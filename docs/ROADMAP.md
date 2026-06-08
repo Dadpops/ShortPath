@@ -54,8 +54,11 @@ Goal: working local JSON store with CSV import/export and seed data.
 - [ ] Update csv.ts: rename the CSV column from `link` to `url` (maps to internal `Entry.link` field)
 - [ ] Update csv.ts: switch tag separator from comma (`,`) to pipe (`|`) in both import and export
 - [ ] Add `tool` as a valid `type` value in `src/shared/types.ts` (join: `reply | doc | link | sop | tool`)
+- [ ] Add `source: "local" | "synced"` to the `Entry` type in `src/shared/types.ts`
+- [ ] Update store functions: set `source: "local"` on all entries created via add/edit form or clipboard capture
+- [ ] Backfill existing entries in store.json on load: if `source` is missing, set it to `"local"`
 - [ ] Update EntryForm.tsx: add `tool` to the type selector radio buttons
-- [ ] Static template file `src/store/template/shortpath-template.csv` — created; confirm it's correct before adding the download button
+- [ ] Static template file `src/store/template/shortpath-template.csv` — created; confirm it matches locked schema before wiring download
 - [ ] IPC handler: `download-template-csv` — copies template file to user-chosen path via dialog.showSaveDialog
 - [ ] Import screen (renderer): show inline format reference — column table, pipe-tag note, multi-line body note
 - [ ] Import screen: download template button triggers `download-template-csv` IPC
@@ -79,7 +82,8 @@ Goal: the core search experience working end-to-end.
 - [x] Recents shown when search box is empty (last 10 opened/copied entries)
 - [x] Per-vertical filter: scope search to one vertical at a time
 - [x] Empty state (no results) and loading state
-- [ ] Write Help topics for Phase 2 features — done as part of Phase 6 Help System
+- [ ] Show source tag on result items (small "mine" or "synced" label) — done after Phase 4 adds source field to live entries
+- [ ] Write Help topics for Phase 2 features — done as part of Phase 7 Help System
 
 ---
 
@@ -93,11 +97,40 @@ Goal: users can copy results and manage their own entries.
 - [x] Edit entry form
 - [x] Delete entry with confirmation
 - [x] User-defined verticals: create and name custom categories
-- [ ] Write Help topics for Phase 3 features — done as part of Phase 6 Help System
+- [ ] Write Help topics for Phase 3 features — done as part of Phase 7 Help System
+
+**Phase 3 additions — Easy capture:**
+
+These features serve the solo user and require no sync layer. They are the onboarding play: making it a normal weekly habit to collect scattered content into ShortPath.
+
+- [ ] Add-from-clipboard: on hotkey open (or via a dedicated button), if the clipboard contains text, offer to create a new local entry pre-filled with the clipboard contents. User adds a title and picks a vertical, then saves. One action from copy to saved.
+- [ ] Quick add: a minimal add form that shows only title + body/url + vertical. Type and tags are optional and collapsed by default. The goal is to make adding an entry take under 10 seconds.
+- [ ] Paste-and-split helper: paste a multi-section document into a special input; ShortPath splits it into entries on headings (each heading + its section body becomes one entry). Pure text heuristic, no AI. Covers the messy-Google-Doc case.
 
 ---
 
-## Phase 4 — Window UX (core, not polish)
+## Phase 4 — Shared-file sync
+
+Goal: teams share a master file in Drive / Dropbox / OneDrive. Every ShortPath instance picks up changes automatically. Personal entries are never touched.
+
+- [ ] Settings UI: configure shared file path (file picker or paste path; local path because the sync service mounts the shared folder as a normal directory)
+- [ ] File watcher: watch the configured shared file path for changes using `fs.watch` or `chokidar`
+- [ ] On change detected: reload synced entries from the shared file, replace the previous synced set in the store, push updated entry list to renderer
+- [ ] Manual "Refresh now" button for cases where file-watch events are delayed or missed
+- [ ] Import shared file: load entries from the shared file with `source: "synced"`; run the same validation as CSV import (required columns, bad row flagging)
+- [ ] Merge rule: synced entries are fully replaced on refresh; local entries (`source: "local"`) are never touched by any sync operation
+- [ ] Clear synced: remove all `source: "synced"` entries (used when switching shared files or disconnecting from a team). Local entries remain.
+- [ ] Export all: write local + synced entries to a user-chosen CSV file
+- [ ] Export mine: write only `source: "local"` entries to CSV. This is the bottom-up path — individuals hand their personal library to the admin who folds it into the shared master.
+- [ ] IPC handlers: `configure-sync`, `refresh-synced`, `clear-synced`, `export-mine`
+- [ ] Visual distinction in results: small source tag on each result item ("mine" or "synced"); local and synced entries may appear as separate top-level groups when browsing
+- [ ] Write Help topics for Phase 4 features (sync setup, refresh, export mine)
+
+**Out of scope for Phase 4 (deliberate decisions, not oversights):** hosted backend, help-desk connectors, Notion/wiki importers, real-time multi-writer editing. The shared-file model covers centralized and synced without any of these.
+
+---
+
+## Phase 5 — Window UX (core, not polish)
 
 Goal: keyboard-first interaction that makes the app genuinely fast.
 
@@ -105,15 +138,15 @@ Goal: keyboard-first interaction that makes the app genuinely fast.
 - [ ] On hotkey: show window, focus search box immediately
 - [ ] Hotkey conflict detection: warn if registration fails, show actionable message
 - [ ] Keyboard navigation: arrow keys move through results, Enter copies focused result, Esc dismisses
-- [ ] Fix `window.open(link)` → use `shell.openExternal` via IPC (quick win)
+- [ ] Fix `window.open(link)` -> use `shell.openExternal` via IPC (quick win)
 - [ ] Persist window size and position between launches
 - [ ] Tray menu: Show, Import CSV, Export CSV, Settings, Quit
-- [ ] Settings surface: change hotkey, reset position
-- [ ] Write Help topics for Phase 4 features (keyboard shortcuts, hotkey config, window management)
+- [ ] Settings surface: change hotkey, reset position, configure sync path
+- [ ] Write Help topics for Phase 5 features (keyboard shortcuts, hotkey config, window management)
 
 ---
 
-## Phase 5 — Support Tools section
+## Phase 6 — Support Tools section
 
 Goal: dedicated surface for quick-access utilities and links.
 
@@ -121,17 +154,17 @@ Goal: dedicated surface for quick-access utilities and links.
 - [ ] Add/edit/remove tool entries (links + labels)
 - [ ] Quick-launch: open link in default browser via shell.openExternal
 - [ ] Reorder tools via drag or keyboard
-- [ ] Write Help topics for Phase 5 features (Support Tools section, reordering)
+- [ ] Write Help topics for Phase 6 features (Support Tools section, reordering)
 
 ---
 
-## Phase 6 — Help system
+## Phase 7 — Help system
 
 Goal: in-app, searchable help covering every feature. No browser, no external links.
 
 - [ ] Help button `?` in main window header (top-right, next to add button)
 - [ ] Help panel: slide-over or in-window view — NOT a separate BrowserWindow, NOT shell.openExternal
-- [ ] Help panel: dismissable with Esc or a close `×` button
+- [ ] Help panel: dismissable with Esc or a close x button
 - [ ] Help panel: search box that filters topics by title and content keywords
 - [ ] Help topic data structure stubbed at `src/renderer/features/help/topics.ts`
 - [ ] Author all 16 Help topics with full content:
@@ -147,15 +180,15 @@ Goal: in-app, searchable help covering every feature. No browser, no external li
   - Editing and deleting (edit button, inline delete confirmation)
   - Managing verticals (create, rename, which are built-in)
   - Importing a CSV (template, column format, pipe tags, preview step)
-  - Exporting a CSV (what's included, how to re-import)
+  - Exporting a CSV (export all vs export mine, re-import behavior)
   - Support Tools (dedicated vertical, quick-launch links, reordering)
-  - Settings (change hotkey, reset window position)
-  - Troubleshooting (hotkey conflicts, app not opening, entries missing)
-- [ ] Retroactively write Help content for Phase 1–3 features (CSV import/export, search, entry management)
+  - Settings (change hotkey, reset window position, configure sync)
+  - Troubleshooting (hotkey conflicts, app not opening, entries missing, sync not updating)
+- [ ] Retroactively write Help content for Phase 1-4 features (CSV, search, entry management, sync)
 
 ---
 
-## Phase 7 — Polish
+## Phase 8 — Polish
 
 Goal: app feels intentional and complete.
 
@@ -167,7 +200,7 @@ Goal: app feels intentional and complete.
 
 ---
 
-## Phase 8 — Packaging and distribution
+## Phase 9 — Packaging and distribution
 
 Goal: installable builds for Windows and Mac.
 

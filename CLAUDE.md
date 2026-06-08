@@ -43,6 +43,11 @@ Then begin work on whatever is marked next.
 - No half-finished implementations. If something is not built yet, leave a stub with a one-line comment pointing to the phase that will build it.
 - No features added beyond the current phase's scope. When tempted, add a task to the roadmap instead.
 
+## Core principles
+
+- **Sync never modifies a user's local entries.** Any code that touches `source: "synced"` entries must never read, write, or delete entries where `source === "local"`. This is a hard guarantee, not a preference. Enforce it in the sync functions, not in callers.
+- Local-first always. No network calls, no accounts, no hosted backend. All data stays on the user's machine.
+
 ## Standing rule: Help topics
 
 When any user-facing feature is added or changed, update its corresponding Help topic in `src/renderer/features/help/topics.ts` in the same commit (or the same PR). This applies to every phase from 4 onward. Phases 1-3 are covered retroactively in Phase 6.
