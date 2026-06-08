@@ -12,6 +12,9 @@ export interface AppSettings {
   hotkey: string;
   windowBounds?: WindowBounds;
   syncPath?: string;
+  fontSize?: "small" | "medium" | "large";
+  sourceMode?: "local" | "sync";
+  sourceName?: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
