@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Fuse, { type FuseResult } from "fuse.js";
 import type { Entry, Vertical, VerticalGroup, SearchResult } from "@shared/types";
 import SearchBar from "./components/SearchBar";
@@ -40,6 +40,8 @@ export default function App() {
   const [focusTrigger, setFocusTrigger] = useState(0);
   const [hotkeyError, setHotkeyError] = useState<string | null>(null);
   const [overlayEntry, setOverlayEntry] = useState<Entry | null>(null);
+  const [animating, setAnimating] = useState(false);
+  const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -81,6 +83,9 @@ export default function App() {
   useEffect(() => {
     const unsubFocus = window.shortpath.onFocusSearch(() => {
       setFocusTrigger((n) => n + 1);
+      setAnimating(true);
+      if (animTimerRef.current) clearTimeout(animTimerRef.current);
+      animTimerRef.current = setTimeout(() => setAnimating(false), 250);
     });
     const unsubHotkey = window.shortpath.onHotkeyFailed((accelerator) => {
       setHotkeyError(`Could not register hotkey "${accelerator}". It may be in use by another app.`);
@@ -109,7 +114,7 @@ export default function App() {
     });
   }, [entries]);
 
-  const groups = useMemo((): VerticalGroup[] => {
+  const rawGroups = useMemo(() => {
     const verticalMap = new Map(verticals.map((v) => [v.id, v]));
     const trimmed = debouncedQuery.trim();
 
@@ -138,33 +143,35 @@ export default function App() {
       byVertical.get(vid)!.push(item);
     }
 
-    const orderedGroups: VerticalGroup[] = [];
+    const result: Array<{ verticalId: string; label: string; hitCount: number; results: SearchResult[] }> = [];
 
     for (const v of verticals) {
       const groupItems = byVertical.get(v.id);
       if (!groupItems?.length) continue;
-      orderedGroups.push({
+      result.push({
         verticalId: v.id,
         label: v.label,
         hitCount: groupItems.length,
         results: groupItems.map((i) => ({ entry: i.entry, matches: i.matches })),
-        expanded: expandedGroups.has(v.id),
       });
     }
 
     for (const [vid, groupItems] of byVertical) {
       if (verticals.find((v) => v.id === vid)) continue;
-      orderedGroups.push({
+      result.push({
         verticalId: vid,
         label: verticalMap.get(vid)?.label ?? vid,
         hitCount: groupItems.length,
         results: groupItems.map((i) => ({ entry: i.entry, matches: i.matches })),
-        expanded: expandedGroups.has(vid),
       });
     }
 
-    return orderedGroups;
-  }, [entries, verticals, debouncedQuery, fuse, expandedGroups]);
+    return result;
+  }, [entries, verticals, debouncedQuery, fuse]);
+
+  const groups = useMemo((): VerticalGroup[] => {
+    return rawGroups.map((g) => ({ ...g, expanded: expandedGroups.has(g.verticalId) }));
+  }, [rawGroups, expandedGroups]);
 
   const recentEntries = useMemo(
     () => recents.map((id) => entries.find((e) => e.id === id)).filter(Boolean) as Entry[],
@@ -306,16 +313,18 @@ export default function App() {
     setMode("browse");
   }
 
-  const totalHits = groups.reduce((sum, g) => sum + g.hitCount, 0);
+  const totalHits = rawGroups.reduce((sum, g) => sum + g.hitCount, 0);
   const isSearching = debouncedQuery.trim().length >= 2;
 
+  const shellClass = `app-shell${animating ? " animate-in" : ""}`;
+
   if (status === "loading") {
-    return <div className="app-shell"><div className="status-message">Loading...</div></div>;
+    return <div className={shellClass}><div className="status-message">Loading...</div></div>;
   }
 
   if (status === "error") {
     return (
-      <div className="app-shell">
+      <div className={shellClass}>
         <div className="status-message error">Failed to load data. Check the app logs.</div>
       </div>
     );
@@ -323,7 +332,7 @@ export default function App() {
 
   if (mode === "add" || mode === "edit") {
     return (
-      <div className="app-shell">
+      <div className={shellClass}>
         <EntryForm
           entry={editingEntry ?? undefined}
           verticals={verticals}
@@ -339,7 +348,7 @@ export default function App() {
 
   if (mode === "import") {
     return (
-      <div className="app-shell">
+      <div className={shellClass}>
         <ImportScreen onComplete={handleImportComplete} onCancel={() => setMode("browse")} />
       </div>
     );
@@ -347,7 +356,7 @@ export default function App() {
 
   if (mode === "split") {
     return (
-      <div className="app-shell">
+      <div className={shellClass}>
         <SplitImport
           verticals={verticals}
           onComplete={handleSplitComplete}
@@ -359,7 +368,7 @@ export default function App() {
 
   if (mode === "settings") {
     return (
-      <div className="app-shell">
+      <div className={shellClass}>
         <SettingsScreen
           onClose={() => setMode("browse")}
           onNavigate={(target) => { setMode(target); }}
@@ -370,7 +379,7 @@ export default function App() {
 
   if (mode === "help") {
     return (
-      <div className="app-shell">
+      <div className={shellClass}>
         <HelpPanel onClose={() => setMode("browse")} />
       </div>
     );
@@ -379,7 +388,7 @@ export default function App() {
   const hasClipboard = !!clipboardText && !clipboardDismissed;
 
   return (
-    <div className="app-shell">
+    <div className={shellClass}>
       <header className="app-header">
         <span className="app-path">shortpath /</span>
         <div className="header-actions">
@@ -453,7 +462,7 @@ export default function App() {
 
         {!isSearching && entries.length === 0 && (
           <div className="empty-state">
-            <p>No entries yet. Press <strong>+</strong> to add one or <strong>↑</strong> to import a CSV.</p>
+            <p>No entries yet. Press <strong>+</strong> to add one or open <strong>⚙ Settings</strong> to import a CSV.</p>
           </div>
         )}
 

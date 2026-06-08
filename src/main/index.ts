@@ -25,6 +25,8 @@ const WINDOW_HEIGHT = 600;
 const MARGIN = 12;
 
 let tray: Tray | null = null;
+let trayIconBase: ReturnType<typeof nativeImage.createFromPath> | null = null;
+let trayIconActive: ReturnType<typeof nativeImage.createFromPath> | null = null;
 let win: BrowserWindow | null = null;
 let store: StoreData;
 let userDataPath: string;
@@ -82,10 +84,15 @@ function createWindow() {
 
   win.once("ready-to-show", () => {
     win?.show();
+    if (tray && trayIconActive) tray.setImage(trayIconActive);
   });
 
   win.on("closed", () => {
     win = null;
+  });
+
+  win.on("hide", () => {
+    if (tray && trayIconBase) tray.setImage(trayIconBase);
   });
 
   function scheduleSaveBounds() {
@@ -103,11 +110,25 @@ function createWindow() {
   win.on("resize", scheduleSaveBounds);
 }
 
+function buildActiveIcon(base: ReturnType<typeof nativeImage.createFromPath>) {
+  const { width, height } = base.getSize();
+  const bitmap = base.getBitmap();
+  for (let i = 0; i < bitmap.length; i += 4) {
+    if (bitmap[i + 3] > 0) {
+      bitmap[i]     = Math.min(bitmap[i]     + 70, 255);
+      bitmap[i + 1] = Math.min(bitmap[i + 1] + 70, 255);
+      bitmap[i + 2] = Math.min(bitmap[i + 2] + 70, 255);
+    }
+  }
+  return nativeImage.createFromBitmap(bitmap, { width, height });
+}
+
 function createTray() {
-  const icon = nativeImage.createFromPath(
+  trayIconBase = nativeImage.createFromPath(
     path.join(app.getAppPath(), "icons/png/tray-32.png")
   );
-  tray = new Tray(icon);
+  trayIconActive = buildActiveIcon(trayIconBase);
+  tray = new Tray(trayIconBase);
 
   const contextMenu = Menu.buildFromTemplate([
     { label: "Show ShortPath", click: toggleWindow },
@@ -139,10 +160,12 @@ function toggleWindow() {
   }
   if (win.isVisible()) {
     win.hide();
+    if (tray && trayIconBase) tray.setImage(trayIconBase);
   } else {
     win.show();
     win.focus();
     win.webContents.send("focus-search");
+    if (tray && trayIconActive) tray.setImage(trayIconActive);
   }
 }
 
