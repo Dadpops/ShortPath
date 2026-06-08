@@ -1,10 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface Props {
   onClose: () => void;
 }
 
 type HotkeyState = "idle" | "capturing" | "saving" | "error";
+type RefreshState = "idle" | "refreshing" | "done" | "error";
+
+interface SyncStatus {
+  syncPath: string | null;
+  syncedCount: number;
+  lastRefreshed: string | null;
+}
+
+function formatRelativeTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
 
 function buildAccelerator(e: KeyboardEvent): string | null {
   // Ignore modifier-only keypresses.
@@ -41,9 +58,24 @@ export default function SettingsScreen({ onClose }: Props) {
   const [errorMsg, setErrorMsg] = useState("");
   const [positionReset, setPositionReset] = useState(false);
 
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [refreshState, setRefreshState] = useState<RefreshState>("idle");
+  const [refreshError, setRefreshError] = useState("");
+  const [clearConfirming, setClearConfirming] = useState(false);
+
+  const reloadSyncStatus = useCallback(() => {
+    window.shortpath.getSyncStatus().then(setSyncStatus);
+  }, []);
+
   useEffect(() => {
     window.shortpath.getSettings().then(({ hotkey }) => setCurrentHotkey(hotkey));
-  }, []);
+    reloadSyncStatus();
+  }, [reloadSyncStatus]);
+
+  // Keep sync status up to date when the watcher fires.
+  useEffect(() => {
+    return window.shortpath.onSyncRefreshed(reloadSyncStatus);
+  }, [reloadSyncStatus]);
 
   useEffect(() => {
     if (hotkeyState !== "capturing") return;
@@ -93,6 +125,35 @@ export default function SettingsScreen({ onClose }: Props) {
     await window.shortpath.resetWindowPosition();
     setPositionReset(true);
     setTimeout(() => setPositionReset(false), 2000);
+  }
+
+  async function handleConfigureSync() {
+    const result = await window.shortpath.configureSync();
+    if (result.success) reloadSyncStatus();
+  }
+
+  async function handleRefreshSynced() {
+    setRefreshState("refreshing");
+    setRefreshError("");
+    const result = await window.shortpath.refreshSynced();
+    if (result.success) {
+      setRefreshState("done");
+      reloadSyncStatus();
+      setTimeout(() => setRefreshState("idle"), 2000);
+    } else {
+      setRefreshError(result.errors?.[0] ?? "Refresh failed.");
+      setRefreshState("error");
+    }
+  }
+
+  async function handleClearSynced() {
+    if (!clearConfirming) {
+      setClearConfirming(true);
+      return;
+    }
+    await window.shortpath.clearSynced();
+    setClearConfirming(false);
+    reloadSyncStatus();
   }
 
   return (
@@ -155,9 +216,49 @@ export default function SettingsScreen({ onClose }: Props) {
           </button>
         </section>
 
-        <section className="settings-section settings-section-stub">
+        <section className="settings-section">
           <div className="settings-section-title">Shared file sync</div>
-          <div className="settings-stub-note">Configured in Phase 4 — not yet available.</div>
+
+          {syncStatus?.syncPath ? (
+            <>
+              <div className="settings-row settings-row-stack">
+                <div className="settings-row-label">Sync file</div>
+                <div className="settings-sync-path">{syncStatus.syncPath}</div>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-label">
+                  {syncStatus.syncedCount} synced {syncStatus.syncedCount === 1 ? "entry" : "entries"}
+                  {syncStatus.lastRefreshed && ` · last refreshed ${formatRelativeTime(syncStatus.lastRefreshed)}`}
+                </div>
+              </div>
+              {refreshState === "error" && <p className="form-error">{refreshError}</p>}
+              <div className="settings-sync-actions">
+                <button className="btn-secondary settings-action-btn" onClick={handleRefreshSynced} disabled={refreshState === "refreshing"}>
+                  {refreshState === "refreshing" ? "Refreshing…" : refreshState === "done" ? "Refreshed ✓" : "Refresh now"}
+                </button>
+                <button className="btn-secondary settings-action-btn" onClick={handleConfigureSync}>
+                  Change file
+                </button>
+                <button className="btn-secondary settings-action-btn settings-danger-btn" onClick={handleClearSynced}>
+                  {clearConfirming ? "Confirm clear" : "Clear synced"}
+                </button>
+              </div>
+              {clearConfirming && (
+                <p className="settings-stub-note">This removes all {syncStatus.syncedCount} synced entries. Your own entries are not affected.</p>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="settings-row">
+                <div className="settings-row-label">
+                  Point to a shared CSV in Dropbox, Drive, or OneDrive. ShortPath watches it for changes and reloads automatically.
+                </div>
+              </div>
+              <button className="btn-secondary settings-action-btn" onClick={handleConfigureSync}>
+                Configure sync file
+              </button>
+            </>
+          )}
         </section>
       </div>
     </div>

@@ -60,4 +60,14 @@ contextBridge.exposeInMainWorld("shortpath", {
     ipcRenderer.on("store-updated", (_event, data) => callback(data));
     return () => ipcRenderer.removeAllListeners("store-updated");
   },
+
+  configureSync: () => ipcRenderer.invoke("configure-sync"),
+  refreshSynced: () => ipcRenderer.invoke("refresh-synced"),
+  clearSynced: () => ipcRenderer.invoke("clear-synced"),
+  getSyncStatus: () => ipcRenderer.invoke("get-sync-status"),
+
+  onSyncRefreshed: (callback: () => void) => {
+    ipcRenderer.on("sync-refreshed", callback);
+    return () => ipcRenderer.removeListener("sync-refreshed", callback);
+  },
 });

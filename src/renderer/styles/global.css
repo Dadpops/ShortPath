@@ -253,6 +253,19 @@ body {
   text-overflow: ellipsis;
 }
 
+.result-source-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  padding: 0 5px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border: 1px solid transparent;
+  align-self: flex-start;
+  line-height: 1.6;
+}
+
 /* Action buttons */
 .result-actions {
   display: flex;
@@ -1090,6 +1103,38 @@ body {
   font-size: 12px;
   color: var(--color-text-muted);
   font-style: italic;
+}
+
+.settings-row-stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.settings-sync-path {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.settings-sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.settings-danger-btn {
+  color: #f87171;
+  border-color: #7f1d1d;
+}
+
+.settings-danger-btn:hover {
+  background: #7f1d1d;
+  border-color: #f87171;
+  color: #fca5a5;
 }
 
 /* Macro overlay */

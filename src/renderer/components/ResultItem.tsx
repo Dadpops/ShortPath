@@ -46,6 +46,7 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused }
     >
       <div className="result-content">
         <span className="result-title">{entry.title}</span>
+        {entry.source === "synced" && <span className="result-source-badge">synced</span>}
         {entry.tags && <span className="result-tags">{entry.tags}</span>}
       </div>
       <div className="result-actions">

@@ -82,9 +82,15 @@ declare global {
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
 
+      configureSync: () => Promise<{ success: boolean; syncPath?: string; errors?: string[] }>;
+      refreshSynced: () => Promise<{ success: boolean; errors?: string[] }>;
+      clearSynced: () => Promise<void>;
+      getSyncStatus: () => Promise<{ syncPath: string | null; syncedCount: number; lastRefreshed: string | null }>;
+
       onFocusSearch: (callback: () => void) => () => void;
       onHotkeyFailed: (callback: (accelerator: string) => void) => () => void;
       onOpenSettings: (callback: () => void) => () => void;
+      onSyncRefreshed: (callback: () => void) => () => void;
 
       onStoreUpdated: (
         callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[] }) => void
