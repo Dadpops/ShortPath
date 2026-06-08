@@ -8,9 +8,11 @@ interface Props {
   onNavigateUp?: () => void;   // ArrowUp pressed in search bar
   onEnter?: () => void;        // Enter pressed in search bar
   onEscape?: () => void;       // Escape pressed in search bar
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
-export default function SearchBar({ value, onChange, focusTrigger, onNavigateDown, onNavigateUp, onEnter, onEscape }: Props) {
+export default function SearchBar({ value, onChange, focusTrigger, onNavigateDown, onNavigateUp, onEnter, onEscape, onFocus, onBlur }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -52,6 +54,8 @@ export default function SearchBar({ value, onChange, focusTrigger, onNavigateDow
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         spellCheck={false}
       />
       {value && (

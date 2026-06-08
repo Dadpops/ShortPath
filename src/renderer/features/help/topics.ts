@@ -377,6 +377,35 @@ Stops the file watcher completely, clears the sync file path from settings, and 
 Both actions require a second click to confirm. Neither action touches your local entries.`,
   },
   {
+    id: "notes",
+    title: "Notes",
+    tags: ["notes", "note", "write", "personal", "private", "memo"],
+    content: `Notes is a private scratchpad built into ShortPath. Notes are completely separate from entries — they never appear in search results, are never exported to CSV, and are never affected by sync.
+
+Opening Notes
+Click the ✎ icon in the header to open the Notes view.
+
+Creating a note
+Click + New. A blank note opens immediately in the editor. Start typing — your note is saved automatically as you type.
+
+Editing a note
+From the notes list, click any note to open it in the editor. The title field is optional. The body field is a plain-text area — you can write freely without formatting.
+
+Notes auto-save about a second after you stop typing. You do not need to click a Save button.
+
+Deleting a note
+While viewing a note in the editor, click "Delete note". A confirmation prompt appears in the same footer bar. Click Delete to confirm, or Cancel to go back.
+
+Searching notes
+In the notes list, type in the search box to filter notes by title or body. The filter applies in real time.
+
+Sorting
+Click the Newest / Oldest button to toggle sort order. Newest (default) shows the most recently updated note first.
+
+Data
+Notes are stored in notes.json in your app data folder, separate from store.json. They are local only and are never synced or exported.`,
+  },
+  {
     id: "troubleshooting",
     title: "Troubleshooting",
     tags: ["troubleshooting", "hotkey conflict", "not opening", "missing entries", "sync", "problem"],

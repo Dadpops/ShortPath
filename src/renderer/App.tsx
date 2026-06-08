@@ -4,7 +4,6 @@ import type { Entry, Vertical, VerticalGroup, SearchResult } from "@shared/types
 import SearchBar from "./components/SearchBar";
 import VerticalGroupComponent from "./components/VerticalGroup";
 import SupportToolsGroup from "./components/SupportToolsGroup";
-import ResultItem from "./components/ResultItem";
 import EntryForm from "./components/EntryForm";
 import ImportScreen from "./components/ImportScreen";
 import SplitImport from "./components/SplitImport";
@@ -12,9 +11,11 @@ import SettingsScreen from "./components/SettingsScreen";
 import HelpPanel from "./components/HelpPanel";
 import MacroOverlay from "./components/MacroOverlay";
 import FavoritesView from "./components/FavoritesView";
+import NotesView from "./components/NotesView";
+import RecentsDropdown from "./components/RecentsDropdown";
 
 type AppStatus = "loading" | "ready" | "error";
-type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "favorites";
+type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "favorites" | "notes";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -46,6 +47,7 @@ export default function App() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [sourceMode, setSourceMode] = useState<"local" | "sync" | undefined>(undefined);
   const [sourceName, setSourceName] = useState<string | undefined>(undefined);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -452,6 +454,14 @@ export default function App() {
     );
   }
 
+  if (mode === "notes") {
+    return (
+      <div className={shellClass}>
+        <NotesView onBack={() => setMode("browse")} />
+      </div>
+    );
+  }
+
   const hasClipboard = !!clipboardText && !clipboardDismissed;
 
   return (
@@ -473,6 +483,7 @@ export default function App() {
               ⎘
             </button>
           )}
+          <button className="header-icon-btn" onClick={() => setMode("notes")} title="Notes">✎</button>
           <button className="header-icon-btn" onClick={() => setMode("favorites")} title="Favorites">☆</button>
           <button className="header-icon-btn" onClick={() => setMode("help")} title="Help">?</button>
           <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings">⚙</button>
@@ -487,38 +498,35 @@ export default function App() {
         </div>
       )}
 
-      <div className="search-container">
-        <SearchBar
-          value={query}
-          onChange={setQuery}
-          focusTrigger={focusTrigger}
-          onNavigateDown={navigateDown}
-          onNavigateUp={navigateUp}
-          onEnter={handleEnter}
-          onEscape={handleEscape}
-        />
+      <div className="search-section">
+        <div className="search-container">
+          <SearchBar
+            value={query}
+            onChange={setQuery}
+            focusTrigger={focusTrigger}
+            onNavigateDown={navigateDown}
+            onNavigateUp={navigateUp}
+            onEnter={handleEnter}
+            onEscape={handleEscape}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+          />
+        </div>
+        {isSearchFocused && !isSearching && recentEntries.length > 0 && (
+          <RecentsDropdown
+            entries={recentEntries}
+            focusedEntryId={focusedEntryId}
+            favorites={favorites}
+            onOpen={handleOpenOverlay}
+            onEdit={handleEditEntry}
+            onCopy={handleCopy}
+            onToggleFavorite={handleToggleFavorite}
+            onMouseDown={(e) => e.preventDefault()}
+          />
+        )}
       </div>
 
       <main className="results-container">
-        {!isSearching && recentEntries.length > 0 && (
-          <div className="recents-section">
-            <div className="recents-header">Recent</div>
-            <ul className="result-list">
-              {recentEntries.map((entry) => (
-                <ResultItem
-                  key={entry.id}
-                  result={{ entry, matches: [] }}
-                  onEdit={handleEditEntry}
-                  onCopy={handleCopy}
-                  onOpen={handleOpenOverlay}
-                  isFocused={focusedEntryId === entry.id}
-                  isFavorite={favorites.has(entry.id)}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              ))}
-            </ul>
-          </div>
-        )}
 
         {isSearching && groups.length === 0 && (
           <div className="empty-state">
