@@ -21,7 +21,6 @@
     "dist": "electron-builder"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -37,8 +36,12 @@
     "vite-plugin-electron": "^0.28.7"
   },
   "dependencies": {
-    "better-sqlite3": "^9.6.0",
+    "fuse.js": "^7.0.0",
+    "papaparse": "^5.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
+  },
+  "notes": {
+    "deps": "fuse.js and papaparse added in Phase 1 realignment. better-sqlite3 removed — storage is local JSON, not SQLite. SQLite remains a documented future option if entry counts grow to tens of thousands."
   }
 }
