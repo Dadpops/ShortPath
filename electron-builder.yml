@@ -12,11 +12,18 @@ files:
   - icons/**/*
   - package.json
 
+# User data lives in app.getPath("userData") — outside the app bundle — so
+# reinstalling never affects saved entries or settings.
+
 win:
   target:
     - target: nsis
       arch: [x64]
   icon: icons/icon.ico
+  # Signing — uncomment when a certificate is available. See docs/SIGNING.md.
+  # certificateFile: path/to/cert.pfx
+  # certificatePassword: ${env.WIN_CERT_PASSWORD}
+  # signAndEditExecutable: true
 
 mac:
   target:
@@ -24,6 +31,11 @@ mac:
       arch: [x64, arm64]
   icon: icons/icon.icns
   category: public.app-category.productivity
+  # Signing — uncomment when an Apple Developer ID is available. See docs/SIGNING.md.
+  # identity: "Developer ID Application: Your Name (TEAMID)"
+  # hardenedRuntime: true
+  # entitlementsInherit: build/entitlements.mac.plist
+  # gatekeeperAssess: false
 
 linux:
   target:
@@ -33,6 +45,7 @@ linux:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
 
 # Tray app — keep it running in background
 extraMetadata:
