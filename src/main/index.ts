@@ -13,7 +13,7 @@ import {
 } from "electron";
 import path from "path";
 import fs from "fs";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, replaceSyncedEntries } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries } from "../store/index";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
@@ -237,6 +237,12 @@ function registerIpcHandlers() {
       return { entry: result.entry, verticals: store.verticals };
     }
   );
+
+  ipcMain.handle("reorder-entry", (_e, entryId: string, direction: "up" | "down") => {
+    store = reorderEntry(store, entryId, direction);
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
+  });
 
   ipcMain.handle("record-access", (_e, entryId: string) => {
     store = recordAccess(store, entryId);

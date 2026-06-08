@@ -68,6 +68,7 @@ export const IPC = {
   RESET_WINDOW_POSITION: "reset-window-position",
   GET_SETTINGS: "get-settings",
   OPEN_SETTINGS: "open-settings",
+  REORDER_ENTRY: "reorder-entry",
   CONFIGURE_SYNC: "configure-sync",
   REFRESH_SYNCED: "refresh-synced",
   CLEAR_SYNCED: "clear-synced",

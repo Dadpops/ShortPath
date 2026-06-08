@@ -63,6 +63,7 @@ declare global {
       ) => Promise<Entry>;
 
       deleteEntry: (id: string) => Promise<void>;
+      reorderEntry: (entryId: string, direction: "up" | "down") => Promise<void>;
       recordAccess: (entryId: string) => Promise<void>;
 
       importCsv: () => Promise<ImportCsvResult>;

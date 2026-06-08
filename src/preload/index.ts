@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld("shortpath", {
 
   recordAccess: (entryId: string) => ipcRenderer.invoke("record-access", entryId),
 
+  reorderEntry: (entryId: string, direction: "up" | "down") =>
+    ipcRenderer.invoke("reorder-entry", entryId, direction),
+
   importCsv: () => ipcRenderer.invoke("import-csv"),
   exportCsv: () => ipcRenderer.invoke("export-csv"),
   exportMine: () => ipcRenderer.invoke("export-mine"),

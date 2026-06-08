@@ -119,6 +119,27 @@ export function ensureVertical(store: StoreData, vertical: Vertical): StoreData 
   return { ...store, verticals: [...store.verticals, vertical] };
 }
 
+// Move an entry up or down within its vertical. Used for Support Tools ordering.
+export function reorderEntry(store: StoreData, entryId: string, direction: "up" | "down"): StoreData {
+  const entry = store.entries.find((e) => e.id === entryId);
+  if (!entry) return store;
+
+  const verticalEntries = store.entries.filter((e) => e.vertical === entry.vertical);
+  const posInVertical = verticalEntries.findIndex((e) => e.id === entryId);
+
+  if (direction === "up" && posInVertical <= 0) return store;
+  if (direction === "down" && posInVertical >= verticalEntries.length - 1) return store;
+
+  const swapId = verticalEntries[direction === "up" ? posInVertical - 1 : posInVertical + 1].id;
+
+  const newEntries = [...store.entries];
+  const globalIdx = newEntries.findIndex((e) => e.id === entryId);
+  const globalSwapIdx = newEntries.findIndex((e) => e.id === swapId);
+  [newEntries[globalIdx], newEntries[globalSwapIdx]] = [newEntries[globalSwapIdx], newEntries[globalIdx]];
+
+  return { ...store, entries: newEntries };
+}
+
 // Replace all synced entries atomically. Local entries are never touched.
 export function replaceSyncedEntries(store: StoreData, newSyncedEntries: Entry[]): StoreData {
   const localEntries = store.entries.filter((e) => e.source === "local");
