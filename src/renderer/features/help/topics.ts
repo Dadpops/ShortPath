@@ -302,14 +302,28 @@ See the "Shared file sync" help topic for full setup instructions.`,
   {
     id: "text-size",
     title: "Adjusting text size",
-    tags: ["font", "text", "size", "appearance", "small", "large", "accessibility"],
-    content: `ShortPath supports three text sizes for entry content: Small, Medium, and Large. Medium is the default.
+    tags: ["font", "text", "size", "appearance", "slider", "large", "accessibility"],
+    content: `ShortPath lets you adjust the text size using a slider in Settings > Appearance. Drag left for smaller text, right for larger. The change applies immediately — no restart needed. The setting persists across launches.
 
-To change the text size, open Settings (⚙ in the header) and find the Appearance section at the top. Click Small, Medium, or Large. The change applies immediately — no restart needed.
+What scales: search input, entry titles, body text, form fields, buttons, and help content. Small decorative labels (vertical headers, badges) stay fixed.`,
+  },
+  {
+    id: "theme",
+    title: "Light and dark mode",
+    tags: ["theme", "dark", "light", "mode", "appearance", "color"],
+    content: `ShortPath supports dark mode (default) and light mode.
 
-The setting is saved and will persist across app launches.
+To switch, open Settings (⚙ in the header) and find the Appearance section. Click Dark or Light under Theme. The change applies instantly and is saved across launches.`,
+  },
+  {
+    id: "vertical-rename",
+    title: "Renaming verticals",
+    tags: ["vertical", "rename", "category", "name", "settings"],
+    content: `You can rename any vertical from Settings > Verticals.
 
-What scales: entry titles in the result list, and the body text in the expanded overlay. Header and chrome elements stay fixed so the layout does not shift.`,
+Open Settings, expand the Verticals section, and click Rename next to any vertical. Type the new name and press Enter (or click Save). Press Esc to cancel without saving.
+
+The rename applies everywhere: group headers, entry forms, and the overlay badge. The vertical's internal ID does not change, so all entries remain linked correctly.`,
   },
   {
     id: "favorites",
@@ -332,21 +346,9 @@ Favorites are stored on your machine in the local store. If an entry is deleted,
   },
   {
     id: "source-mode",
-    title: "Local vs File Share Sync",
-    tags: ["setup", "source", "mode", "local", "sync", "team", "first launch"],
-    content: `On first launch, ShortPath asks how you plan to use it.
-
-Local (just me)
-All entries live only on your machine. Nothing is shared. This is the right choice for solo users. You can always add sync later from Settings > Shared file sync.
-
-File Share Sync (team)
-You provide a friendly name (like "Acme Support Team") that appears in the header path. ShortPath is designed to read a shared CSV that your cloud service (Drive, Dropbox, OneDrive) keeps in sync across machines. See the "Shared file sync" help topic for full setup steps.
-
-The header path
-The top-left of every screen shows "shortpath / Local" or "shortpath / [your source name]". Clicking it returns you to the main list and clears the current search from anywhere in the app.
-
-Changing source name
-If you need to update the source name, re-run setup is not available yet — edit settings.json in your app data folder (see Troubleshooting for the path) and change the sourceName field.`,
+    title: "Header path",
+    tags: ["header", "source", "local", "home", "navigation"],
+    content: `The top-left of every screen shows "shortpath / Local". Clicking it returns you to the main list and clears the current search from anywhere in the app.`,
   },
   {
     id: "editing-overlay",
