@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-08 — Phase 3 easy capture](sessions/2026-06-08-phase3-easy-capture.md) — Clipboard banner, quick add (type/tags collapsed), paste-and-split on markdown headings. All Phase 3 additions complete.
 - [2026-06-07 — Phase 1 additions](sessions/2026-06-07-phase1-additions.md) — Source field, tool type, pipe tags, two-step import screen with preview, download template, export mine. All Phase 1 additions complete.
 - [2026-06-07 — Sync + capture roadmap revision](sessions/2026-06-07-sync-capture-planning.md) — Add source field, shared-file sync model, easy capture features, new Phase 4 (sync), renumber phases to 9 total.
 - [2026-06-07 — Phase 1 addendum: CSV template + Help system planning](sessions/2026-06-07-phase1-addendum-csv-help.md) — Lock CSV schema, specify import preview UX, design Help system, add Phase 6, renumber phases.

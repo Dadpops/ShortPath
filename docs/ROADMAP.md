@@ -103,9 +103,9 @@ Goal: users can copy results and manage their own entries.
 
 These features serve the solo user and require no sync layer. They are the onboarding play: making it a normal weekly habit to collect scattered content into ShortPath.
 
-- [ ] Add-from-clipboard: on hotkey open (or via a dedicated button), if the clipboard contains text, offer to create a new local entry pre-filled with the clipboard contents. User adds a title and picks a vertical, then saves. One action from copy to saved.
-- [ ] Quick add: a minimal add form that shows only title + body/url + vertical. Type and tags are optional and collapsed by default. The goal is to make adding an entry take under 10 seconds.
-- [ ] Paste-and-split helper: paste a multi-section document into a special input; ShortPath splits it into entries on headings (each heading + its section body becomes one entry). Pure text heuristic, no AI. Covers the messy-Google-Doc case.
+- [x] Add-from-clipboard: on hotkey open (or via a dedicated button), if the clipboard contains text, offer to create a new local entry pre-filled with the clipboard contents. User adds a title and picks a vertical, then saves. One action from copy to saved.
+- [x] Quick add: a minimal add form that shows only title + body/url + vertical. Type and tags are optional and collapsed by default. The goal is to make adding an entry take under 10 seconds.
+- [x] Paste-and-split helper: paste a multi-section document into a special input; ShortPath splits it into entries on headings (each heading + its section body becomes one entry). Pure text heuristic, no AI. Covers the messy-Google-Doc case.
 
 ---
 
