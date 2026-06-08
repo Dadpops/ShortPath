@@ -1,11 +1,11 @@
 // Help topic content is authored here as each feature ships (see CLAUDE.md standing rule).
-// Phase 6 builds the HelpPanel UI that renders these topics.
+// Phase 7 builds the HelpPanel UI that renders these topics.
 
 export interface HelpTopic {
   id: string;
   title: string;
   tags: string[];
-  content: string; // plain text or light markdown; rendered in HelpPanel
+  content: string; // plain text; rendered in HelpPanel
 }
 
 export const HELP_TOPICS: HelpTopic[] = [
@@ -13,129 +13,282 @@ export const HELP_TOPICS: HelpTopic[] = [
     id: "getting-started",
     title: "Getting started",
     tags: ["intro", "overview", "install", "launch"],
-    content: "", // TODO: Phase 6
+    content: `ShortPath is a local desktop app that puts your support library — saved replies, documentation, SOPs, and quick-launch tools — in one fast, searchable surface.
+
+Press the hotkey (default: Ctrl+Shift+Space) from anywhere on your desktop. The window opens with focus already in the search box. Type a keyword to search every category at once. Click a result to read it in full, or use the copy button to copy it straight to your clipboard.
+
+Everything is stored on your machine. Nothing is sent to a server. No login required.
+
+First steps
+1. Press the hotkey now: Ctrl+Shift+Space (Cmd+Shift+Space on Mac).
+2. Type a few characters to search the sample entries.
+3. Click any result to open it, or use the ⎘ copy button on the right of each row.
+4. Use the + button in the header to add your first real entry.
+5. If your team has a shared CSV file, configure it in Settings > Shared file sync.`,
   },
   {
     id: "opening-closing",
     title: "Opening and closing the window",
-    tags: ["hotkey", "tray", "esc", "dismiss", "shortcut"],
-    content: "", // TODO: Phase 4 (hotkey) + Phase 6
+    tags: ["hotkey", "tray", "esc", "dismiss", "shortcut", "open", "close"],
+    content: `Opening
+Use the global hotkey (default: Ctrl+Shift+Space) to show the window from anywhere on your desktop. The window opens and focus goes directly to the search box.
+
+You can also click the ShortPath icon in the system tray.
+
+Hiding
+Press Esc to hide the window (press again to show it). The app keeps running in the tray — it is not quit, just hidden.
+
+Press the hotkey a second time to toggle the window off.
+
+Quitting
+Right-click the tray icon and choose Quit to stop the app completely.
+
+Changing the hotkey
+Open Settings (⚙ in the header), then use the "Change hotkey" button. If the combination is already taken by another app, you will see an error — try a different one.`,
   },
   {
     id: "searching",
     title: "Searching",
-    tags: ["search", "query", "fuzzy", "keywords", "tips"],
-    content: "", // TODO: Phase 2 done -> Phase 6
+    tags: ["search", "query", "fuzzy", "keywords", "tips", "find"],
+    content: `Type at least 2 characters to start searching. Results appear instantly as you type, grouped by category.
+
+The search is fuzzy — it finds close matches even with minor typos. Title is weighted most heavily, then tags, then body text.
+
+Tips for better results
+- Short, specific keywords work better than long phrases ("billing" not "customer has a billing question").
+- Tag keywords give the most precise results — tags like "refund", "escalation", "VIP" are designed for quick lookup.
+- If nothing comes up, check the spelling or try a synonym.
+- Entries with no body (link-only) can still be found by title or tags.
+
+Keyboard navigation
+Once results appear, press ArrowDown to move focus into the list. Use ArrowUp/ArrowDown to move between results, Enter to open the focused result, and Esc to return focus to the search box.
+
+When the search box is empty, the app shows your recently accessed entries.`,
   },
   {
     id: "understanding-results",
     title: "Understanding results",
-    tags: ["results", "verticals", "groups", "hit count", "expand", "collapse"],
-    content: "", // TODO: Phase 2 done -> Phase 6
+    tags: ["results", "verticals", "groups", "hit count", "expand", "collapse", "categories"],
+    content: `Results are grouped by category (called verticals). Each group header shows the category name and the number of matching entries.
+
+Expanding and collapsing groups
+Click any group header to expand or collapse it. Collapsed groups still count toward the total hit count shown in the header.
+
+Entry types
+- reply: a saved response to copy and paste into a support ticket.
+- doc: a piece of documentation or policy text.
+- sop: a standard operating procedure — step-by-step instructions.
+- link: an external URL to open in the browser.
+- tool: a quick-launch link shown in the Support Tools grid.
+
+Source labels
+If a team-shared sync file is configured, entries from that file show a small "synced" label. These are read-only — they cannot be edited locally.
+
+Entries you created yourself have no label (they are "mine" by default).`,
   },
   {
     id: "copying",
     title: "Copying an entry",
-    tags: ["copy", "clipboard", "copy button"],
-    content: "", // TODO: Phase 3 done -> Phase 6
+    tags: ["copy", "clipboard", "copy button", "paste"],
+    content: `Click any entry to open a detail panel showing the full content. Use the Copy button in the panel to copy the text to your clipboard.
+
+You can also use the ⎘ copy button on each result row to copy without opening the panel.
+
+What gets copied
+- Entries with a body: the full body text.
+- Link-only entries: the URL.
+- Title-only entries: the title.
+
+The copied text goes straight to your clipboard, ready to paste into your support tool, browser, or any app.
+
+After copying, the entry moves to the top of the Recents list for easy re-access.`,
   },
   {
     id: "keyboard-navigation",
     title: "Keyboard navigation",
-    tags: ["keyboard", "arrows", "enter", "esc", "navigation"],
-    content: "", // TODO: Phase 4
+    tags: ["keyboard", "arrows", "enter", "esc", "navigation", "shortcuts"],
+    content: `ShortPath is designed to be used without touching the mouse.
+
+After typing a search, press ArrowDown to move focus from the search box into the results list.
+
+Keys
+- ArrowDown: move to the next result
+- ArrowUp: move to the previous result
+- Enter: open the focused entry's detail panel
+- Esc (once): clear keyboard focus (return to search box)
+- Esc (again): hide the window
+
+The focused entry is highlighted. It scrolls into view automatically.
+
+The hotkey (Ctrl+Shift+Space) summons the window from anywhere on your desktop. The search box is focused immediately — you can start typing right away.`,
   },
   {
     id: "filtering-by-vertical",
     title: "Filtering by vertical",
-    tags: ["filter", "vertical", "scope", "category"],
-    content: "", // TODO: Phase 2 done -> Phase 6
+    tags: ["filter", "vertical", "scope", "category", "group"],
+    content: `Search results are grouped by vertical (category). To focus on one vertical, collapse the other groups by clicking their headers.
+
+Keyboard navigation only cycles through expanded groups, so collapsing a group effectively filters it out of the keyboard path.
+
+There is no single-click "show only this vertical" toggle in the current version — the collapse/expand controls serve that purpose.`,
   },
   {
     id: "recents",
     title: "Recents",
-    tags: ["recents", "recently used", "history"],
-    content: "", // TODO: Phase 3 done -> Phase 6
+    tags: ["recents", "recently used", "history", "recent"],
+    content: `When the search box is empty, ShortPath shows your 10 most recently accessed entries.
+
+An entry moves to the top of Recents when you:
+- Copy it (via the copy button or the Copy button in the detail panel)
+- Open its link in the browser
+
+Recents give fast access to the replies and tools you use most. They are stored locally and not synced to other devices.`,
   },
   {
     id: "adding-entries",
     title: "Adding an entry",
-    tags: ["add", "create", "new entry", "form", "vertical"],
-    content: "", // TODO: Phase 3 done -> Phase 6
+    tags: ["add", "create", "new entry", "form", "vertical", "save", "quick add"],
+    content: `Press the + button in the header (or go to Settings > Add entry) to open the add form.
+
+Required fields
+- Title: a short name used in search results.
+- Vertical: the category it belongs to. Type a new name to create a custom category.
+
+Optional fields (click "More options" to expand)
+- Type: reply, doc, sop, link, or tool.
+- Tags: pipe-separated keywords (e.g. billing|refund|payment). These are searched directly so choose terms you would actually type.
+
+Body vs URL
+- Body: use this for text you copy and paste (saved replies, policy text, SOPs).
+- URL: use this for a link to open in the browser.
+- Both can be filled in on the same entry.
+
+Clipboard shortcut
+If your clipboard has text when you open ShortPath, a clipboard icon (📋) appears in the header. Click it to open the add form with the clipboard content pre-filled — one action from copy to saved entry.`,
   },
   {
     id: "editing-deleting",
     title: "Editing and deleting",
-    tags: ["edit", "delete", "update", "remove"],
-    content: "", // TODO: Phase 3 done -> Phase 6
+    tags: ["edit", "delete", "update", "remove", "change"],
+    content: `Click the ✎ edit button on any entry row to open the edit form. All fields can be changed including type, tags, and vertical.
+
+Synced entries (from a team-shared file) cannot be edited locally — the edit button only appears on your own entries.
+
+Deleting an entry
+In the edit form, click the Delete button. A confirmation prompt appears — click "Yes, delete" to confirm. Deleted entries are removed from search results and from Recents immediately.`,
   },
   {
     id: "managing-verticals",
     title: "Managing verticals",
-    tags: ["verticals", "categories", "create vertical", "custom"],
-    content: "", // TODO: Phase 3 done -> Phase 6
+    tags: ["verticals", "categories", "create vertical", "custom", "manage"],
+    content: `ShortPath comes with four built-in categories: Saved Replies, Documentation, Internal SOPs, and Support Tools.
+
+Creating a custom vertical
+In the Add or Edit form, type a new category name in the Vertical field. An option to create it will appear — select it to save the new vertical.
+
+Renaming a vertical
+There is no rename UI in the current version. To effectively rename a vertical, edit each of its entries and assign the new category name. A new vertical is created automatically.
+
+Removing a vertical
+To remove a vertical, delete or reassign all its entries. Empty verticals stop appearing in the results.`,
   },
   {
     id: "importing-csv",
     title: "Importing a CSV",
-    tags: ["import", "csv", "template", "upload", "bulk"],
-    content: "", // TODO: Phase 1 additions -> Phase 6
+    tags: ["import", "csv", "template", "upload", "bulk", "file"],
+    content: `Go to Settings > Import CSV to add entries in bulk from a spreadsheet.
+
+File format
+Required columns: title, vertical, type
+Optional columns: body, url, tags, id, createdAt, updatedAt
+
+Type must be one of: reply, doc, sop, link, tool
+Tags use pipe separators: billing|refund|payment
+The url column maps to the link field internally.
+
+Download a template
+Use Settings > Download template to get an example file showing the exact column format and four sample rows.
+
+Import preview
+Before committing, ShortPath shows a preview of the first 5 rows and flags any rows with errors. Review the preview, then click Import to confirm.
+
+Update behavior
+If a row's title + vertical matches an existing entry, that entry is updated. Otherwise a new entry is created. The source field is preserved — re-importing a local entry does not make it synced.`,
   },
   {
     id: "exporting-csv",
     title: "Exporting a CSV",
     tags: ["export", "csv", "backup", "download", "export mine"],
-    content: `Use the tray menu or the export option in the app to save your entries as a CSV file.
+    content: `Go to Settings to access export options.
 
-Export all: writes every entry — both your own and any synced team entries — to a single file.
+Export all
+Writes every entry — your own and any synced team entries — to a CSV file. Use this for a full backup.
 
-Export mine: writes only your personal entries (source: local). Use this to share your library with a team admin who can fold it into the shared master file. It is the bottom-up path for building a shared team resource from individual collections.
+Export mine
+Writes only your own entries (source: local). Use this to share your personal library with a team admin who can fold it into the shared master file. This is the standard bottom-up path for building a team resource from individual collections.
 
-The exported file uses the same column format as the import template, so it can be re-imported into any ShortPath instance.`,
+The exported file uses the same column format as the import template, so it can be re-imported into any ShortPath instance without modification.`,
   },
   {
     id: "shared-file-sync",
     title: "Shared file sync",
-    tags: ["sync", "shared file", "team", "dropbox", "drive", "onedrive", "refresh"],
+    tags: ["sync", "shared file", "team", "dropbox", "drive", "onedrive", "refresh", "synced"],
     content: `Shared file sync lets a team share a master CSV file via Dropbox, Google Drive, OneDrive, or any folder that syncs to a local path. Each team member points ShortPath at the same file and gets updates automatically.
 
 Setup
-1. Open Settings (⚙ in the header or tray menu > Settings).
+1. Open Settings (⚙ in the header).
 2. In the "Shared file sync" section, click "Configure sync file".
 3. Select the CSV file from your synced folder (e.g. ~/Dropbox/Team/shortpath-team.csv).
-4. ShortPath loads the file immediately and starts watching it for changes.
+4. ShortPath loads the file immediately and starts watching it.
 
 How it works
-ShortPath watches the file for changes. When the file is updated (for example, the team admin edits and saves it), ShortPath reloads it within a second and updates your results. No restart needed.
+ShortPath watches the file for changes. When the file is saved (e.g. by the team admin), ShortPath reloads it automatically within about a second. No restart needed.
 
-If the watcher misses an update, use "Refresh now" in Settings to reload manually.
+If the watcher misses an update (can happen on network drives), use "Refresh now" in Settings to reload manually.
 
-Your entries are safe
-Sync only ever adds, updates, or removes entries marked as "synced". Your own entries are never modified by sync, even if you clear synced entries or switch to a different file.
+Your own entries are safe
+Sync only touches entries marked as "synced". Your own entries are never modified, overwritten, or deleted by any sync operation — not even when you clear synced entries or switch to a different file.
 
-Synced entries appear with a small "synced" label in the results list so you can tell them apart from your own.
+Synced entries show a small "synced" badge in search results so you can tell them apart.
 
 Switching or disconnecting
-To use a different file, click "Change file" in Settings and select the new one.
-To disconnect entirely, click "Clear synced" — this removes all synced entries but leaves your own entries untouched.`,
+- To use a different file, click "Change file" in Settings.
+- To disconnect entirely, click "Clear synced" — this removes all synced entries but leaves your own entries untouched.`,
   },
   {
     id: "support-tools",
     title: "Support Tools",
-    tags: ["support tools", "links", "quick launch", "utilities"],
-    content: "", // TODO: Phase 6
+    tags: ["support tools", "links", "quick launch", "utilities", "grid", "reorder"],
+    content: `Support Tools is a dedicated category for links you open regularly — admin panels, dashboards, forms, and other utilities.
+
+Support Tools entries appear in a grid layout for faster scanning, separate from the text-based saved replies and docs.
+
+Launching a tool
+Click anywhere on a tool card to open its link in your default browser. The tool is also added to your Recents list.
+
+Adding a tool
+Click + in the header, set the Type to "tool", and fill in the Title and URL. Assign it to the Support Tools vertical (or any vertical — the grid layout applies specifically to the Support Tools vertical).
+
+Reordering tools
+When browsing (not searching), each tool card shows ↑ and ↓ buttons. Click them to change the order. The new order is saved immediately.
+
+Editing and removing
+Click ✎ on any tool card to open the edit form. You can change the title, URL, tags, or delete the tool.`,
   },
   {
     id: "settings",
     title: "Settings",
     tags: ["settings", "hotkey", "config", "window", "position", "sync"],
-    content: `Open Settings from the ⚙ button in the header or from the tray menu.
+    content: `Open Settings from the ⚙ button in the header, or from the tray menu.
 
 Global hotkey
-The default shortcut is Ctrl+Shift+Space (Cmd+Shift+Space on Mac). To change it, click "Change hotkey", hold your new combination, then release. Press Esc to cancel without saving. If the combination is already in use by another app, you will see an error — try a different combination.
+The default shortcut is Ctrl+Shift+Space (Cmd+Shift+Space on Mac). To change it, click "Change hotkey", hold your new combination, then release to save. Press Esc to cancel without saving. If the combination is already in use by another app, you will see an error.
 
-Window position
-The window remembers its position and size between launches. Use "Reset to default position" to snap it back to the bottom-left corner at the default size.
+Window
+The window remembers its position and size between launches. Click "Reset to default position" to snap it back to the bottom-left corner at the default size.
+
+Data
+Import CSV, Export all, Export mine, Download template, Paste and split, and Add new entry are all available in the Data section of Settings.
 
 Shared file sync
 See the "Shared file sync" help topic for full setup instructions.`,
@@ -143,7 +296,21 @@ See the "Shared file sync" help topic for full setup instructions.`,
   {
     id: "troubleshooting",
     title: "Troubleshooting",
-    tags: ["troubleshooting", "hotkey conflict", "not opening", "missing entries"],
-    content: "", // TODO: Phase 6
+    tags: ["troubleshooting", "hotkey conflict", "not opening", "missing entries", "sync", "problem"],
+    content: `Hotkey not working
+The global hotkey may be blocked if another app registered the same combination. Open Settings > Global hotkey and try a different one, such as Ctrl+Shift+1 or Ctrl+Alt+Space.
+
+Window not appearing
+If the window does not show when you press the hotkey, click the ShortPath icon in the system tray. If the icon is missing, the app may have stopped running — relaunch it from your Applications folder or Start menu.
+
+Entries missing after import
+Check the import result for skipped-row errors. Common causes: missing required columns (title, vertical, type), an invalid type value, or column names that do not match the expected format. Download the template from Settings to see the exact format.
+
+Sync not updating
+If the sync file is on a network drive or cloud folder, the file watcher may be delayed or unreliable. Use Settings > Shared file sync > Refresh now to reload manually.
+
+App data location
+Windows: %APPDATA%\\ShortPath (store.json and settings.json)
+Mac: ~/Library/Application Support/ShortPath`,
   },
 ];
