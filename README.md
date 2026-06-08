@@ -11,7 +11,8 @@ Download it to your machine. Import your team's resources via CSV. Search across
 - One search bar that searches across every category at once: Saved Replies, Documentation, SOPs, Support Tools, and any custom categories you define.
 - Results group by category with hit counts. Each group is expandable.
 - Every result has a direct copy button.
-- Lives in the system tray. Opens as a popup in the bottom-left corner by default. Resizable.
+- A global hotkey summons the popup instantly. Type to search, arrow keys to move, Enter to copy, Esc to dismiss. No mouse required.
+- Lives in the system tray. Opens as a popup in the bottom-left corner by default. Resizable. Position and size persist.
 - Import and export resources via CSV.
 
 ## Status
@@ -25,7 +26,9 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the build plan.
 - Electron + Node
 - React + Vite (renderer)
 - TypeScript throughout
-- SQLite (better-sqlite3) with FTS5 for full-text search
+- Local JSON file for storage (no database)
+- Fuse.js for in-renderer keyword search
+- PapaParse for CSV import/export
 - electron-builder for packaging
 
 ## Development

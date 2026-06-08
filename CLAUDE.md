@@ -12,10 +12,11 @@ The app lives in the system tray and opens as a minimal popup, defaulting to the
 
 - **Electron** — desktop shell, tray integration, global hotkey
 - **React + Vite** — renderer UI (TypeScript throughout)
-- **better-sqlite3** — local storage, zero-dependency, synchronous
-- **SQLite FTS5** — cross-vertical full-text search with per-vertical hit counts
+- **Local JSON file** — storage in Electron's userData directory; no database dependency
+- **Fuse.js** — in-renderer keyword search, title-weighted, conservative fuzzy threshold
+- **PapaParse** — CSV import and export (lossless round-trip)
 - **electron-builder** — packaging for Windows/Mac/Linux
-- **No backend server.** All data is local.
+- **No backend server. No AI. No SQLite.** All data is local.
 
 ## How to start a session
 
@@ -58,18 +59,19 @@ Commit in small logical chunks. One concern per commit. Descriptive but concise 
 ## Where things live
 
 ```
-src/main/          Electron main process: tray, window lifecycle, IPC handlers
+src/main/          Electron main process: tray, window lifecycle, global hotkey, IPC handlers, JSON store I/O
 src/preload/       Context bridge: exposes safe IPC surface to renderer
 src/renderer/      React + Vite UI
   components/      Shared UI components (SearchBar, ResultList, CopyButton, ...)
   features/        Feature modules grouped by concern
-    search/        Cross-vertical search UI
-    verticals/     Vertical definitions and result grouping
+    search/        Fuse.js search, debounce, result grouping by vertical
+    verticals/     Vertical definitions and group rendering
     copy/          Copy-to-clipboard
+    keyboard/      Keyboard navigation (arrows, Enter to copy, Esc to dismiss)
     support-tools/ Support Tools section
   styles/          Global CSS and design tokens
-src/shared/        Types shared across all processes (Entry, VerticalGroup, IPC names)
-src/db/            SQLite schema, FTS5 setup, migrations, CSV import/export
+src/shared/        Types and IPC channel constants shared across all processes
+src/store/         JSON store read/write, CSV import/export (PapaParse), store schema
 docs/              Architecture, data model, roadmap, session logs
 .github/workflows/ CI (lint + typecheck on push/PR)
 ```
