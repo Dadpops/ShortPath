@@ -74,6 +74,42 @@ The global hotkey is the primary way to open and dismiss the popup. The tray ico
 
 The window is frameless and skips the taskbar. The tray icon is the only persistent visible element when the popup is hidden.
 
+## Sync model
+
+The team layer sits on top of the local store without replacing it. There is no server, no auth, no hosted backend. The mechanism is a single shared file sitting in a folder synced by Google Drive, Dropbox, OneDrive, or any folder-sync service. Those services mount the shared folder as a normal local path, so ShortPath sees the team's master file as just a file on disk.
+
+**Setup:** the user opens Settings, selects the shared file path once, and ShortPath takes it from there. One step.
+
+**How sync works:**
+
+- ShortPath watches the shared file path for changes (using `fs.watch` or `chokidar`).
+- When the file changes, ShortPath reloads the synced set and pushes the updated entries to the renderer.
+- A manual "Refresh now" button is available for cases where file-watch events are delayed or missed.
+- Entries from the shared file are loaded with `source: "synced"`. The user's own entries always have `source: "local"`.
+
+**The core guarantee:** sync only reads the shared file and replaces entries with `source: "synced"`. It never touches entries with `source: "local"`. A user's personal additions are never overwritten or removed by any sync operation, ever.
+
+**Sync operations:**
+
+| Operation | What it does |
+|---|---|
+| Refresh synced | Reload the synced set from the shared file path. Also triggered automatically on file change. |
+| Clear synced | Remove all `source: "synced"` entries from the store. Used when switching shared files or starting clean. Local entries remain. |
+| Export all | Write the entire store (local + synced) to a user-chosen CSV file. |
+| Export mine | Write only `source: "local"` entries to CSV. This is the bottom-up path: individuals collect their personal replies in ShortPath, then hand them to an admin who folds them into the shared master. |
+
+**Out of scope (deliberate decisions, not oversights):**
+- Hosted backend or server-side storage
+- Help-desk connectors (Zendesk, Intercom, Freshdesk, others)
+- Notion, Confluence, or wiki importers
+- Real-time multi-writer editing or conflict resolution (the shared file has one admin editor; concurrent writes are not a design target)
+
+The shared-file model covers centralized, current, and synced for the target customer without any of the above.
+
+## Product strategy
+
+Build for the individual's selfish convenience first. A solo agent who captures their own scattered replies into ShortPath gets immediate value with no team coordination needed. When a team adopts ShortPath, each agent's personal library is already built from everyday use. They share it upward via "export mine" and the admin folds it into the shared master. The shared file fills up bottom-up from actual usage, not from a migration project nobody volunteers for. This is why easy capture (add from clipboard, quick add, paste-and-split) is core product.
+
 ## IPC contract
 
 All IPC uses `ipcRenderer.invoke` / `ipcMain.handle` (request-response). Channel names are defined as constants in `src/shared/types.ts`.
@@ -85,8 +121,15 @@ All IPC uses `ipcRenderer.invoke` / `ipcMain.handle` (request-response). Channel
 | `create-entry` | renderer -> main | Add new entry to JSON store |
 | `update-entry` | renderer -> main | Update entry in JSON store |
 | `delete-entry` | renderer -> main | Delete entry from JSON store |
+| `record-access` | renderer -> main | Record entry access for recents |
 | `import-csv` | renderer -> main | Open file picker, parse CSV, merge into store |
 | `export-csv` | renderer -> main | Serialize store to CSV, write to file |
+| `export-mine` | renderer -> main | Serialize only local entries to CSV, write to file |
+| `configure-sync` | renderer -> main | Set or clear the shared file path |
+| `refresh-synced` | renderer -> main | Reload synced entries from shared file |
+| `clear-synced` | renderer -> main | Remove all synced entries from store |
+| `download-template-csv` | renderer -> main | Copy template CSV to a user-chosen path |
+| `store-updated` | main -> renderer (push) | Notify renderer of store changes (entries + verticals + recents) |
 
 Search does not go through IPC. It runs in the renderer against the in-memory entry list.
 
@@ -100,7 +143,10 @@ src/renderer/   React UI: components, features, styles
     search/     Fuse.js search, debounce, result grouping
     verticals/  Vertical definitions and group rendering
     copy/       Copy-to-clipboard
+    keyboard/   Keyboard navigation (arrows, Enter, Esc)
     support-tools/ Support Tools section
+    help/       In-app help panel: topics data (topics.ts), HelpPanel component
 src/shared/     Types and IPC channel constants shared across processes
 src/store/      JSON store read/write, CSV import/export (PapaParse), entry schema
+  template/     Static CSV template file for download
 ```
