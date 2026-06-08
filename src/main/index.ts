@@ -13,7 +13,7 @@ import {
 } from "electron";
 import path from "path";
 import fs from "fs";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, renameVertical } from "../store/index";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
@@ -251,9 +251,10 @@ function registerIpcHandlers() {
     verticals: store.verticals,
     recents: store.recents,
     favorites: store.favorites,
-    fontSize: settings.fontSize ?? "medium",
+    fontSize: settings.fontSize ?? 13,
     sourceMode: settings.sourceMode ?? null,
     sourceName: settings.sourceName ?? null,
+    theme: settings.theme ?? "dark",
   }));
 
   ipcMain.handle(
@@ -414,7 +415,8 @@ function registerIpcHandlers() {
 
   ipcMain.handle("get-settings", () => ({
     hotkey: settings.hotkey,
-    fontSize: settings.fontSize ?? "medium",
+    fontSize: settings.fontSize ?? 13,
+    theme: settings.theme ?? "dark",
   }));
 
   ipcMain.handle("toggle-favorite", (_e, entryId: string) => {
@@ -423,9 +425,22 @@ function registerIpcHandlers() {
     pushStoreUpdate();
   });
 
-  ipcMain.handle("set-font-size", (_e, size: "small" | "medium" | "large") => {
+  ipcMain.handle("set-font-size", (_e, size: number) => {
     settings = { ...settings, fontSize: size };
     saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-theme", (_e, theme: "dark" | "light") => {
+    settings = { ...settings, theme };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("minimize-window", () => win?.minimize());
+
+  ipcMain.handle("rename-vertical", (_e, id: string, newLabel: string) => {
+    store = renameVertical(store, id, newLabel);
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
   });
 
   ipcMain.handle("save-source-mode", (_e, mode: "local" | "sync", name?: string) => {

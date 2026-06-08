@@ -39,7 +39,10 @@ contextBridge.exposeInMainWorld("shortpath", {
   resetWindowPosition: () => ipcRenderer.invoke("reset-window-position"),
 
   toggleFavorite: (entryId: string) => ipcRenderer.invoke("toggle-favorite", entryId),
-  setFontSize: (size: "small" | "medium" | "large") => ipcRenderer.invoke("set-font-size", size),
+  setFontSize: (size: number) => ipcRenderer.invoke("set-font-size", size),
+  setTheme: (theme: "dark" | "light") => ipcRenderer.invoke("set-theme", theme),
+  minimizeWindow: () => ipcRenderer.invoke("minimize-window"),
+  renameVertical: (id: string, newLabel: string) => ipcRenderer.invoke("rename-vertical", id, newLabel),
   saveSourceMode: (mode: "local" | "sync", name?: string) => ipcRenderer.invoke("save-source-mode", mode, name),
   disconnectSync: () => ipcRenderer.invoke("disconnect-sync"),
 

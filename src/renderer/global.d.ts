@@ -5,9 +5,10 @@ interface LoadEntriesResult {
   verticals: Vertical[];
   recents: string[];
   favorites: string[];
-  fontSize: "small" | "medium" | "large";
+  fontSize: number;
   sourceMode: "local" | "sync" | null;
   sourceName: string | null;
+  theme: "dark" | "light";
 }
 
 interface CreateEntryResult {
@@ -82,15 +83,18 @@ declare global {
 
       openExternal: (url: string) => Promise<void>;
       hideWindow: () => Promise<void>;
+      minimizeWindow: () => Promise<void>;
 
-      getSettings: () => Promise<{ hotkey: string; fontSize: "small" | "medium" | "large" }>;
+      getSettings: () => Promise<{ hotkey: string; fontSize: number; theme: "dark" | "light" }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
 
       toggleFavorite: (entryId: string) => Promise<void>;
-      setFontSize: (size: "small" | "medium" | "large") => Promise<void>;
+      setFontSize: (size: number) => Promise<void>;
+      setTheme: (theme: "dark" | "light") => Promise<void>;
       saveSourceMode: (mode: "local" | "sync", name?: string) => Promise<void>;
       disconnectSync: () => Promise<void>;
+      renameVertical: (id: string, newLabel: string) => Promise<void>;
 
       configureSync: () => Promise<{ success: boolean; syncPath?: string; errors?: string[] }>;
       refreshSynced: () => Promise<{ success: boolean; errors?: string[] }>;

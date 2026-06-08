@@ -151,6 +151,13 @@ export function reorderEntry(store: StoreData, entryId: string, direction: "up" 
   return { ...store, entries: newEntries };
 }
 
+export function renameVertical(store: StoreData, id: string, newLabel: string): StoreData {
+  return {
+    ...store,
+    verticals: store.verticals.map((v) => (v.id === id ? { ...v, label: newLabel } : v)),
+  };
+}
+
 // Replace all synced entries atomically. Local entries are never touched.
 export function replaceSyncedEntries(store: StoreData, newSyncedEntries: Entry[]): StoreData {
   const localEntries = store.entries.filter((e) => e.source === "local");
