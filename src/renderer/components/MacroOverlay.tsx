@@ -10,9 +10,10 @@ interface Props {
   onToggleFavorite?: () => void;
   onEdit?: (entry: Entry) => void;
   onDuplicate?: (entry: Entry) => void;
+  onAddNote?: () => void;
 }
 
-export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFavorite, onToggleFavorite, onEdit, onDuplicate }: Props) {
+export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFavorite, onToggleFavorite, onEdit, onDuplicate, onAddNote }: Props) {
   const [copied, setCopied] = useState(false);
 
   const verticalLabel = verticals.find((v) => v.id === entry.vertical)?.label ?? entry.vertical;
@@ -84,7 +85,7 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFa
           )}
         </div>
 
-        {(onEdit || onDuplicate) && (
+        {(onEdit || onDuplicate || onAddNote) && (
           <div className="macro-edit-strip">
             {entry.source === "local" && onEdit && (
               <button className="macro-edit-btn" onClick={() => onEdit(entry)}>✎ Edit entry</button>
@@ -94,6 +95,9 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFa
                 <button className="macro-edit-btn" onClick={() => onDuplicate(entry)}>⊕ Duplicate to local and edit</button>
                 <p className="macro-edit-note">Synced entries come from the shared file and can't be edited directly. Duplicating creates a local copy you can edit freely.</p>
               </>
+            )}
+            {onAddNote && (
+              <button className="macro-edit-btn" onClick={onAddNote}>✎ Add note</button>
             )}
           </div>
         )}

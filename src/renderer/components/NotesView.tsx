@@ -5,10 +5,12 @@ type NotesViewState = "list" | "editor";
 
 interface Props {
   onBack: () => void;
+  initialEntry?: { id: string; title: string };
 }
 
-export default function NotesView({ onBack }: Props) {
+export default function NotesView({ onBack, initialEntry }: Props) {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [notesLoaded, setNotesLoaded] = useState(false);
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [view, setView] = useState<NotesViewState>("list");
@@ -17,8 +19,25 @@ export default function NotesView({ onBack }: Props) {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    window.shortpath.loadNotes().then(setNotes);
+    window.shortpath.loadNotes().then((loaded) => {
+      setNotes(loaded);
+      setNotesLoaded(true);
+    });
   }, []);
+
+  // When opened from a resource overlay, create a linked note immediately.
+  useEffect(() => {
+    if (!notesLoaded || !initialEntry) return;
+    window.shortpath.createNote({
+      body: "",
+      entryId: initialEntry.id,
+      entryTitle: initialEntry.title,
+    }).then((note) => {
+      setNotes((prev) => [note, ...prev]);
+      setEditingNote(note);
+      setView("editor");
+    });
+  }, [notesLoaded]);
 
   async function handleCreate() {
     const note = await window.shortpath.createNote({ body: "" });
@@ -97,6 +116,11 @@ export default function NotesView({ onBack }: Props) {
           <button className="form-back-btn" onClick={handleBackToList}>
             ← Notes
           </button>
+          {editingNote.entryTitle && (
+            <span className="notes-entry-ref" title={`Linked to: ${editingNote.entryTitle}`}>
+              ↗ {editingNote.entryTitle}
+            </span>
+          )}
         </div>
         <div className="notes-editor">
           <input
@@ -180,6 +204,9 @@ export default function NotesView({ onBack }: Props) {
             <div className="notes-list-title">
               {note.title || <em>Untitled</em>}
             </div>
+            {note.entryTitle && (
+              <div className="notes-list-entry-ref">↗ {note.entryTitle}</div>
+            )}
             <div className="notes-list-body">
               {note.body.slice(0, 80) || "Empty note"}
             </div>

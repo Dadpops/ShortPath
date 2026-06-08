@@ -187,10 +187,12 @@ In the edit form, click the Delete button. A confirmation prompt appears — cli
     content: `ShortPath comes with four built-in categories: Saved Replies, Documentation, Internal SOPs, and Support Tools.
 
 Creating a custom vertical
-In the Add or Edit form, type a new category name in the Vertical field. An option to create it will appear — select it to save the new vertical.
+In Settings > Verticals, click "+ Add vertical", type a name, and press Add. The new vertical is ready immediately for use in the Add or Edit entry form.
+
+You can also create a vertical on the fly: in the Add or Edit form, type a new category name in the Vertical field and select the create option.
 
 Renaming a vertical
-There is no rename UI in the current version. To effectively rename a vertical, edit each of its entries and assign the new category name. A new vertical is created automatically.
+In Settings > Verticals, click Rename next to any vertical, type the new name, and press Save.
 
 Removing a vertical
 To remove a vertical, delete or reassign all its entries. Empty verticals stop appearing in the results.`,
@@ -387,6 +389,9 @@ Click the ✎ icon in the header to open the Notes view.
 
 Creating a note
 Click + New. A blank note opens immediately in the editor. Start typing — your note is saved automatically as you type.
+
+Linking a note to a resource
+Open a resource by clicking on it in search results, then click "Add note" in the edit strip at the bottom of the panel. A new note opens in the editor, linked to that resource. In the Notes list, linked notes show the resource name in blue beneath the title.
 
 Editing a note
 From the notes list, click any note to open it in the editor. The title field is optional. The body field is a plain-text area — you can write freely without formatting.

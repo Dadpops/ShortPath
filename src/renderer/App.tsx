@@ -48,6 +48,7 @@ export default function App() {
   const [sourceMode, setSourceMode] = useState<"local" | "sync" | undefined>(undefined);
   const [sourceName, setSourceName] = useState<string | undefined>(undefined);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [pendingNoteEntry, setPendingNoteEntry] = useState<{ id: string; title: string } | null>(null);
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -425,6 +426,10 @@ export default function App() {
           onVerticalRenamed={(id, newLabel) => {
             setVerticals((prev) => prev.map((v) => (v.id === id ? { ...v, label: newLabel } : v)));
           }}
+          onVerticalAdded={(v) => {
+            setVerticals((prev) => [...prev, v]);
+            setExpandedGroups((prev) => new Set([...prev, v.id]));
+          }}
         />
       </div>
     );
@@ -457,7 +462,10 @@ export default function App() {
   if (mode === "notes") {
     return (
       <div className={shellClass}>
-        <NotesView onBack={() => setMode("browse")} />
+        <NotesView
+          onBack={() => { setPendingNoteEntry(null); setMode("browse"); }}
+          initialEntry={pendingNoteEntry ?? undefined}
+        />
       </div>
     );
   }
@@ -585,6 +593,11 @@ export default function App() {
           onToggleFavorite={() => handleToggleFavorite(overlayEntry.id)}
           onEdit={handleEditFromOverlay}
           onDuplicate={handleDuplicateEntry}
+          onAddNote={() => {
+            setPendingNoteEntry({ id: overlayEntry.id, title: overlayEntry.title });
+            setOverlayEntry(null);
+            setMode("notes");
+          }}
         />
       )}
     </div>

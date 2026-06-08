@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import type { Vertical } from "@shared/types";
+import { HELP_TOPICS } from "../features/help/topics";
 
 interface Props {
   onClose: () => void;
   onNavigate: (mode: "import" | "split" | "add") => void;
   verticals: Vertical[];
   onVerticalRenamed: (id: string, newLabel: string) => void;
+  onVerticalAdded: (v: Vertical) => void;
 }
 
 type HotkeyState = "idle" | "capturing" | "saving" | "error";
@@ -38,7 +40,7 @@ function displayAccelerator(acc: string): string {
     .replace(/\+/g, " + ");
 }
 
-export default function SettingsScreen({ onClose, onNavigate, verticals, onVerticalRenamed }: Props) {
+export default function SettingsScreen({ onClose, onNavigate, verticals, onVerticalRenamed, onVerticalAdded }: Props) {
   const [currentHotkey, setCurrentHotkey] = useState("Loading…");
   const [hotkeyState, setHotkeyState] = useState<HotkeyState>("idle");
   const [capturedAccelerator, setCapturedAccelerator] = useState<string | null>(null);
@@ -53,6 +55,10 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
 
   const [editingVerticalId, setEditingVerticalId] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState("");
+  const [addingVertical, setAddingVertical] = useState(false);
+  const [newVerticalLabel, setNewVerticalLabel] = useState("");
+
+  const [activeInfoId, setActiveInfoId] = useState<string | null>(null);
 
   const [expanded, setExpanded] = useState<Set<SectionKey>>(
     new Set(["appearance", "data", "hotkey", "window", "verticals"])
@@ -161,6 +167,21 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
     setEditingVerticalId(null);
   }
 
+  async function handleAddVertical() {
+    const trimmed = newVerticalLabel.trim();
+    if (!trimmed) return;
+    const vertical = await window.shortpath.addVertical(trimmed);
+    onVerticalAdded(vertical);
+    setNewVerticalLabel("");
+    setAddingVertical(false);
+  }
+
+  function toggleInfo(topicId: string) {
+    setActiveInfoId((prev) => (prev === topicId ? null : topicId));
+  }
+
+  const activeInfoTopic = activeInfoId ? HELP_TOPICS.find((t) => t.id === activeInfoId) : null;
+
   function SectionHeader({ title, sectionKey }: { title: string; sectionKey: SectionKey }) {
     return (
       <button className="settings-section-header" onClick={() => toggleSection(sectionKey)}>
@@ -169,6 +190,15 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
       </button>
     );
   }
+
+  const dataActions: Array<{ label: string; topicId: string; onClick: () => void; disabled?: boolean }> = [
+    { label: "+ Add entry", topicId: "adding-entries", onClick: () => onNavigate("add") },
+    { label: "↑ Import CSV", topicId: "importing-csv", onClick: () => onNavigate("import") },
+    { label: "✂ Paste and split", topicId: "adding-entries", onClick: () => onNavigate("split") },
+    { label: "↓ Download template", topicId: "importing-csv", onClick: () => window.shortpath.downloadTemplateCsv() },
+    { label: exportingAll ? "Saving…" : "Export all", topicId: "exporting-csv", onClick: handleExportAll, disabled: exportingAll },
+    { label: exportingMine ? "Saving…" : "Export mine", topicId: "exporting-csv", onClick: handleExportMine, disabled: exportingMine },
+  ];
 
   return (
     <div className="settings-shell">
@@ -224,25 +254,38 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
           {expanded.has("data") && (
             <div className="settings-section-body">
               <div className="settings-data-grid">
-                <button className="settings-data-btn" onClick={() => onNavigate("add")}>
-                  + Add entry
-                </button>
-                <button className="settings-data-btn" onClick={() => onNavigate("import")}>
-                  ↑ Import CSV
-                </button>
-                <button className="settings-data-btn" onClick={() => onNavigate("split")}>
-                  ✂ Paste and split
-                </button>
-                <button className="settings-data-btn" onClick={() => window.shortpath.downloadTemplateCsv()}>
-                  ↓ Download template
-                </button>
-                <button className="settings-data-btn" onClick={handleExportAll} disabled={exportingAll}>
-                  {exportingAll ? "Saving…" : "Export all"}
-                </button>
-                <button className="settings-data-btn" onClick={handleExportMine} disabled={exportingMine}>
-                  {exportingMine ? "Saving…" : "Export mine"}
-                </button>
+                {dataActions.map((action) => (
+                  <div key={action.label} className="settings-data-cell">
+                    <button
+                      className="settings-data-btn"
+                      onClick={action.onClick}
+                      disabled={action.disabled}
+                    >
+                      {action.label}
+                    </button>
+                    <button
+                      className={`settings-info-btn${activeInfoId === action.topicId ? " active" : ""}`}
+                      onClick={() => toggleInfo(action.topicId)}
+                      title="What does this do?"
+                    >
+                      ⓘ
+                    </button>
+                  </div>
+                ))}
               </div>
+              {activeInfoTopic && (
+                <div className="settings-info-popup">
+                  <div className="settings-info-popup-title">{activeInfoTopic.title}</div>
+                  <button
+                    className="settings-info-popup-close"
+                    onClick={() => setActiveInfoId(null)}
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
+                  <div className="settings-info-popup-body">{activeInfoTopic.content}</div>
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -282,8 +325,39 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
                   )}
                 </div>
               ))}
-              {verticals.length === 0 && (
-                <p className="settings-stub-note">No verticals yet. Add entries to create verticals.</p>
+
+              {addingVertical ? (
+                <div className="settings-vertical-row">
+                  <input
+                    className="form-input settings-vertical-input"
+                    placeholder="New vertical name"
+                    value={newVerticalLabel}
+                    onChange={(e) => setNewVerticalLabel(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void handleAddVertical();
+                      if (e.key === "Escape") { setAddingVertical(false); setNewVerticalLabel(""); }
+                    }}
+                    autoFocus
+                  />
+                  <button className="btn-primary settings-action-btn" onClick={() => void handleAddVertical()} disabled={!newVerticalLabel.trim()}>
+                    Add
+                  </button>
+                  <button className="btn-secondary settings-action-btn" onClick={() => { setAddingVertical(false); setNewVerticalLabel(""); }}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="btn-secondary settings-action-btn"
+                  onClick={() => setAddingVertical(true)}
+                  style={{ alignSelf: "flex-start" }}
+                >
+                  + Add vertical
+                </button>
+              )}
+
+              {verticals.length === 0 && !addingVertical && (
+                <p className="settings-stub-note">No verticals yet. Add entries to create verticals, or add one manually.</p>
               )}
             </div>
           )}
