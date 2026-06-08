@@ -82,7 +82,7 @@ Goal: the core search experience working end-to-end.
 - [x] Recents shown when search box is empty (last 10 opened/copied entries)
 - [x] Per-vertical filter: scope search to one vertical at a time
 - [x] Empty state (no results) and loading state
-- [ ] Show source tag on result items (small "mine" or "synced" label) — done after Phase 4 adds source field to live entries
+- [x] Show source tag on result items (small "mine" or "synced" label) — done after Phase 4 adds source field to live entries
 - [ ] Write Help topics for Phase 2 features — done as part of Phase 7 Help System
 
 ---
@@ -113,18 +113,18 @@ These features serve the solo user and require no sync layer. They are the onboa
 
 Goal: teams share a master file in Drive / Dropbox / OneDrive. Every ShortPath instance picks up changes automatically. Personal entries are never touched.
 
-- [ ] Settings UI: configure shared file path (file picker or paste path; local path because the sync service mounts the shared folder as a normal directory)
-- [ ] File watcher: watch the configured shared file path for changes using `fs.watch` or `chokidar`
-- [ ] On change detected: reload synced entries from the shared file, replace the previous synced set in the store, push updated entry list to renderer
-- [ ] Manual "Refresh now" button for cases where file-watch events are delayed or missed
-- [ ] Import shared file: load entries from the shared file with `source: "synced"`; run the same validation as CSV import (required columns, bad row flagging)
-- [ ] Merge rule: synced entries are fully replaced on refresh; local entries (`source: "local"`) are never touched by any sync operation
-- [ ] Clear synced: remove all `source: "synced"` entries (used when switching shared files or disconnecting from a team). Local entries remain.
-- [ ] Export all: write local + synced entries to a user-chosen CSV file
-- [ ] Export mine: write only `source: "local"` entries to CSV. This is the bottom-up path — individuals hand their personal library to the admin who folds it into the shared master.
-- [ ] IPC handlers: `configure-sync`, `refresh-synced`, `clear-synced`, `export-mine`
-- [ ] Visual distinction in results: small source tag on each result item ("mine" or "synced"); local and synced entries may appear as separate top-level groups when browsing
-- [ ] Write Help topics for Phase 4 features (sync setup, refresh, export mine)
+- [x] Settings UI: configure shared file path (file picker or paste path; local path because the sync service mounts the shared folder as a normal directory)
+- [x] File watcher: watch the configured shared file path for changes using `fs.watch` or `chokidar`
+- [x] On change detected: reload synced entries from the shared file, replace the previous synced set in the store, push updated entry list to renderer
+- [x] Manual "Refresh now" button for cases where file-watch events are delayed or missed
+- [x] Import shared file: load entries from the shared file with `source: "synced"`; run the same validation as CSV import (required columns, bad row flagging)
+- [x] Merge rule: synced entries are fully replaced on refresh; local entries (`source: "local"`) are never touched by any sync operation
+- [x] Clear synced: remove all `source: "synced"` entries (used when switching shared files or disconnecting from a team). Local entries remain.
+- [x] Export all: write local + synced entries to a user-chosen CSV file
+- [x] Export mine: write only `source: "local"` entries to CSV. This is the bottom-up path — individuals hand their personal library to the admin who folds it into the shared master.
+- [x] IPC handlers: `configure-sync`, `refresh-synced`, `clear-synced`, `export-mine`
+- [x] Visual distinction in results: small source tag on each result item ("mine" or "synced"); local and synced entries may appear as separate top-level groups when browsing
+- [x] Write Help topics for Phase 4 features (sync setup, refresh, export mine)
 
 **Out of scope for Phase 4 (deliberate decisions, not oversights):** hosted backend, help-desk connectors, Notion/wiki importers, real-time multi-writer editing. The shared-file model covers centralized and synced without any of these.
 
