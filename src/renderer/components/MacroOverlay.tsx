@@ -6,9 +6,13 @@ interface Props {
   verticals: Vertical[];
   onClose: () => void;
   onCopied: (entryId: string) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
+  onEdit?: (entry: Entry) => void;
+  onDuplicate?: (entry: Entry) => void;
 }
 
-export default function MacroOverlay({ entry, verticals, onClose, onCopied }: Props) {
+export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFavorite, onToggleFavorite, onEdit, onDuplicate }: Props) {
   const [copied, setCopied] = useState(false);
 
   const verticalLabel = verticals.find((v) => v.id === entry.vertical)?.label ?? entry.vertical;
@@ -46,6 +50,15 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied }: Pr
 
         <div className="macro-header">
           <div className="macro-header-meta">
+            {onToggleFavorite && (
+              <button
+                className={`macro-star-toggle${isFavorite ? " starred" : ""}`}
+                onClick={onToggleFavorite}
+                title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              >
+                {isFavorite ? "★" : "☆"}
+              </button>
+            )}
             <span className="macro-badge macro-badge-vertical">{verticalLabel}</span>
             <span className="macro-badge macro-badge-type">{entry.type}</span>
           </div>
@@ -70,6 +83,20 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied }: Pr
             <p className="macro-body-empty">No body text.</p>
           )}
         </div>
+
+        {(onEdit || onDuplicate) && (
+          <div className="macro-edit-strip">
+            {entry.source === "local" && onEdit && (
+              <button className="macro-edit-btn" onClick={() => onEdit(entry)}>✎ Edit entry</button>
+            )}
+            {entry.source === "synced" && onDuplicate && (
+              <>
+                <button className="macro-edit-btn" onClick={() => onDuplicate(entry)}>⊕ Duplicate to local and edit</button>
+                <p className="macro-edit-note">Synced entries come from the shared file and can't be edited directly. Duplicating creates a local copy you can edit freely.</p>
+              </>
+            )}
+          </div>
+        )}
 
         {(entry.link || tags.length > 0) && (
           <div className="macro-footer">
