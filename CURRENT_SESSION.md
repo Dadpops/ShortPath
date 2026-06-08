@@ -1,17 +1,8 @@
 # Current Session State
 
-**Status:** Phases 1–9 (packaging) complete. electron-builder targets configured, build scripts added, signing docs written.
+**Status:** Phases 1–9 complete. UI improvements session done (slider, light mode, FAB, vertical rename, collapsible settings).
 
-**Last session:** [2026-06-08 — Phase 9 packaging](docs/sessions/2026-06-08-phase9-packaging.md)
-
-**Next up:**
-
-Tag v0.1.0 and publish the first GitHub Release:
-
-1. `npm run build` to compile renderer + main.
-2. `npm run dist:win` on Windows (or `dist:mac` on Mac) to produce the installer in `release/`.
-3. `git tag v0.1.0 && git push origin master --tags`
-4. Create a GitHub Release at github.com/Dadpops/ShortPath/releases — attach the installer(s), publish.
+**Last session:** [2026-06-08 — UI improvements](docs/sessions/2026-06-08-ui-improvements.md)
 
 **Open polish items:**
 - Settings hotkey display shows "Ctrl" regardless of platform; should show "Cmd" on Mac.

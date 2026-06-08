@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-08 — UI improvements](sessions/2026-06-08-ui-improvements.md) — Slider, light/dark mode, auto-local, minimize btn, FAB, vertical rename, collapsible settings.
 - [2026-06-08 — Phase 9 packaging](sessions/2026-06-08-phase9-packaging.md) — electron-builder targets, dist:win/mac scripts, SIGNING.md, INSTALLING.md, RELEASING.md.
 - [2026-06-08 — Post-phase features](sessions/2026-06-08-postphase-features.md) — Text size, favorites, source-mode setup, in-overlay editing, disconnect sync.
 - [2026-06-08 — Phase 8 polish](sessions/2026-06-08-phase8-polish.md) — Entrance animation, tray icon active state, rawGroups perf split, empty state copy fix.
