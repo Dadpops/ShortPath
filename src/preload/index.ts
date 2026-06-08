@@ -2,6 +2,8 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { Entry } from "../shared/types";
 
 contextBridge.exposeInMainWorld("shortpath", {
+  platform: process.platform,
+
   loadEntries: () => ipcRenderer.invoke("load-entries"),
 
   createEntry: (

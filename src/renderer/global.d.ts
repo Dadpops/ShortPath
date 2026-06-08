@@ -55,6 +55,8 @@ interface CsvCommitResult {
 declare global {
   interface Window {
     shortpath: {
+      platform: string;
+
       loadEntries: () => Promise<LoadEntriesResult>;
 
       createEntry: (

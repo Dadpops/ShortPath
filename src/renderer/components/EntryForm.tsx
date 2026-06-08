@@ -19,6 +19,14 @@ function slugify(label: string): string {
     .replace(/[^a-z0-9-]/g, "");
 }
 
+function normalizeTags(raw: string): string {
+  return raw
+    .split(/[|,]+/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .join("|");
+}
+
 export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel, quickAdd, prefillBody }: Props) {
   const isEdit = !!entry;
 
@@ -250,9 +258,11 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
               type="text"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="pipe|separated|tags"
+              onBlur={(e) => setTags(normalizeTags(e.target.value))}
+              placeholder="billing|refund|payment"
               disabled={saving}
             />
+            <p className="form-hint">Separated by | (e.g. billing | refund | password reset)</p>
           </div>
         )}
 

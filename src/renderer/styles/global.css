@@ -643,6 +643,14 @@ body {
 
 .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Form hint (always-visible helper text below a field) */
+.form-hint {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
 /* Form error */
 .form-error {
   font-size: 12px;

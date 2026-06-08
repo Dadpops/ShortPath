@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Vertical } from "@shared/types";
+import { formatAccelerator } from "@shared/platform";
 import { HELP_TOPICS } from "../features/help/topics";
 
 interface Props {
@@ -31,9 +32,6 @@ function buildAccelerator(e: KeyboardEvent): string | null {
   return parts.join("+");
 }
 
-function displayAccelerator(acc: string): string {
-  return acc.replace("CommandOrControl", "Ctrl").replace(/\+/g, " + ");
-}
 
 export default function SettingsScreen({ onClose, onNavigate, verticals, onVerticalRenamed, onVerticalAdded }: Props) {
   const [currentHotkey, setCurrentHotkey] = useState("Loading…");
@@ -116,7 +114,7 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
       setHotkeyState("idle");
       setCapturedAccelerator(null);
     } else {
-      setErrorMsg(`"${displayAccelerator(accelerator)}" is already in use by another app.`);
+      setErrorMsg(`"${formatAccelerator(accelerator, window.shortpath.platform)}" is already in use by another app.`);
       setHotkeyState("error");
       setCapturedAccelerator(null);
     }
@@ -466,8 +464,8 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
                 <div className="settings-row-label">Current shortcut</div>
                 <div className="settings-hotkey-display">
                   {hotkeyState === "capturing"
-                    ? capturedAccelerator ? displayAccelerator(capturedAccelerator) : "Press shortcut…"
-                    : displayAccelerator(currentHotkey)}
+                    ? capturedAccelerator ? formatAccelerator(capturedAccelerator, window.shortpath.platform) : "Press shortcut…"
+                    : formatAccelerator(currentHotkey, window.shortpath.platform)}
                 </div>
               </div>
               {hotkeyState === "idle" && (
