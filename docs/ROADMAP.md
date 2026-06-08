@@ -134,15 +134,15 @@ Goal: teams share a master file in Drive / Dropbox / OneDrive. Every ShortPath i
 
 Goal: keyboard-first interaction that makes the app genuinely fast.
 
-- [ ] Global hotkey to summon and dismiss the popup (configurable, default: Cmd/Ctrl+Shift+Space)
-- [ ] On hotkey: show window, focus search box immediately
-- [ ] Hotkey conflict detection: warn if registration fails, show actionable message
-- [ ] Keyboard navigation: arrow keys move through results, Enter copies focused result, Esc dismisses
-- [ ] Fix `window.open(link)` -> use `shell.openExternal` via IPC (quick win)
-- [ ] Persist window size and position between launches
-- [ ] Tray menu: Show, Import CSV, Export CSV, Settings, Quit
-- [ ] Settings surface: change hotkey, reset position, configure sync path
-- [ ] Write Help topics for Phase 5 features (keyboard shortcuts, hotkey config, window management)
+- [x] Global hotkey to summon and dismiss the popup (configurable, default: Cmd/Ctrl+Shift+Space)
+- [x] On hotkey: show window, focus search box immediately
+- [x] Hotkey conflict detection: warn if registration fails, show actionable message
+- [x] Keyboard navigation: arrow keys move through results, Enter copies focused result, Esc dismisses
+- [x] Fix `window.open(link)` -> use `shell.openExternal` via IPC (quick win)
+- [x] Persist window size and position between launches
+- [x] Tray menu: Show, Import CSV, Export CSV, Settings, Quit
+- [x] Settings surface: change hotkey, reset position, configure sync path
+- [ ] Write Help topics for Phase 5 features (keyboard shortcuts, hotkey config, window management) — done as part of Phase 7 Help System
 
 ---
 
