@@ -23,6 +23,19 @@
   --font-size-base: 13px;
 }
 
+:root[data-theme="light"] {
+  --color-bg: #f5f5f7;
+  --color-surface: #ffffff;
+  --color-surface-hover: #ebebed;
+  --color-border: #d1d1d6;
+  --color-border-subtle: #e5e5ea;
+  --color-text: #1c1c1e;
+  --color-text-muted: #6e6e73;
+  --color-text-faint: #aeaeb2;
+  --color-accent: #0071e3;
+  --color-accent-dim: #ddeeff;
+}
+
 html, body, #root {
   height: 100%;
   width: 100%;
@@ -115,7 +128,7 @@ body {
   outline: none;
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   line-height: 1.4;
 }
 
@@ -319,7 +332,7 @@ body {
   padding: 32px 16px;
   text-align: center;
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--font-size-base);
 }
 
 .empty-state strong {
@@ -332,7 +345,7 @@ body {
   justify-content: center;
   height: 100%;
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--font-size-base);
 }
 
 .status-message.error {
@@ -505,7 +518,7 @@ body {
   border-radius: var(--radius);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   padding: 7px 10px;
   outline: none;
   transition: border-color 0.15s;
@@ -584,7 +597,7 @@ body {
   background: var(--color-accent);
   border: none;
   color: #fff;
-  font-size: 13px;
+  font-size: var(--font-size-base);
   padding: 7px 16px;
   border-radius: var(--radius);
   cursor: pointer;
@@ -598,7 +611,7 @@ body {
   background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   padding: 7px 16px;
   border-radius: var(--radius);
   cursor: pointer;
@@ -736,7 +749,7 @@ body {
 }
 
 .import-preview-summary {
-  font-size: 13px;
+  font-size: var(--font-size-base);
   color: var(--color-text);
 }
 
@@ -1300,7 +1313,7 @@ body {
   padding: 7px 10px;
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
@@ -1331,7 +1344,7 @@ body {
   border: none;
   border-bottom: 1px solid var(--color-border-subtle);
   color: var(--color-text);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   text-align: left;
   cursor: pointer;
   transition: background 0.1s;
@@ -1361,7 +1374,7 @@ body {
 
 .help-topic-content {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   color: var(--color-text);
   white-space: pre-wrap;
   word-break: break-word;
@@ -1375,7 +1388,32 @@ body {
   text-align: center;
 }
 
-/* Font size segmented control */
+/* Font size slider */
+.font-size-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.font-size-label-sm {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  user-select: none;
+}
+
+.font-size-label-lg {
+  font-size: 16px;
+  color: var(--color-text-muted);
+  user-select: none;
+}
+
+.font-size-slider {
+  width: 110px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+/* Segmented control (theme toggle + others) */
 .font-size-control {
   display: flex;
   gap: 0;
@@ -1408,6 +1446,92 @@ body {
 .font-size-btn.active {
   background: var(--color-accent-dim);
   color: var(--color-accent);
+}
+
+/* Collapsible settings section header */
+.settings-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding: 6px 0;
+  cursor: pointer;
+  text-align: left;
+  -webkit-app-region: no-drag;
+}
+
+.settings-section-header:hover .settings-section-title {
+  color: var(--color-text);
+}
+
+.settings-chevron {
+  font-size: 14px;
+  color: var(--color-text-faint);
+  transition: transform 0.15s;
+  display: inline-block;
+  transform: rotate(0deg);
+  line-height: 1;
+}
+
+.settings-chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.settings-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+/* Vertical rename row */
+.settings-vertical-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-vertical-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--color-text);
+}
+
+.settings-vertical-input {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Floating action button */
+.fab-add {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.1s, transform 0.1s;
+  z-index: 10;
+  -webkit-app-region: no-drag;
+}
+
+.fab-add:hover {
+  opacity: 0.9;
+  transform: scale(1.06);
 }
 
 /* Favorites view */
