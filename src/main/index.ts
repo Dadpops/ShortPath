@@ -13,7 +13,7 @@ import {
 } from "electron";
 import path from "path";
 import fs from "fs";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, renameVertical } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, renameVertical, addVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
@@ -520,7 +520,15 @@ function registerIpcHandlers() {
 
   ipcMain.handle("notes:load", () => notesData.notes);
 
-  ipcMain.handle("notes:create", (_e, fields: { title?: string; body: string }) => {
+  ipcMain.handle("add-vertical", (_e, label: string) => {
+    const result = addVertical(store, label);
+    store = result.store;
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
+    return result.vertical;
+  });
+
+  ipcMain.handle("notes:create", (_e, fields: { title?: string; body: string; entryId?: string; entryTitle?: string }) => {
     const result = storeCreateNote(notesData, fields);
     notesData = result.data;
     saveNotes(userDataPath, notesData);

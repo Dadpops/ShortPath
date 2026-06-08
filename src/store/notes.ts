@@ -31,13 +31,15 @@ export function saveNotes(userDataPath: string, data: NotesData): void {
 
 export function createNote(
   data: NotesData,
-  fields: { title?: string; body: string }
+  fields: { title?: string; body: string; entryId?: string; entryTitle?: string }
 ): { data: NotesData; note: Note } {
   const now = new Date().toISOString();
   const note: Note = {
     id: randomUUID(),
     title: fields.title || undefined,
     body: fields.body,
+    entryId: fields.entryId,
+    entryTitle: fields.entryTitle,
     createdAt: now,
     updatedAt: now,
   };

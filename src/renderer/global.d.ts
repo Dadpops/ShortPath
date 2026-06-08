@@ -95,6 +95,7 @@ declare global {
       saveSourceMode: (mode: "local" | "sync", name?: string) => Promise<void>;
       disconnectSync: () => Promise<void>;
       renameVertical: (id: string, newLabel: string) => Promise<void>;
+      addVertical: (label: string) => Promise<Vertical>;
 
       configureSync: () => Promise<{ success: boolean; syncPath?: string; errors?: string[] }>;
       refreshSynced: () => Promise<{ success: boolean; errors?: string[] }>;
@@ -111,7 +112,7 @@ declare global {
       ) => () => void;
 
       loadNotes: () => Promise<Note[]>;
-      createNote: (fields: { title?: string; body: string }) => Promise<Note>;
+      createNote: (fields: { title?: string; body: string; entryId?: string; entryTitle?: string }) => Promise<Note>;
       updateNote: (id: string, updates: { title?: string; body: string }) => Promise<Note>;
       deleteNote: (id: string) => Promise<void>;
     };

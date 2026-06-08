@@ -151,6 +151,19 @@ export function reorderEntry(store: StoreData, entryId: string, direction: "up" 
   return { ...store, entries: newEntries };
 }
 
+export function addVertical(store: StoreData, label: string): { store: StoreData; vertical: Vertical } {
+  const slug = label.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const baseId = slug || "custom";
+  let id = baseId;
+  let suffix = 1;
+  while (store.verticals.find((v) => v.id === id)) {
+    id = `${baseId}-${suffix}`;
+    suffix++;
+  }
+  const vertical: Vertical = { id, label, builtIn: false };
+  return { store: { ...store, verticals: [...store.verticals, vertical] }, vertical };
+}
+
 export function renameVertical(store: StoreData, id: string, newLabel: string): StoreData {
   return {
     ...store,

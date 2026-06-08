@@ -48,6 +48,8 @@ export interface Note {
   id: string;
   title?: string;
   body: string;
+  entryId?: string;
+  entryTitle?: string;
   createdAt: string;
   updatedAt: string;
 }

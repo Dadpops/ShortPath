@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld("shortpath", {
   setTheme: (theme: "dark" | "light") => ipcRenderer.invoke("set-theme", theme),
   minimizeWindow: () => ipcRenderer.invoke("minimize-window"),
   renameVertical: (id: string, newLabel: string) => ipcRenderer.invoke("rename-vertical", id, newLabel),
+  addVertical: (label: string) => ipcRenderer.invoke("add-vertical", label),
   saveSourceMode: (mode: "local" | "sync", name?: string) => ipcRenderer.invoke("save-source-mode", mode, name),
   disconnectSync: () => ipcRenderer.invoke("disconnect-sync"),
 
@@ -84,7 +85,7 @@ contextBridge.exposeInMainWorld("shortpath", {
   },
 
   loadNotes: () => ipcRenderer.invoke("notes:load"),
-  createNote: (fields: { title?: string; body: string }) => ipcRenderer.invoke("notes:create", fields),
+  createNote: (fields: { title?: string; body: string; entryId?: string; entryTitle?: string }) => ipcRenderer.invoke("notes:create", fields),
   updateNote: (id: string, updates: { title?: string; body: string }) => ipcRenderer.invoke("notes:update", id, updates),
   deleteNote: (id: string) => ipcRenderer.invoke("notes:delete", id),
 });
