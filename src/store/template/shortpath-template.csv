@@ -1,0 +1,24 @@
+title,vertical,type,body,url,tags
+Refund request — standard response,Saved Replies,reply,"Hi [Name],
+
+Thanks for reaching out. I've gone ahead and processed your refund. You should see the credit back to your original payment method within 5–10 business days depending on your bank.
+
+Let me know if there's anything else I can help with!
+
+Best,
+[Your name]",,billing|refund|payment
+How to reset your password,Documentation,doc,"To reset your password:
+1. Go to the login page and click ""Forgot password?""
+2. Enter your email address and click Send.
+3. Check your inbox for the reset email (check spam if you don't see it).
+4. Click the link in the email — it expires after 24 hours.
+5. Choose a new password and confirm it.
+
+If you don't receive the email within a few minutes, make sure the address matches the one on your account.",https://help.example.com/password-reset,password reset|account|login
+New ticket escalation SOP,Internal SOPs,sop,"1. Confirm the issue cannot be resolved at Tier 1 (check KB and saved replies first).
+2. Collect: account ID, error message (exact text or screenshot), steps the customer already tried.
+3. Open a Tier 2 ticket in the support portal — link the original ticket in the description.
+4. Set priority based on impact: P1 = service down, P2 = core feature broken, P3 = degraded/workaround exists.
+5. Notify the customer that their case has been escalated and give a response SLA.
+6. Monitor the Tier 2 queue for updates and relay them to the customer promptly.",,escalation|tier-2|sop
+Statuspage — live incident feed,Support Tools,tool,,https://status.example.com,status|incidents|uptime

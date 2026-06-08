@@ -24,14 +24,14 @@ Every resource in ShortPath is an entry. Entries are stored as an array of objec
 | `title` | string | Required. Short, searchable label. |
 | `body` | string or null | Full text content (saved replies, docs, SOPs). Null for link-only entries. |
 | `link` | string or null | URL. Null for text-only entries. Both body and link can be set. |
-| `tags` | string | Comma-separated tag strings. Empty string when none. |
-| `type` | string | One of: `reply`, `doc`, `link`, `sop` |
+| `tags` | string | Pipe-separated tag strings (`billing|refund|chat`). Empty string when none. |
+| `type` | string | One of: `reply`, `doc`, `link`, `sop`, `tool` |
 | `createdAt` | string | ISO 8601 datetime |
 | `updatedAt` | string | ISO 8601 datetime, updated on every write |
 
-The `type` field hints at rendering (e.g. `reply` shows a copy button prominently, `link` shows an open-in-browser button). The `vertical` field drives grouping.
+The `type` field hints at rendering (e.g. `reply` shows a copy button prominently, `link` and `tool` show an open-in-browser button). The `vertical` field drives grouping.
 
-Note on IDs: the original foundation used an auto-increment integer (SQLite rowid). Changed to UUID strings so entries created manually in the app and entries imported from CSV do not collide, and so JSON files are self-contained without a database sequence.
+Note on IDs: uses UUID strings so entries created manually and entries imported from CSV do not collide, and so JSON files are self-contained without a database sequence.
 
 ## TypeScript representation
 
@@ -43,8 +43,8 @@ interface Entry {
   title: string;
   body: string | null;
   link: string | null;
-  tags: string;
-  type: "reply" | "doc" | "link" | "sop";
+  tags: string;          // pipe-separated: "billing|refund|chat"
+  type: "reply" | "doc" | "link" | "sop" | "tool";
   createdAt: string;
   updatedAt: string;
 }
@@ -63,7 +63,8 @@ The store is a single JSON file at `{userData}/store.json`. Structure:
     { "id": "documentation", "label": "Documentation", "builtIn": true },
     { "id": "sops", "label": "Internal SOPs", "builtIn": true },
     { "id": "support-tools", "label": "Support Tools", "builtIn": true }
-  ]
+  ],
+  "recents": [ ...entryId strings, max 10, most recent first ]
 }
 ```
 
@@ -81,30 +82,65 @@ Index configuration:
 
 After running a query, results are grouped by `vertical` with a per-vertical hit count for the group headers. Each group is expandable/collapsible.
 
-When the search box is empty: show recents (last 10 opened/copied entries) instead of search results.
+When the search box is empty: show the recents section (last 10 accessed entries) followed by all entries grouped by vertical.
 
 Not included in v1: boolean operators, regex search, saved searches, search analytics.
 
-## CSV import format
+---
 
-CSV import expects these columns (header row required, column order does not matter):
+## CSV format (locked schema)
 
-| Column | Required | Notes |
+Import and export use the exact same column set in the exact same order. This makes the round-trip lossless: export, edit in a spreadsheet, re-import, and nothing changes.
+
+### Columns
+
+| Column | Required | Description |
 |---|---|---|
-| `vertical` | Yes | Must match a vertical ID or will create a new one |
-| `title` | Yes | |
-| `type` | Yes | `reply`, `doc`, `link`, or `sop` |
-| `body` | No | Leave blank for link-only entries |
-| `link` | No | Leave blank for text-only entries |
-| `tags` | No | Comma-separated within the cell, e.g. `"billing, refund"` |
+| `title` | Yes | Short name shown in search results. |
+| `vertical` | Yes | Which group the entry belongs to. Free text — any value creates a new vertical if unknown. The standard four: `Saved Replies`, `Documentation`, `Internal SOPs`, `Support Tools`. |
+| `type` | Yes | One of: `reply`, `doc`, `sop`, `link`, `tool`. Unknown values are flagged as errors; the row is not imported. |
+| `body` | Yes* | Full content: the saved reply text, documentation, SOP steps. Can contain line breaks (use standard CSV quoting). |
+| `url` | Yes* | A link. Used when the entry is a link or points to an external document. |
+| `tags` | No | Keywords that improve search relevance. **Pipe-separated** (`billing|refund|chat`), not comma-separated. |
 
-Import behavior:
+*`body` and `url`: an entry needs at least one. A saved reply has `body`. A link or tool has `url`. A doc can have both.
+
+### Column order
+
+The export always writes columns in this order:
+
+```
+title, vertical, type, body, url, tags
+```
+
+Import does not require a specific order (PapaParse uses the header row for mapping), but the template uses the canonical order above.
+
+### Tag separator
+
+Tags use `|` (pipe) as the separator, not `,` (comma). This avoids conflicts between the tag separator and the CSV field separator, and lets you have multi-word tags like `password reset` without quoting.
+
+### Multi-line body
+
+A saved reply or SOP with line breaks must survive a round-trip. The body cell is wrapped in double quotes in the CSV; internal quotes are escaped by doubling them (`""`). The template includes a multi-line example.
+
+### Import behavior
+
 - Parsed by PapaParse with header detection on.
-- Rows missing `vertical`, `title`, or `type` are skipped with a warning returned to the renderer.
-- Unknown vertical IDs create a new vertical automatically (with `builtIn: false`).
-- Duplicate detection: entries with the same `vertical` + `title` update the existing entry (preserving the original `id` and `createdAt`).
+- Rows missing `title`, `vertical`, or `type` are skipped. The importer reports the row number and what was missing.
+- Rows with an unknown `type` value are skipped with a specific error naming the row and the bad value.
+- Unknown `vertical` values create a new vertical automatically (`builtIn: false`).
+- Duplicate detection: entries with the same `vertical` + `title` update the existing entry (preserves `id` and `createdAt`).
 - New entries get a fresh UUID for `id`.
+- Before committing, the import screen shows a preview of the first parsed rows, a total count, and any flagged rows. The user confirms before the import runs.
 
-## CSV export format
+### Export behavior
 
-Export produces the same column set as import, making round-trips lossless. `id`, `createdAt`, and `updatedAt` are included as additional columns but ignored on re-import.
+Export produces the same column set as import. Internal fields `id`, `createdAt`, and `updatedAt` are included as additional trailing columns so a re-import identifies existing entries correctly, but those columns are ignored if missing.
+
+### Template file
+
+A static CSV template lives at `src/store/template/shortpath-template.csv`. It contains the header row and four example rows (one per standard vertical, one per type) including a multi-line body example. Users download it via a "Download template" button on the import screen.
+
+### Internal field name vs CSV column name
+
+The internal `Entry` type uses `link` for the URL field. The CSV column is named `url` (more intuitive to non-developers). The import/export layer maps between them.
