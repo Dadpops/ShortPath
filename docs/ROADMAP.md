@@ -202,8 +202,8 @@ These were implemented outside the original phase plan based on user request.
 
 Goal: installable builds for Windows and Mac.
 
-- [ ] electron-builder targets: NSIS (Windows), DMG (Mac)
-- [ ] Code signing: document Apple Developer cert and Windows signing requirements (certificates not committed)
-- [ ] Auto-update scaffold (electron-updater) — optional for v1
-- [ ] Build and release scripts in package.json
+- [x] electron-builder targets: NSIS (Windows), DMG (Mac)
+- [x] Code signing: documented in docs/SIGNING.md; signing fields commented in electron-builder.yml; no certs committed
+- [ ] Auto-update scaffold (electron-updater) — out of scope for v0.1.0; manual reinstall model documented in docs/RELEASING.md
+- [x] Build and release scripts in package.json (dist:win, dist:mac)
 - [ ] First tagged release (v0.1.0) on GitHub
