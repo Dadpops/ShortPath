@@ -7,58 +7,310 @@
 :root {
   --color-bg: #0f0f10;
   --color-surface: #1a1a1d;
+  --color-surface-hover: #212124;
   --color-border: #2a2a2e;
+  --color-border-subtle: #1e1e21;
   --color-text: #e8e8ea;
-  --color-text-muted: #888890;
-  --color-accent: #5b8dee;
-  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  --color-text-muted: #72727a;
+  --color-text-faint: #44444a;
+  --color-accent: #3b82f6;
+  --color-accent-dim: #1e3a5f;
+  --color-success: #22c55e;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --radius: 6px;
+  --radius: 5px;
+  --radius-sm: 3px;
 }
 
 html, body, #root {
   height: 100%;
   width: 100%;
+  overflow: hidden;
 }
 
 body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
+/* App shell */
 .app-shell {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
 
+/* Header */
 .app-header {
-  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
+  flex-shrink: 0;
+  -webkit-app-region: drag;
 }
 
 .app-path {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-accent);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  user-select: none;
 }
 
-.app-main {
+.app-hit-summary {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* Search */
+.search-container {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  transition: border-color 0.15s;
+}
+
+.search-bar:focus-within {
+  border-color: var(--color-accent);
+}
+
+.search-icon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.search-input {
   flex: 1;
-  padding: 24px 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.search-input::placeholder {
+  color: var(--color-text-faint);
+}
+
+.search-clear {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+}
+
+.search-clear:hover {
+  color: var(--color-text);
+}
+
+/* Results */
+.results-container {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.results-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.results-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.results-container::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+/* Vertical group */
+.vertical-group {
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 0.1s, background 0.1s;
+}
+
+.group-header:hover {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.group-chevron {
+  font-size: 14px;
+  line-height: 1;
+  display: inline-block;
+  transition: transform 0.15s;
+  transform: rotate(0deg);
+  color: var(--color-text-faint);
+}
+
+.group-chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.group-label {
+  flex: 1;
+}
+
+.group-count {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+  padding: 1px 6px;
+  border-radius: 10px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Result list */
+.result-list {
+  list-style: none;
+  padding: 0;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 30px;
+  transition: background 0.1s;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.result-item:first-child {
+  border-top: none;
+}
+
+.result-item:hover {
+  background: var(--color-surface-hover);
+}
+
+.result-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.result-title {
+  color: var(--color-text);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-tags {
+  color: var(--color-text-faint);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Action buttons */
+.result-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.1s;
+  flex-shrink: 0;
+}
+
+.result-item:hover .result-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  width: 26px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: color 0.1s, border-color 0.1s, background 0.1s;
 }
 
-.placeholder-text {
+.action-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+.copy-btn.copied {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+/* Empty / status states */
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
   color: var(--color-text-muted);
   font-size: 13px;
-  text-align: center;
+}
+
+.empty-state strong {
+  color: var(--color-text);
+}
+
+.status-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.status-message.error {
+  color: #f87171;
 }
