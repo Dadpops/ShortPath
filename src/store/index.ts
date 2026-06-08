@@ -17,11 +17,11 @@ export function openStore(userDataPath: string): StoreData {
     const raw = fs.readFileSync(storePath, "utf-8");
     const parsed = JSON.parse(raw) as Partial<StoreData>;
     return migrate({
-      recents: [],
-      ...parsed,
+      version: parsed.version ?? 1,
       entries: parsed.entries ?? [],
       verticals: parsed.verticals ?? [],
-      version: parsed.version ?? 1,
+      recents: parsed.recents ?? [],
+      favorites: parsed.favorites ?? [],
     });
   } catch {
     console.error("store.json corrupted, resetting to defaults");
@@ -106,6 +106,17 @@ export function deleteEntry(store: StoreData, id: string): StoreData {
     ...store,
     entries: store.entries.filter((e) => e.id !== id),
     recents: store.recents.filter((rid) => rid !== id),
+    favorites: store.favorites.filter((fid) => fid !== id),
+  };
+}
+
+export function toggleFavorite(store: StoreData, entryId: string): StoreData {
+  const already = store.favorites.includes(entryId);
+  return {
+    ...store,
+    favorites: already
+      ? store.favorites.filter((id) => id !== entryId)
+      : [...store.favorites, entryId],
   };
 }
 
@@ -153,9 +164,10 @@ export function replaceSyncedEntries(store: StoreData, newSyncedEntries: Entry[]
     }
   }
 
-  // Prune recents that no longer exist after the replacement.
+  // Prune recents and favorites that no longer exist after the replacement.
   const liveIds = new Set([...localEntries, ...newSyncedEntries].map((e) => e.id));
   const recents = store.recents.filter((id) => liveIds.has(id));
+  const favorites = store.favorites.filter((id) => liveIds.has(id));
 
-  return { ...store, entries: [...localEntries, ...newSyncedEntries], verticals, recents };
+  return { ...store, entries: [...localEntries, ...newSyncedEntries], verticals, recents, favorites };
 }
