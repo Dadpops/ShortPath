@@ -1,21 +1,24 @@
 # Current Session State
 
-**Status:** Phase 4 complete. Shared-file sync is live: file watcher, replaceSyncedEntries (local entries never touched), sync settings UI, "synced" badge on result items, Help topics for sync.
+**Status:** Phases 1–7 complete. Header cleaned up (clipboard icon, ? help, no clutter). Support Tools grid with reorder. Help panel with all 16 topics. Import/export/add accessible from Settings.
 
-**Last session:** [2026-06-08 — Phase 4 shared-file sync](docs/sessions/2026-06-08-phase4-sync.md)
+**Last session:** [2026-06-08 — Phase 6 + 7 + UI cleanup](docs/sessions/2026-06-08-phase6-7-ui.md)
 
-**Next up — choose one:**
+**Next up:**
 
-**Phase 6 — Support Tools section**
-- Support Tools vertical with distinct UI treatment (icons, quick-launch grid).
-- shell.openExternal for links is already wired from Phase 5.
-- Reorder tools via drag or keyboard.
+**Phase 8 — Polish**
+- Show/hide animation for the popup window.
+- Tray icon states (active/inactive).
+- Consistent empty and error states throughout.
+- Performance check on large datasets (~10k entries).
 
-**Phase 7 — Help system**
-- Help panel UI: slide-over, Esc to close, search/filter.
-- Help topic data is written and ready (all 16+ topics have stubs; settings, sync, exporting already have full content).
+**Phase 9 — Packaging and distribution**
+- electron-builder targets: NSIS (Windows), DMG (Mac).
+- Code signing: document Apple Developer cert and Windows signing requirements.
+- Build and release scripts in package.json.
+- First tagged release (v0.1.0) on GitHub.
 
-**Open questions / polish items:**
+**Open polish items:**
 - Settings hotkey display shows "Ctrl" regardless of platform; should show "Cmd" on Mac.
 - Tag enforcement (pipe vs comma) in the add form not enforced at input time.
 - fs.watch can miss events on network drives; chokidar would be more reliable if users report issues.
