@@ -1,0 +1,44 @@
+{
+  "name": "shortpath",
+  "version": "0.1.0",
+  "description": "Local-first documentation, saved-reply, and process hub for support agents.",
+  "main": "dist/main/index.js",
+  "author": "Dadpops",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\"",
+    "dev:renderer": "vite",
+    "dev:main": "tsc -p tsconfig.main.json --watch",
+    "build": "npm run build:renderer && npm run build:main",
+    "build:renderer": "vite build",
+    "build:main": "tsc -p tsconfig.main.json",
+    "electron": "electron .",
+    "start": "npm run build && npm run electron",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^8.2.2",
+    "electron": "^31.0.1",
+    "electron-builder": "^24.13.3",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1",
+    "vite-plugin-electron": "^0.28.7"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.6.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

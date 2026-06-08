@@ -1,0 +1,38 @@
+appId: com.dadpops.shortpath
+productName: ShortPath
+copyright: Copyright © 2024 Dadpops
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - node_modules/**/*
+  - package.json
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.ico
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: build/icon.icns
+  category: public.app-category.productivity
+
+linux:
+  target:
+    - target: AppImage
+  icon: build/icon.png
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
+# Tray app — keep it running in background
+extraMetadata:
+  main: dist/main/index.js

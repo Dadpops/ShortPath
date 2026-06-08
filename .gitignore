@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+out/
+release/
+build/
+
+# Vite
+.vite/
+.vite-cache/
+
+# Electron builder
+dist_electron/
+
+# SQLite databases (local data, not committed)
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Test coverage
+coverage/
