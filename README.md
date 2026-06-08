@@ -25,11 +25,30 @@ Download it to your machine. Import your team's resources via CSV. Search across
 
 ---
 
+## Installation
+
+Download the latest installer from the [Releases page](https://github.com/Dadpops/ShortPath/releases).
+
+| Platform | File | Notes |
+|---|---|---|
+| Windows | `ShortPath-Setup-x.y.z.exe` | NSIS installer. SmartScreen will warn on first run — click "More info → Run anyway". See [docs/INSTALLING.md](docs/INSTALLING.md). |
+| macOS | `ShortPath-x.y.z.dmg` | Not notarised in v0.1.0. Gatekeeper will block unsigned builds. See [docs/INSTALLING.md](docs/INSTALLING.md). |
+
+Your data lives in the OS app-data folder (`%APPDATA%\ShortPath` on Windows, `~/Library/Application Support/ShortPath` on macOS) and is not affected by reinstalling or updating.
+
+---
+
+## Screenshots
+
+<!-- TODO: add screenshots after first release build -->
+
+---
+
 ## Status
 
-Feature-complete for v0.1.0. All nine planned phases are done plus several post-phase additions. A tagged release and auto-update scaffold are the remaining items before a public v0.1.0 build.
+v0.1.0 — initial release. All nine planned phases are complete plus several post-phase additions (sub-folders, clipboard capture, paste-and-split, notes linking, help system).
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the full phase checklist.
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the full phase checklist and [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 ---
 
