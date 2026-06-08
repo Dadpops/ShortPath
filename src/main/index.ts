@@ -13,9 +13,9 @@ import {
 } from "electron";
 import path from "path";
 import fs from "fs";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, replaceSyncedEntries } from "../store/index";
 import { applySeed } from "../store/seed";
-import { importCsv, exportCsv, parseCsvPreview, CSV_TEMPLATE_CONTENT } from "../store/csv";
+import { importCsv, exportCsv, parseCsvPreview, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import type { StoreData } from "../store/schema";
 import type { Entry } from "../shared/types";
@@ -35,6 +35,11 @@ let pendingCsvImport: string | null = null;
 
 // Debounce timer for saving window bounds after move/resize.
 let saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Sync state
+let syncWatcher: fs.FSWatcher | null = null;
+let syncDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let lastRefreshed: string | null = null;
 
 function getBottomLeftPosition() {
   const display = screen.getPrimaryDisplay();
@@ -179,6 +184,41 @@ async function handleExportFromTray() {
   } catch (err) {
     console.error("CSV export failed:", err);
   }
+}
+
+function loadSyncedFile(filePath: string): { ok: boolean; errors: string[] } {
+  try {
+    const csvString = fs.readFileSync(filePath, "utf-8");
+    const { entries: syncedEntries, errors } = parseSyncedCsv(csvString);
+    store = replaceSyncedEntries(store, syncedEntries);
+    saveStore(userDataPath, store);
+    lastRefreshed = new Date().toISOString();
+    pushStoreUpdate();
+    win?.webContents.send("sync-refreshed");
+    return { ok: true, errors };
+  } catch (err) {
+    console.error("Sync file load failed:", err);
+    return { ok: false, errors: [String(err)] };
+  }
+}
+
+function startSyncWatcher(filePath: string) {
+  stopSyncWatcher();
+  try {
+    syncWatcher = fs.watch(filePath, () => {
+      // editors write multiple events per save; debounce to one load
+      if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+      syncDebounceTimer = setTimeout(() => loadSyncedFile(filePath), 500);
+    });
+    syncWatcher.on("error", (err) => console.error("Sync watcher error:", err));
+  } catch (err) {
+    console.error("Failed to start sync watcher:", err);
+  }
+}
+
+function stopSyncWatcher() {
+  if (syncDebounceTimer) { clearTimeout(syncDebounceTimer); syncDebounceTimer = null; }
+  if (syncWatcher) { syncWatcher.close(); syncWatcher = null; }
 }
 
 function registerIpcHandlers() {
@@ -358,6 +398,42 @@ function registerIpcHandlers() {
     saveSettings(userDataPath, settings);
   });
 
+  ipcMain.handle("configure-sync", async () => {
+    const { filePaths } = await dialog.showOpenDialog({
+      title: "Select shared sync file",
+      filters: [{ name: "CSV", extensions: ["csv"] }],
+      properties: ["openFile"],
+    });
+    if (!filePaths[0]) return { success: false };
+
+    const filePath = filePaths[0];
+    settings = { ...settings, syncPath: filePath };
+    saveSettings(userDataPath, settings);
+
+    const result = loadSyncedFile(filePath);
+    startSyncWatcher(filePath);
+    return { success: true, syncPath: filePath, errors: result.errors };
+  });
+
+  ipcMain.handle("refresh-synced", () => {
+    if (!settings.syncPath) return { success: false, errors: ["No sync file configured."] };
+    const result = loadSyncedFile(settings.syncPath);
+    return { success: result.ok, errors: result.errors };
+  });
+
+  ipcMain.handle("clear-synced", () => {
+    store = replaceSyncedEntries(store, []);
+    saveStore(userDataPath, store);
+    lastRefreshed = null;
+    pushStoreUpdate();
+  });
+
+  ipcMain.handle("get-sync-status", () => ({
+    syncPath: settings.syncPath ?? null,
+    syncedCount: store.entries.filter((e) => e.source === "synced").length,
+    lastRefreshed,
+  }));
+
   ipcMain.handle("ping", () => "pong");
 }
 
@@ -375,6 +451,12 @@ app.whenReady().then(() => {
   createTray();
   createWindow();
   registerHotkey(settings.hotkey);
+
+  // Resume file-watch sync if a path was previously configured.
+  if (settings.syncPath && fs.existsSync(settings.syncPath)) {
+    loadSyncedFile(settings.syncPath);
+    startSyncWatcher(settings.syncPath);
+  }
 });
 
 let currentHotkey: string | null = null;
@@ -395,6 +477,7 @@ function registerHotkey(accelerator: string): boolean {
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+  stopSyncWatcher();
 });
 
 // Keep the app running when all windows are closed (tray app behavior).

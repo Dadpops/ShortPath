@@ -205,6 +205,62 @@ export function importCsv(
   return { store: { ...store, entries, verticals }, imported, updated, skipped, errors };
 }
 
+export interface SyncParseResult {
+  entries: Entry[];
+  errors: string[];
+  skipped: number;
+}
+
+// Parse a shared CSV file into synced entries. Uses stable IDs (vertical:title) so
+// recents survive a re-sync even when the CSV has no id column.
+export function parseSyncedCsv(csvString: string): SyncParseResult {
+  const { data, parseErrors } = parseRows(csvString);
+  const errors: string[] = [...parseErrors];
+  const entries: Entry[] = [];
+  let skipped = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const rowNum = i + 2;
+
+    const missing = REQUIRED_COLUMNS.filter((col) => !row[col]?.trim());
+    if (missing.length) {
+      errors.push(`Row ${rowNum}: missing required column(s): ${missing.join(", ")}`);
+      skipped++;
+      continue;
+    }
+
+    const type = row.type!.trim() as Entry["type"];
+    if (!VALID_TYPES.includes(type)) {
+      errors.push(`Row ${rowNum}: invalid type "${row.type}" — must be one of: ${VALID_TYPES.join(", ")}`);
+      skipped++;
+      continue;
+    }
+
+    const vertical = row.vertical!.trim();
+    const title = row.title!.trim();
+    const now = new Date().toISOString();
+
+    // Prefer the id from the CSV (round-trip stable); fall back to a deterministic slug.
+    const id = row.id?.trim() || `synced:${vertical}:${title}`;
+
+    entries.push({
+      id,
+      vertical,
+      title,
+      body: row.body?.trim() || null,
+      link: row.url?.trim() || null,
+      tags: row.tags?.trim() || "",
+      type,
+      source: "synced",
+      createdAt: row.createdAt?.trim() || now,
+      updatedAt: row.updatedAt?.trim() || now,
+    });
+  }
+
+  return { entries, errors, skipped };
+}
+
 export function exportCsv(entries: Entry[]): string {
   const rows = entries.map((e) => ({
     title: e.title,

@@ -118,3 +118,23 @@ export function ensureVertical(store: StoreData, vertical: Vertical): StoreData 
   if (store.verticals.find((v) => v.id === vertical.id)) return store;
   return { ...store, verticals: [...store.verticals, vertical] };
 }
+
+// Replace all synced entries atomically. Local entries are never touched.
+export function replaceSyncedEntries(store: StoreData, newSyncedEntries: Entry[]): StoreData {
+  const localEntries = store.entries.filter((e) => e.source === "local");
+
+  // Ensure verticals exist for all incoming synced entries.
+  let verticals = [...store.verticals];
+  const seenVerticalIds = new Set(newSyncedEntries.map((e) => e.vertical));
+  for (const vid of seenVerticalIds) {
+    if (!verticals.find((v) => v.id === vid)) {
+      verticals = [...verticals, { id: vid, label: vid, builtIn: false }];
+    }
+  }
+
+  // Prune recents that no longer exist after the replacement.
+  const liveIds = new Set([...localEntries, ...newSyncedEntries].map((e) => e.id));
+  const recents = store.recents.filter((id) => liveIds.has(id));
+
+  return { ...store, entries: [...localEntries, ...newSyncedEntries], verticals, recents };
+}

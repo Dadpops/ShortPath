@@ -11,6 +11,7 @@ export interface WindowBounds {
 export interface AppSettings {
   hotkey: string;
   windowBounds?: WindowBounds;
+  syncPath?: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
