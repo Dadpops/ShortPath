@@ -8,9 +8,11 @@ interface Props {
   onCopy: (entryId: string) => void;
   onOpen: (entry: Entry) => void;
   focusedEntryId?: string | null;
+  favorites?: Set<string>;
+  onToggleFavorite?: (id: string) => void;
 }
 
-export default function VerticalGroupComponent({ group, onToggle, onEdit, onCopy, onOpen, focusedEntryId }: Props) {
+export default function VerticalGroupComponent({ group, onToggle, onEdit, onCopy, onOpen, focusedEntryId, favorites, onToggleFavorite }: Props) {
   return (
     <div className="vertical-group">
       <button className="group-header" onClick={onToggle}>
@@ -28,6 +30,8 @@ export default function VerticalGroupComponent({ group, onToggle, onEdit, onCopy
               onCopy={onCopy}
               onOpen={onOpen}
               isFocused={focusedEntryId === result.entry.id}
+              isFavorite={favorites?.has(result.entry.id)}
+              onToggleFavorite={onToggleFavorite}
             />
           ))}
         </ul>
