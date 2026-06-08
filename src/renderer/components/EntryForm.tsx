@@ -7,6 +7,8 @@ interface Props {
   onSave: (entry: Entry, newVerticals: Vertical[]) => void;
   onDelete?: () => void;
   onCancel: () => void;
+  quickAdd?: boolean;           // hides type/tags behind "More options" toggle
+  prefillBody?: string;         // pre-populate body field (e.g. from clipboard)
 }
 
 function slugify(label: string): string {
@@ -17,11 +19,11 @@ function slugify(label: string): string {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel }: Props) {
+export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel, quickAdd, prefillBody }: Props) {
   const isEdit = !!entry;
 
   const [title, setTitle] = useState(entry?.title ?? "");
-  const [body, setBody] = useState(entry?.body ?? "");
+  const [body, setBody] = useState(entry?.body ?? prefillBody ?? "");
   const [link, setLink] = useState(entry?.link ?? "");
   const [tags, setTags] = useState(entry?.tags ?? "");
   const [type, setType] = useState<Entry["type"]>(entry?.type ?? "reply");
@@ -31,6 +33,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showMore, setShowMore] = useState(false);
 
   const finalVerticalId = isNewVertical ? slugify(newVerticalLabel) : verticalId;
 
@@ -100,7 +103,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
         <button className="form-back-btn" onClick={onCancel} disabled={saving}>
           ← Back
         </button>
-        <span className="form-title">{isEdit ? "Edit entry" : "Add entry"}</span>
+        <span className="form-title">{isEdit ? "Edit entry" : quickAdd ? "Quick add" : "Add entry"}</span>
         {isEdit && !confirmDelete && (
           <button className="form-delete-trigger" onClick={() => setConfirmDelete(true)}>
             Delete
@@ -158,24 +161,36 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
           />
         </div>
 
-        <div className="form-field">
-          <label className="form-label">Type</label>
-          <div className="type-options">
-            {(["reply", "doc", "link", "sop", "tool"] as Entry["type"][]).map((t) => (
-              <label key={t} className={`type-option${type === t ? " selected" : ""}`}>
-                <input
-                  type="radio"
-                  name="type"
-                  value={t}
-                  checked={type === t}
-                  onChange={() => setType(t)}
-                  disabled={saving}
-                />
-                {t === "reply" ? "Reply" : t === "doc" ? "Doc" : t === "link" ? "Link" : t === "sop" ? "SOP" : "Tool"}
-              </label>
-            ))}
+        {quickAdd && !isEdit && !showMore && (
+          <button
+            type="button"
+            className="more-options-toggle"
+            onClick={() => setShowMore(true)}
+          >
+            More options (type, tags) ▾
+          </button>
+        )}
+
+        {(!quickAdd || isEdit || showMore) && (
+          <div className="form-field">
+            <label className="form-label">Type</label>
+            <div className="type-options">
+              {(["reply", "doc", "link", "sop", "tool"] as Entry["type"][]).map((t) => (
+                <label key={t} className={`type-option${type === t ? " selected" : ""}`}>
+                  <input
+                    type="radio"
+                    name="type"
+                    value={t}
+                    checked={type === t}
+                    onChange={() => setType(t)}
+                    disabled={saving}
+                  />
+                  {t === "reply" ? "Reply" : t === "doc" ? "Doc" : t === "link" ? "Link" : t === "sop" ? "SOP" : "Tool"}
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="form-field">
           <label className="form-label">Body</label>
@@ -201,17 +216,19 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
           />
         </div>
 
-        <div className="form-field">
-          <label className="form-label">Tags</label>
-          <input
-            className="form-input"
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="pipe|separated|tags"
-            disabled={saving}
-          />
-        </div>
+        {(!quickAdd || isEdit || showMore) && (
+          <div className="form-field">
+            <label className="form-label">Tags</label>
+            <input
+              className="form-input"
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="pipe|separated|tags"
+              disabled={saving}
+            />
+          </div>
+        )}
 
         {error && <p className="form-error">{error}</p>}
 
