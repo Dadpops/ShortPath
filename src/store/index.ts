@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import type { Entry, Vertical } from "../shared/types";
-import { defaultStore, STORE_VERSION, type StoreData } from "./schema";
+import { defaultStore, type StoreData } from "./schema";
 
 export type { StoreData };
 
@@ -15,8 +15,15 @@ export function openStore(userDataPath: string): StoreData {
   }
   try {
     const raw = fs.readFileSync(storePath, "utf-8");
-    const data = JSON.parse(raw) as StoreData;
-    return migrate(data);
+    const parsed = JSON.parse(raw) as Partial<StoreData>;
+    // Backfill fields added after initial release so existing store.json files keep working.
+    return migrate({
+      recents: [],
+      ...parsed,
+      entries: parsed.entries ?? [],
+      verticals: parsed.verticals ?? [],
+      version: parsed.version ?? 1,
+    });
   } catch {
     console.error("store.json corrupted, resetting to defaults");
     const store = defaultStore();
@@ -31,21 +38,24 @@ export function saveStore(userDataPath: string, data: StoreData): void {
 }
 
 function migrate(data: StoreData): StoreData {
-  if (data.version === STORE_VERSION) return data;
-  // Future migrations added here when STORE_VERSION bumps.
+  // Future version migrations go here.
   return data;
 }
 
 export function addEntry(
   store: StoreData,
-  fields: Omit<Entry, "id" | "createdAt" | "updatedAt">
+  fields: Omit<Entry, "id" | "createdAt" | "updatedAt">,
+  verticalLabel?: string
 ): { store: StoreData; entry: Entry } {
   const now = new Date().toISOString();
   const entry: Entry = { ...fields, id: randomUUID(), createdAt: now, updatedAt: now };
 
   let verticals = store.verticals;
   if (!verticals.find((v) => v.id === entry.vertical)) {
-    verticals = [...verticals, { id: entry.vertical, label: entry.vertical, builtIn: false }];
+    verticals = [
+      ...verticals,
+      { id: entry.vertical, label: verticalLabel ?? entry.vertical, builtIn: false },
+    ];
   }
 
   return {
@@ -72,7 +82,16 @@ export function updateEntry(
 }
 
 export function deleteEntry(store: StoreData, id: string): StoreData {
-  return { ...store, entries: store.entries.filter((e) => e.id !== id) };
+  return {
+    ...store,
+    entries: store.entries.filter((e) => e.id !== id),
+    recents: store.recents.filter((rid) => rid !== id),
+  };
+}
+
+export function recordAccess(store: StoreData, entryId: string): StoreData {
+  const recents = [entryId, ...store.recents.filter((id) => id !== entryId)].slice(0, 10);
+  return { ...store, recents };
 }
 
 export function ensureVertical(store: StoreData, vertical: Vertical): StoreData {

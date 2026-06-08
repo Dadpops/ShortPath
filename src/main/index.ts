@@ -11,7 +11,7 @@ import {
 } from "electron";
 import path from "path";
 import fs from "fs";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess } from "../store/index";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv } from "../store/csv";
 import type { StoreData } from "../store/schema";
@@ -118,7 +118,7 @@ async function handleImportFromTray() {
     const result = importCsv(store, csvString);
     store = result.store;
     saveStore(userDataPath, store);
-    win?.webContents.send("store-updated", { entries: store.entries, verticals: store.verticals });
+    win?.webContents.send("store-updated", { entries: store.entries, verticals: store.verticals, recents: store.recents });
   } catch (err) {
     console.error("CSV import failed:", err);
   }
@@ -142,13 +142,22 @@ function registerIpcHandlers() {
   ipcMain.handle("load-entries", () => ({
     entries: store.entries,
     verticals: store.verticals,
+    recents: store.recents,
   }));
 
-  ipcMain.handle("create-entry", (_e, fields: Omit<Entry, "id" | "createdAt" | "updatedAt">) => {
-    const result = addEntry(store, fields);
-    store = result.store;
+  ipcMain.handle(
+    "create-entry",
+    (_e, fields: Omit<Entry, "id" | "createdAt" | "updatedAt">, verticalLabel?: string) => {
+      const result = addEntry(store, fields, verticalLabel);
+      store = result.store;
+      saveStore(userDataPath, store);
+      return { entry: result.entry, verticals: store.verticals };
+    }
+  );
+
+  ipcMain.handle("record-access", (_e, entryId: string) => {
+    store = recordAccess(store, entryId);
     saveStore(userDataPath, store);
-    return result.entry;
   });
 
   ipcMain.handle("update-entry", (_e, id: string, updates: Partial<Entry>) => {
