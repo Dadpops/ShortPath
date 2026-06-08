@@ -11,9 +11,11 @@ import SplitImport from "./components/SplitImport";
 import SettingsScreen from "./components/SettingsScreen";
 import HelpPanel from "./components/HelpPanel";
 import MacroOverlay from "./components/MacroOverlay";
+import FavoritesView from "./components/FavoritesView";
+import SetupScreen from "./components/SetupScreen";
 
 type AppStatus = "loading" | "ready" | "error";
-type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help";
+type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "favorites" | "setup";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -42,17 +44,34 @@ export default function App() {
   const [overlayEntry, setOverlayEntry] = useState<Entry | null>(null);
   const [animating, setAnimating] = useState(false);
   const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [sourceMode, setSourceMode] = useState<"local" | "sync" | undefined>(undefined);
+  const [sourceName, setSourceName] = useState<string | undefined>(undefined);
 
   const debouncedQuery = useDebounce(query, 120);
+
+  const fontSizeMap: Record<"small" | "medium" | "large", string> = {
+    small: "11px",
+    medium: "13px",
+    large: "15px",
+  };
 
   useEffect(() => {
     window.shortpath
       .loadEntries()
-      .then(({ entries: e, verticals: v, recents: r }) => {
+      .then(({ entries: e, verticals: v, recents: r, favorites: favs, fontSize: fs, sourceMode: sm, sourceName: sn }) => {
         setEntries(e);
         setVerticals(v);
         setRecents(r);
+        setFavorites(new Set(favs));
         setExpandedGroups(new Set(v.map((vert) => vert.id)));
+        document.documentElement.style.setProperty("--font-size-base", fontSizeMap[fs]);
+        if (sm === null || sm === undefined) {
+          setMode("setup");
+        } else {
+          setSourceMode(sm);
+          setSourceName(sn ?? undefined);
+        }
         setStatus("ready");
       })
       .catch((err) => {
@@ -60,10 +79,11 @@ export default function App() {
         setStatus("error");
       });
 
-    const unsubscribe = window.shortpath.onStoreUpdated(({ entries: e, verticals: v, recents: r }) => {
+    const unsubscribe = window.shortpath.onStoreUpdated(({ entries: e, verticals: v, recents: r, favorites: favs }) => {
       setEntries(e);
       setVerticals(v);
       setRecents(r);
+      setFavorites(new Set(favs));
     });
     return unsubscribe;
   }, []);
@@ -245,6 +265,43 @@ export default function App() {
     // store-updated push from main will refresh entries
   }
 
+  function handleToggleFavorite(id: string) {
+    void window.shortpath.toggleFavorite(id);
+    // store-updated push from main will refresh favorites
+  }
+
+  function handleGoHome() {
+    setMode("browse");
+    setQuery("");
+  }
+
+  function handleSetupComplete(sm: "local" | "sync", sn?: string) {
+    setSourceMode(sm);
+    setSourceName(sn);
+    setMode("browse");
+  }
+
+  function handleEditFromOverlay(entry: Entry) {
+    setOverlayEntry(null);
+    handleEditEntry(entry);
+  }
+
+  async function handleDuplicateEntry(entry: Entry) {
+    const result = await window.shortpath.createEntry({
+      vertical: entry.vertical,
+      title: entry.title,
+      body: entry.body,
+      link: entry.link,
+      tags: entry.tags,
+      type: entry.type,
+    });
+    setEntries((prev) => [...prev, result.entry]);
+    setVerticals(result.verticals);
+    setOverlayEntry(null);
+    setEditingEntry(result.entry);
+    setMode("edit");
+  }
+
   function handleOpenOverlay(entry: Entry) {
     setOverlayEntry(entry);
   }
@@ -330,6 +387,14 @@ export default function App() {
     );
   }
 
+  if (mode === "setup") {
+    return (
+      <div className={shellClass}>
+        <SetupScreen onComplete={handleSetupComplete} />
+      </div>
+    );
+  }
+
   if (mode === "add" || mode === "edit") {
     return (
       <div className={shellClass}>
@@ -385,12 +450,30 @@ export default function App() {
     );
   }
 
+  if (mode === "favorites") {
+    return (
+      <div className={shellClass}>
+        <FavoritesView
+          entries={entries}
+          favorites={favorites}
+          onBack={handleGoHome}
+          onEdit={handleEditEntry}
+          onCopy={handleCopy}
+          onOpen={handleOpenOverlay}
+          onToggleFavorite={handleToggleFavorite}
+        />
+      </div>
+    );
+  }
+
   const hasClipboard = !!clipboardText && !clipboardDismissed;
 
   return (
     <div className={shellClass}>
       <header className="app-header">
-        <span className="app-path">shortpath /</span>
+        <button className="app-path-btn" onClick={handleGoHome} title="Go home">
+          shortpath / {sourceMode === "sync" && sourceName ? sourceName : "Local"}
+        </button>
         <div className="header-actions">
           {isSearching && totalHits > 0 && (
             <span className="app-hit-summary">{totalHits} result{totalHits !== 1 ? "s" : ""}</span>
@@ -404,6 +487,7 @@ export default function App() {
               ⎘
             </button>
           )}
+          <button className="header-icon-btn" onClick={() => setMode("favorites")} title="Favorites">☆</button>
           <button className="header-icon-btn" onClick={() => setMode("help")} title="Help">?</button>
           <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings">⚙</button>
           <button
@@ -448,6 +532,8 @@ export default function App() {
                   onCopy={handleCopy}
                   onOpen={handleOpenOverlay}
                   isFocused={focusedEntryId === entry.id}
+                  isFavorite={favorites.has(entry.id)}
+                  onToggleFavorite={handleToggleFavorite}
                 />
               ))}
             </ul>
@@ -486,6 +572,8 @@ export default function App() {
               onCopy={handleCopy}
               onOpen={handleOpenOverlay}
               focusedEntryId={focusedEntryId}
+              favorites={favorites}
+              onToggleFavorite={handleToggleFavorite}
             />
           )
         )}
@@ -497,6 +585,10 @@ export default function App() {
           verticals={verticals}
           onClose={handleCloseOverlay}
           onCopied={handleCopy}
+          isFavorite={favorites.has(overlayEntry.id)}
+          onToggleFavorite={() => handleToggleFavorite(overlayEntry.id)}
+          onEdit={handleEditFromOverlay}
+          onDuplicate={handleDuplicateEntry}
         />
       )}
     </div>

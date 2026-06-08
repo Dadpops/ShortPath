@@ -59,6 +59,8 @@ export default function SettingsScreen({ onClose, onNavigate }: Props) {
   const [errorMsg, setErrorMsg] = useState("");
   const [positionReset, setPositionReset] = useState(false);
 
+  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">("medium");
+
   const [exportingAll, setExportingAll] = useState(false);
   const [exportingMine, setExportingMine] = useState(false);
 
@@ -66,13 +68,17 @@ export default function SettingsScreen({ onClose, onNavigate }: Props) {
   const [refreshState, setRefreshState] = useState<RefreshState>("idle");
   const [refreshError, setRefreshError] = useState("");
   const [clearConfirming, setClearConfirming] = useState(false);
+  const [disconnectConfirming, setDisconnectConfirming] = useState(false);
 
   const reloadSyncStatus = useCallback(() => {
     window.shortpath.getSyncStatus().then(setSyncStatus);
   }, []);
 
   useEffect(() => {
-    window.shortpath.getSettings().then(({ hotkey }) => setCurrentHotkey(hotkey));
+    window.shortpath.getSettings().then(({ hotkey, fontSize: fs }) => {
+      setCurrentHotkey(hotkey);
+      setFontSize(fs);
+    });
     reloadSyncStatus();
   }, [reloadSyncStatus]);
 
@@ -143,6 +149,18 @@ export default function SettingsScreen({ onClose, onNavigate }: Props) {
     setExportingMine(false);
   }
 
+  const fontSizeMap: Record<"small" | "medium" | "large", string> = {
+    small: "11px",
+    medium: "13px",
+    large: "15px",
+  };
+
+  function handleFontSize(size: "small" | "medium" | "large") {
+    setFontSize(size);
+    document.documentElement.style.setProperty("--font-size-base", fontSizeMap[size]);
+    void window.shortpath.setFontSize(size);
+  }
+
   async function handleConfigureSync() {
     const result = await window.shortpath.configureSync();
     if (result.success) reloadSyncStatus();
@@ -172,6 +190,17 @@ export default function SettingsScreen({ onClose, onNavigate }: Props) {
     reloadSyncStatus();
   }
 
+  async function handleDisconnectSync() {
+    if (!disconnectConfirming) {
+      setDisconnectConfirming(true);
+      return;
+    }
+    await window.shortpath.disconnectSync();
+    setDisconnectConfirming(false);
+    setClearConfirming(false);
+    reloadSyncStatus();
+  }
+
   return (
     <div className="settings-shell">
       <div className="form-header">
@@ -182,6 +211,24 @@ export default function SettingsScreen({ onClose, onNavigate }: Props) {
       </div>
 
       <div className="settings-body">
+        <section className="settings-section">
+          <div className="settings-section-title">Appearance</div>
+          <div className="settings-row">
+            <div className="settings-row-label">Text size</div>
+            <div className="font-size-control">
+              {(["small", "medium", "large"] as const).map((size) => (
+                <button
+                  key={size}
+                  className={`font-size-btn${fontSize === size ? " active" : ""}`}
+                  onClick={() => handleFontSize(size)}
+                >
+                  {size.charAt(0).toUpperCase() + size.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="settings-section">
           <div className="settings-section-title">Data</div>
           <div className="settings-data-grid">
@@ -279,12 +326,24 @@ export default function SettingsScreen({ onClose, onNavigate }: Props) {
                 <button className="btn-secondary settings-action-btn" onClick={handleConfigureSync}>
                   Change file
                 </button>
-                <button className="btn-secondary settings-action-btn settings-danger-btn" onClick={handleClearSynced}>
-                  {clearConfirming ? "Confirm clear" : "Clear synced"}
+                <button
+                  className="btn-secondary settings-action-btn settings-danger-btn"
+                  onClick={handleClearSynced}
+                >
+                  {clearConfirming ? "Confirm clear" : "Clear synced entries"}
+                </button>
+                <button
+                  className="btn-secondary settings-action-btn settings-danger-btn"
+                  onClick={handleDisconnectSync}
+                >
+                  {disconnectConfirming ? "Confirm disconnect" : "Disconnect sync"}
                 </button>
               </div>
               {clearConfirming && (
-                <p className="settings-stub-note">This removes all {syncStatus.syncedCount} synced entries. Your own entries are not affected.</p>
+                <p className="settings-stub-note">This removes all {syncStatus.syncedCount} synced entries but sync keeps running. Use "Disconnect sync" to stop.</p>
+              )}
+              {disconnectConfirming && (
+                <p className="settings-stub-note">This stops the file watcher, clears the sync path, and removes all synced entries.</p>
               )}
             </>
           ) : (
