@@ -12,10 +12,9 @@ import SettingsScreen from "./components/SettingsScreen";
 import HelpPanel from "./components/HelpPanel";
 import MacroOverlay from "./components/MacroOverlay";
 import FavoritesView from "./components/FavoritesView";
-import SetupScreen from "./components/SetupScreen";
 
 type AppStatus = "loading" | "ready" | "error";
-type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "favorites" | "setup";
+type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "favorites";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -50,24 +49,21 @@ export default function App() {
 
   const debouncedQuery = useDebounce(query, 120);
 
-  const fontSizeMap: Record<"small" | "medium" | "large", string> = {
-    small: "11px",
-    medium: "13px",
-    large: "15px",
-  };
-
   useEffect(() => {
     window.shortpath
       .loadEntries()
-      .then(({ entries: e, verticals: v, recents: r, favorites: favs, fontSize: fs, sourceMode: sm, sourceName: sn }) => {
+      .then(({ entries: e, verticals: v, recents: r, favorites: favs, fontSize: fs, sourceMode: sm, sourceName: sn, theme: t }) => {
         setEntries(e);
         setVerticals(v);
         setRecents(r);
         setFavorites(new Set(favs));
         setExpandedGroups(new Set(v.map((vert) => vert.id)));
-        document.documentElement.style.setProperty("--font-size-base", fontSizeMap[fs]);
+        document.documentElement.style.setProperty("--font-size-base", `${fs}px`);
+        document.documentElement.setAttribute("data-theme", t);
         if (sm === null || sm === undefined) {
-          setMode("setup");
+          // Auto-default to local mode; no setup screen.
+          setSourceMode("local");
+          void window.shortpath.saveSourceMode("local");
         } else {
           setSourceMode(sm);
           setSourceName(sn ?? undefined);
@@ -275,12 +271,6 @@ export default function App() {
     setQuery("");
   }
 
-  function handleSetupComplete(sm: "local" | "sync", sn?: string) {
-    setSourceMode(sm);
-    setSourceName(sn);
-    setMode("browse");
-  }
-
   function handleEditFromOverlay(entry: Entry) {
     setOverlayEntry(null);
     handleEditEntry(entry);
@@ -387,14 +377,6 @@ export default function App() {
     );
   }
 
-  if (mode === "setup") {
-    return (
-      <div className={shellClass}>
-        <SetupScreen onComplete={handleSetupComplete} />
-      </div>
-    );
-  }
-
   if (mode === "add" || mode === "edit") {
     return (
       <div className={shellClass}>
@@ -437,6 +419,10 @@ export default function App() {
         <SettingsScreen
           onClose={() => setMode("browse")}
           onNavigate={(target) => { setMode(target); }}
+          verticals={verticals}
+          onVerticalRenamed={(id, newLabel) => {
+            setVerticals((prev) => prev.map((v) => (v.id === id ? { ...v, label: newLabel } : v)));
+          }}
         />
       </div>
     );
@@ -490,13 +476,7 @@ export default function App() {
           <button className="header-icon-btn" onClick={() => setMode("favorites")} title="Favorites">☆</button>
           <button className="header-icon-btn" onClick={() => setMode("help")} title="Help">?</button>
           <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings">⚙</button>
-          <button
-            className="add-btn"
-            onClick={() => { setEditingEntry(null); setQuickAddPrefill(undefined); setMode("add"); }}
-            title="Add entry"
-          >
-            +
-          </button>
+          <button className="header-icon-btn" onClick={() => void window.shortpath.minimizeWindow()} title="Minimize">−</button>
         </div>
       </header>
 
@@ -578,6 +558,14 @@ export default function App() {
           )
         )}
       </main>
+
+      <button
+        className="fab-add"
+        onClick={() => { setEditingEntry(null); setQuickAddPrefill(undefined); setMode("add"); }}
+        title="Add entry"
+      >
+        +
+      </button>
 
       {overlayEntry && (
         <MacroOverlay
