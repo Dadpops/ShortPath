@@ -1,10 +1,10 @@
 # Current Session State
 
-**Status:** Phase 5 Window UX complete. Keyboard navigation, hotkey reliability, shell.openExternal, persisted window bounds, and settings screen all shipped.
+**Status:** Macro overlay complete. Click any result (or Enter on keyboard-focused result) to open a panel showing the full entry, with Copy, URL link, and tag chips.
 
-**Last session:** [2026-06-08 — Phase 5 window UX](docs/sessions/2026-06-08-phase5-window-ux.md)
+**Last session:** [2026-06-08 — Macro overlay](docs/sessions/2026-06-08-macro-overlay.md)
 
-**Next up — two options:**
+**Next up — choose one:**
 
 **Option A: Phase 4 — Shared-file sync**
 - Settings screen already has a sync path stub ready.
