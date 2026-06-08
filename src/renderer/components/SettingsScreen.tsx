@@ -1,31 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import type { Vertical } from "@shared/types";
 
 interface Props {
   onClose: () => void;
   onNavigate: (mode: "import" | "split" | "add") => void;
+  verticals: Vertical[];
+  onVerticalRenamed: (id: string, newLabel: string) => void;
 }
 
 type HotkeyState = "idle" | "capturing" | "saving" | "error";
-type RefreshState = "idle" | "refreshing" | "done" | "error";
-
-interface SyncStatus {
-  syncPath: string | null;
-  syncedCount: number;
-  lastRefreshed: string | null;
-}
-
-function formatRelativeTime(isoString: string): string {
-  const diff = Date.now() - new Date(isoString).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
+type SectionKey = "appearance" | "data" | "hotkey" | "window" | "verticals";
 
 function buildAccelerator(e: KeyboardEvent): string | null {
-  // Ignore modifier-only keypresses.
   if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return null;
 
   const parts: string[] = [];
@@ -34,12 +20,12 @@ function buildAccelerator(e: KeyboardEvent): string | null {
   if (e.altKey) parts.push("Alt");
 
   const key = e.code.startsWith("Key")
-    ? e.code.slice(3)                        // KeyA -> A
+    ? e.code.slice(3)
     : e.code.startsWith("Digit")
-    ? e.code.slice(5)                        // Digit1 -> 1
+    ? e.code.slice(5)
     : e.key === " " ? "Space"
     : e.key.length === 1 ? e.key.toUpperCase()
-    : e.key;                                 // F1, Tab, etc.
+    : e.key;
 
   if (!key) return null;
   parts.push(key);
@@ -52,40 +38,41 @@ function displayAccelerator(acc: string): string {
     .replace(/\+/g, " + ");
 }
 
-export default function SettingsScreen({ onClose, onNavigate }: Props) {
+export default function SettingsScreen({ onClose, onNavigate, verticals, onVerticalRenamed }: Props) {
   const [currentHotkey, setCurrentHotkey] = useState("Loading…");
   const [hotkeyState, setHotkeyState] = useState<HotkeyState>("idle");
   const [capturedAccelerator, setCapturedAccelerator] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [positionReset, setPositionReset] = useState(false);
 
-  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">("medium");
+  const [fontSize, setFontSize] = useState<number>(13);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   const [exportingAll, setExportingAll] = useState(false);
   const [exportingMine, setExportingMine] = useState(false);
 
-  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
-  const [refreshState, setRefreshState] = useState<RefreshState>("idle");
-  const [refreshError, setRefreshError] = useState("");
-  const [clearConfirming, setClearConfirming] = useState(false);
-  const [disconnectConfirming, setDisconnectConfirming] = useState(false);
+  const [editingVerticalId, setEditingVerticalId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState("");
 
-  const reloadSyncStatus = useCallback(() => {
-    window.shortpath.getSyncStatus().then(setSyncStatus);
-  }, []);
+  const [expanded, setExpanded] = useState<Set<SectionKey>>(
+    new Set(["appearance", "data", "hotkey", "window", "verticals"])
+  );
+
+  function toggleSection(key: SectionKey) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
 
   useEffect(() => {
-    window.shortpath.getSettings().then(({ hotkey, fontSize: fs }) => {
+    window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t }) => {
       setCurrentHotkey(hotkey);
       setFontSize(fs);
+      setTheme(t);
     });
-    reloadSyncStatus();
-  }, [reloadSyncStatus]);
-
-  // Keep sync status up to date when the watcher fires.
-  useEffect(() => {
-    return window.shortpath.onSyncRefreshed(reloadSyncStatus);
-  }, [reloadSyncStatus]);
+  }, []);
 
   useEffect(() => {
     if (hotkeyState !== "capturing") return;
@@ -149,56 +136,38 @@ export default function SettingsScreen({ onClose, onNavigate }: Props) {
     setExportingMine(false);
   }
 
-  const fontSizeMap: Record<"small" | "medium" | "large", string> = {
-    small: "11px",
-    medium: "13px",
-    large: "15px",
-  };
-
-  function handleFontSize(size: "small" | "medium" | "large") {
+  function handleFontSize(size: number) {
     setFontSize(size);
-    document.documentElement.style.setProperty("--font-size-base", fontSizeMap[size]);
+    document.documentElement.style.setProperty("--font-size-base", `${size}px`);
     void window.shortpath.setFontSize(size);
   }
 
-  async function handleConfigureSync() {
-    const result = await window.shortpath.configureSync();
-    if (result.success) reloadSyncStatus();
+  function handleSetTheme(t: "dark" | "light") {
+    setTheme(t);
+    document.documentElement.setAttribute("data-theme", t);
+    void window.shortpath.setTheme(t);
   }
 
-  async function handleRefreshSynced() {
-    setRefreshState("refreshing");
-    setRefreshError("");
-    const result = await window.shortpath.refreshSynced();
-    if (result.success) {
-      setRefreshState("done");
-      reloadSyncStatus();
-      setTimeout(() => setRefreshState("idle"), 2000);
-    } else {
-      setRefreshError(result.errors?.[0] ?? "Refresh failed.");
-      setRefreshState("error");
-    }
+  function startEditVertical(v: Vertical) {
+    setEditingVerticalId(v.id);
+    setEditingLabel(v.label);
   }
 
-  async function handleClearSynced() {
-    if (!clearConfirming) {
-      setClearConfirming(true);
-      return;
-    }
-    await window.shortpath.clearSynced();
-    setClearConfirming(false);
-    reloadSyncStatus();
+  function saveEditVertical() {
+    if (!editingVerticalId || !editingLabel.trim()) return;
+    const trimmed = editingLabel.trim();
+    void window.shortpath.renameVertical(editingVerticalId, trimmed);
+    onVerticalRenamed(editingVerticalId, trimmed);
+    setEditingVerticalId(null);
   }
 
-  async function handleDisconnectSync() {
-    if (!disconnectConfirming) {
-      setDisconnectConfirming(true);
-      return;
-    }
-    await window.shortpath.disconnectSync();
-    setDisconnectConfirming(false);
-    setClearConfirming(false);
-    reloadSyncStatus();
+  function SectionHeader({ title, sectionKey }: { title: string; sectionKey: SectionKey }) {
+    return (
+      <button className="settings-section-header" onClick={() => toggleSection(sectionKey)}>
+        <span className="settings-section-title">{title}</span>
+        <span className={`settings-chevron${expanded.has(sectionKey) ? " expanded" : ""}`}>›</span>
+      </button>
+    );
   }
 
   return (
@@ -211,154 +180,178 @@ export default function SettingsScreen({ onClose, onNavigate }: Props) {
       </div>
 
       <div className="settings-body">
+
         <section className="settings-section">
-          <div className="settings-section-title">Appearance</div>
-          <div className="settings-row">
-            <div className="settings-row-label">Text size</div>
-            <div className="font-size-control">
-              {(["small", "medium", "large"] as const).map((size) => (
-                <button
-                  key={size}
-                  className={`font-size-btn${fontSize === size ? " active" : ""}`}
-                  onClick={() => handleFontSize(size)}
-                >
-                  {size.charAt(0).toUpperCase() + size.slice(1)}
+          <SectionHeader title="Appearance" sectionKey="appearance" />
+          {expanded.has("appearance") && (
+            <div className="settings-section-body">
+              <div className="settings-row">
+                <div className="settings-row-label">Text size</div>
+                <div className="font-size-slider-wrap">
+                  <span className="font-size-label-sm">A</span>
+                  <input
+                    type="range"
+                    min={11}
+                    max={16}
+                    step={1}
+                    value={fontSize}
+                    onChange={(e) => handleFontSize(Number(e.target.value))}
+                    className="font-size-slider"
+                  />
+                  <span className="font-size-label-lg">A</span>
+                </div>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-label">Theme</div>
+                <div className="font-size-control">
+                  {(["dark", "light"] as const).map((t) => (
+                    <button
+                      key={t}
+                      className={`font-size-btn${theme === t ? " active" : ""}`}
+                      onClick={() => handleSetTheme(t)}
+                    >
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="settings-section">
+          <SectionHeader title="Data" sectionKey="data" />
+          {expanded.has("data") && (
+            <div className="settings-section-body">
+              <div className="settings-data-grid">
+                <button className="settings-data-btn" onClick={() => onNavigate("add")}>
+                  + Add entry
                 </button>
+                <button className="settings-data-btn" onClick={() => onNavigate("import")}>
+                  ↑ Import CSV
+                </button>
+                <button className="settings-data-btn" onClick={() => onNavigate("split")}>
+                  ✂ Paste and split
+                </button>
+                <button className="settings-data-btn" onClick={() => window.shortpath.downloadTemplateCsv()}>
+                  ↓ Download template
+                </button>
+                <button className="settings-data-btn" onClick={handleExportAll} disabled={exportingAll}>
+                  {exportingAll ? "Saving…" : "Export all"}
+                </button>
+                <button className="settings-data-btn" onClick={handleExportMine} disabled={exportingMine}>
+                  {exportingMine ? "Saving…" : "Export mine"}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="settings-section">
+          <SectionHeader title="Verticals" sectionKey="verticals" />
+          {expanded.has("verticals") && (
+            <div className="settings-section-body">
+              {verticals.map((v) => (
+                <div key={v.id} className="settings-vertical-row">
+                  {editingVerticalId === v.id ? (
+                    <>
+                      <input
+                        className="form-input settings-vertical-input"
+                        value={editingLabel}
+                        onChange={(e) => setEditingLabel(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveEditVertical();
+                          if (e.key === "Escape") setEditingVerticalId(null);
+                        }}
+                        autoFocus
+                      />
+                      <button className="btn-primary settings-action-btn" onClick={saveEditVertical}>
+                        Save
+                      </button>
+                      <button className="btn-secondary settings-action-btn" onClick={() => setEditingVerticalId(null)}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="settings-vertical-label">{v.label}</span>
+                      <button className="btn-secondary settings-action-btn" onClick={() => startEditVertical(v)}>
+                        Rename
+                      </button>
+                    </>
+                  )}
+                </div>
               ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="settings-section">
-          <div className="settings-section-title">Data</div>
-          <div className="settings-data-grid">
-            <button className="settings-data-btn" onClick={() => onNavigate("add")}>
-              + Add entry
-            </button>
-            <button className="settings-data-btn" onClick={() => onNavigate("import")}>
-              ↑ Import CSV
-            </button>
-            <button className="settings-data-btn" onClick={() => onNavigate("split")}>
-              ✂ Paste and split
-            </button>
-            <button className="settings-data-btn" onClick={() => window.shortpath.downloadTemplateCsv()}>
-              ↓ Download template
-            </button>
-            <button className="settings-data-btn" onClick={handleExportAll} disabled={exportingAll}>
-              {exportingAll ? "Saving…" : "Export all"}
-            </button>
-            <button className="settings-data-btn" onClick={handleExportMine} disabled={exportingMine}>
-              {exportingMine ? "Saving…" : "Export mine"}
-            </button>
-          </div>
-        </section>
-
-        <section className="settings-section">
-          <div className="settings-section-title">Global hotkey</div>
-
-          <div className="settings-row">
-            <div className="settings-row-label">Current shortcut</div>
-            <div className="settings-hotkey-display">
-              {hotkeyState === "capturing"
-                ? capturedAccelerator
-                  ? displayAccelerator(capturedAccelerator)
-                  : "Press shortcut…"
-                : displayAccelerator(currentHotkey)}
-            </div>
-          </div>
-
-          {hotkeyState === "idle" && (
-            <button className="btn-secondary settings-action-btn" onClick={() => { setHotkeyState("capturing"); setCapturedAccelerator(null); }}>
-              Change hotkey
-            </button>
-          )}
-
-          {hotkeyState === "capturing" && (
-            <div className="settings-capture-hint">
-              Hold a key combination, then release. Press Esc to cancel.
+              {verticals.length === 0 && (
+                <p className="settings-stub-note">No verticals yet. Add entries to create verticals.</p>
+              )}
             </div>
           )}
-
-          {hotkeyState === "saving" && (
-            <div className="settings-capture-hint">Registering…</div>
-          )}
-
-          {hotkeyState === "error" && (
-            <>
-              <p className="form-error">{errorMsg}</p>
-              <button className="btn-secondary settings-action-btn" onClick={() => { setHotkeyState("capturing"); setErrorMsg(""); setCapturedAccelerator(null); }}>
-                Try again
-              </button>
-            </>
-          )}
         </section>
 
         <section className="settings-section">
-          <div className="settings-section-title">Window</div>
-          <div className="settings-row">
-            <div className="settings-row-label">Position and size are saved automatically.</div>
-          </div>
-          <button className="btn-secondary settings-action-btn" onClick={handleResetPosition}>
-            {positionReset ? "Reset ✓" : "Reset to default position"}
-          </button>
-        </section>
-
-        <section className="settings-section">
-          <div className="settings-section-title">Shared file sync</div>
-
-          {syncStatus?.syncPath ? (
-            <>
-              <div className="settings-row settings-row-stack">
-                <div className="settings-row-label">Sync file</div>
-                <div className="settings-sync-path">{syncStatus.syncPath}</div>
-              </div>
+          <SectionHeader title="Global hotkey" sectionKey="hotkey" />
+          {expanded.has("hotkey") && (
+            <div className="settings-section-body">
               <div className="settings-row">
-                <div className="settings-row-label">
-                  {syncStatus.syncedCount} synced {syncStatus.syncedCount === 1 ? "entry" : "entries"}
-                  {syncStatus.lastRefreshed && ` · last refreshed ${formatRelativeTime(syncStatus.lastRefreshed)}`}
+                <div className="settings-row-label">Current shortcut</div>
+                <div className="settings-hotkey-display">
+                  {hotkeyState === "capturing"
+                    ? capturedAccelerator
+                      ? displayAccelerator(capturedAccelerator)
+                      : "Press shortcut…"
+                    : displayAccelerator(currentHotkey)}
                 </div>
               </div>
-              {refreshState === "error" && <p className="form-error">{refreshError}</p>}
-              <div className="settings-sync-actions">
-                <button className="btn-secondary settings-action-btn" onClick={handleRefreshSynced} disabled={refreshState === "refreshing"}>
-                  {refreshState === "refreshing" ? "Refreshing…" : refreshState === "done" ? "Refreshed ✓" : "Refresh now"}
-                </button>
-                <button className="btn-secondary settings-action-btn" onClick={handleConfigureSync}>
-                  Change file
-                </button>
+
+              {hotkeyState === "idle" && (
                 <button
-                  className="btn-secondary settings-action-btn settings-danger-btn"
-                  onClick={handleClearSynced}
+                  className="btn-secondary settings-action-btn"
+                  onClick={() => { setHotkeyState("capturing"); setCapturedAccelerator(null); }}
                 >
-                  {clearConfirming ? "Confirm clear" : "Clear synced entries"}
+                  Change hotkey
                 </button>
-                <button
-                  className="btn-secondary settings-action-btn settings-danger-btn"
-                  onClick={handleDisconnectSync}
-                >
-                  {disconnectConfirming ? "Confirm disconnect" : "Disconnect sync"}
-                </button>
-              </div>
-              {clearConfirming && (
-                <p className="settings-stub-note">This removes all {syncStatus.syncedCount} synced entries but sync keeps running. Use "Disconnect sync" to stop.</p>
               )}
-              {disconnectConfirming && (
-                <p className="settings-stub-note">This stops the file watcher, clears the sync path, and removes all synced entries.</p>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="settings-row">
-                <div className="settings-row-label">
-                  Point to a shared CSV in Dropbox, Drive, or OneDrive. ShortPath watches it for changes and reloads automatically.
+
+              {hotkeyState === "capturing" && (
+                <div className="settings-capture-hint">
+                  Hold a key combination, then release. Press Esc to cancel.
                 </div>
-              </div>
-              <button className="btn-secondary settings-action-btn" onClick={handleConfigureSync}>
-                Configure sync file
-              </button>
-            </>
+              )}
+
+              {hotkeyState === "saving" && (
+                <div className="settings-capture-hint">Registering…</div>
+              )}
+
+              {hotkeyState === "error" && (
+                <>
+                  <p className="form-error">{errorMsg}</p>
+                  <button
+                    className="btn-secondary settings-action-btn"
+                    onClick={() => { setHotkeyState("capturing"); setErrorMsg(""); setCapturedAccelerator(null); }}
+                  >
+                    Try again
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </section>
+
+        <section className="settings-section">
+          <SectionHeader title="Window" sectionKey="window" />
+          {expanded.has("window") && (
+            <div className="settings-section-body">
+              <div className="settings-row">
+                <div className="settings-row-label">Position and size are saved automatically.</div>
+              </div>
+              <button className="btn-secondary settings-action-btn" onClick={handleResetPosition}>
+                {positionReset ? "Reset ✓" : "Reset to default position"}
+              </button>
+            </div>
+          )}
+        </section>
+
       </div>
     </div>
   );
