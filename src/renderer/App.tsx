@@ -7,9 +7,10 @@ import ResultItem from "./components/ResultItem";
 import EntryForm from "./components/EntryForm";
 import ImportScreen from "./components/ImportScreen";
 import SplitImport from "./components/SplitImport";
+import SettingsScreen from "./components/SettingsScreen";
 
 type AppStatus = "loading" | "ready" | "error";
-type AppMode = "browse" | "add" | "edit" | "import" | "split";
+type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -32,6 +33,9 @@ export default function App() {
   const [quickAddPrefill, setQuickAddPrefill] = useState<string | undefined>(undefined);
   const [clipboardText, setClipboardText] = useState<string | null>(null);
   const [clipboardDismissed, setClipboardDismissed] = useState(false);
+  const [focusedEntryId, setFocusedEntryId] = useState<string | null>(null);
+  const [focusTrigger, setFocusTrigger] = useState(0);
+  const [hotkeyError, setHotkeyError] = useState<string | null>(null);
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -68,6 +72,23 @@ export default function App() {
     refreshClipboard();
     window.addEventListener("focus", refreshClipboard);
     return () => window.removeEventListener("focus", refreshClipboard);
+  }, []);
+
+  useEffect(() => {
+    const unsubFocus = window.shortpath.onFocusSearch(() => {
+      setFocusTrigger((n) => n + 1);
+    });
+    const unsubHotkey = window.shortpath.onHotkeyFailed((accelerator) => {
+      setHotkeyError(`Could not register hotkey "${accelerator}". It may be in use by another app.`);
+    });
+    const unsubSettings = window.shortpath.onOpenSettings(() => {
+      setMode("settings");
+    });
+    return () => {
+      unsubFocus();
+      unsubHotkey();
+      unsubSettings();
+    };
   }, []);
 
   const fuse = useMemo(() => {
@@ -146,6 +167,25 @@ export default function App() {
     [recents, entries]
   );
 
+  // Flat list of all currently visible results for keyboard navigation.
+  const flatResults = useMemo((): Entry[] => {
+    const searching = debouncedQuery.trim().length >= 2;
+    if (!searching && recentEntries.length > 0) return recentEntries;
+    return groups.flatMap((g) => (g.expanded ? g.results.map((r) => r.entry) : []));
+  }, [groups, recentEntries, debouncedQuery]);
+
+  // Reset keyboard focus when the query or visible results change.
+  useEffect(() => {
+    setFocusedEntryId(null);
+  }, [debouncedQuery]);
+
+  // Scroll focused item into view.
+  useEffect(() => {
+    if (focusedEntryId) {
+      document.querySelector("[data-focused='true']")?.scrollIntoView({ block: "nearest" });
+    }
+  }, [focusedEntryId]);
+
   const toggleGroup = useCallback((verticalId: string) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
@@ -162,6 +202,47 @@ export default function App() {
 
   function handleCopy(entryId: string) {
     setRecents((prev) => [entryId, ...prev.filter((id) => id !== entryId)].slice(0, 10));
+  }
+
+  function performCopy(entry: Entry) {
+    const text = entry.body ?? entry.link ?? entry.title;
+    navigator.clipboard.writeText(text).then(() => {
+      handleCopy(entry.id);
+      window.shortpath.recordAccess(entry.id);
+    });
+  }
+
+  function navigateDown() {
+    if (flatResults.length === 0) return;
+    setFocusedEntryId((prev) => {
+      const idx = prev ? flatResults.findIndex((e) => e.id === prev) : -1;
+      const next = idx < flatResults.length - 1 ? idx + 1 : 0;
+      return flatResults[next].id;
+    });
+  }
+
+  function navigateUp() {
+    if (flatResults.length === 0) return;
+    setFocusedEntryId((prev) => {
+      const idx = prev ? flatResults.findIndex((e) => e.id === prev) : flatResults.length;
+      const next = idx > 0 ? idx - 1 : flatResults.length - 1;
+      return flatResults[next].id;
+    });
+  }
+
+  function handleEnter() {
+    if (focusedEntryId) {
+      const entry = flatResults.find((e) => e.id === focusedEntryId);
+      if (entry) performCopy(entry);
+    }
+  }
+
+  function handleEscape() {
+    if (focusedEntryId) {
+      setFocusedEntryId(null);
+    } else {
+      window.shortpath.hideWindow();
+    }
   }
 
   function handleFormSave(entry: Entry, newVerticals: Vertical[]) {
@@ -258,6 +339,14 @@ export default function App() {
     );
   }
 
+  if (mode === "settings") {
+    return (
+      <div className="app-shell">
+        <SettingsScreen onClose={() => setMode("browse")} />
+      </div>
+    );
+  }
+
   const showClipboardBanner =
     mode === "browse" &&
     !!clipboardText &&
@@ -271,6 +360,13 @@ export default function App() {
           {isSearching && totalHits > 0 && (
             <span className="app-hit-summary">{totalHits} result{totalHits !== 1 ? "s" : ""}</span>
           )}
+          <button
+            className="header-icon-btn"
+            onClick={() => setMode("settings")}
+            title="Settings"
+          >
+            ⚙
+          </button>
           <button
             className="header-icon-btn"
             onClick={() => setMode("split")}
@@ -294,6 +390,13 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {hotkeyError && (
+        <div className="hotkey-error-banner">
+          <span>{hotkeyError}</span>
+          <button className="clipboard-banner-dismiss" onClick={() => setHotkeyError(null)} aria-label="Dismiss">✕</button>
+        </div>
+      )}
 
       {showClipboardBanner && (
         <div className="clipboard-banner">
@@ -322,7 +425,15 @@ export default function App() {
       )}
 
       <div className="search-container">
-        <SearchBar value={query} onChange={setQuery} />
+        <SearchBar
+          value={query}
+          onChange={setQuery}
+          focusTrigger={focusTrigger}
+          onNavigateDown={navigateDown}
+          onNavigateUp={navigateUp}
+          onEnter={handleEnter}
+          onEscape={handleEscape}
+        />
       </div>
 
       <main className="results-container">
@@ -336,6 +447,7 @@ export default function App() {
                   result={{ entry, matches: [] }}
                   onEdit={handleEditEntry}
                   onCopy={handleCopy}
+                  isFocused={focusedEntryId === entry.id}
                 />
               ))}
             </ul>
@@ -361,6 +473,7 @@ export default function App() {
             onToggle={() => toggleGroup(group.verticalId)}
             onEdit={handleEditEntry}
             onCopy={handleCopy}
+            focusedEntryId={focusedEntryId}
           />
         ))}
       </main>
