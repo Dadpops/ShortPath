@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-08 — Post-phase features](sessions/2026-06-08-postphase-features.md) — Text size, favorites, source-mode setup, in-overlay editing, disconnect sync.
 - [2026-06-08 — Phase 8 polish](sessions/2026-06-08-phase8-polish.md) — Entrance animation, tray icon active state, rawGroups perf split, empty state copy fix.
 - [2026-06-08 — Phase 6 + 7 + UI cleanup](sessions/2026-06-08-phase6-7-ui.md) — Support Tools grid, Help panel (all 16 topics), clean header (clipboard icon, ? help), Settings data section.
 - [2026-06-08 — Phase 4 shared-file sync](sessions/2026-06-08-phase4-sync.md) — File watcher, replaceSyncedEntries, sync settings UI, source badge. All Phase 4 tasks complete.

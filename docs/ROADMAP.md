@@ -184,6 +184,20 @@ Goal: app feels intentional and complete.
 
 ---
 
+## Post-phase features (added after Phase 8)
+
+These were implemented outside the original phase plan based on user request.
+
+- [x] Adjustable text size (Small/Medium/Large, persisted in settings, CSS variable)
+- [x] Favorites (star toggle on entries and overlay, favorites view, persisted in store)
+- [x] Source-mode setup screen on first launch (Local vs File Share Sync, source name)
+- [x] Source name shown in header path; header path is clickable to go home
+- [x] In-overlay editing: local entries editable in place; synced entries offer duplicate-to-local
+- [x] Disconnect sync action (stops watcher, clears path, removes synced entries)
+- [x] Clear synced copy clarified to distinguish from disconnect
+
+---
+
 ## Phase 9 — Packaging and distribution
 
 Goal: installable builds for Windows and Mac.
