@@ -6,9 +6,10 @@ import VerticalGroupComponent from "./components/VerticalGroup";
 import ResultItem from "./components/ResultItem";
 import EntryForm from "./components/EntryForm";
 import ImportScreen from "./components/ImportScreen";
+import SplitImport from "./components/SplitImport";
 
 type AppStatus = "loading" | "ready" | "error";
-type AppMode = "browse" | "add" | "edit" | "import";
+type AppMode = "browse" | "add" | "edit" | "import" | "split";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -28,6 +29,9 @@ export default function App() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<AppMode>("browse");
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [quickAddPrefill, setQuickAddPrefill] = useState<string | undefined>(undefined);
+  const [clipboardText, setClipboardText] = useState<string | null>(null);
+  const [clipboardDismissed, setClipboardDismissed] = useState(false);
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -52,6 +56,18 @@ export default function App() {
       setRecents(r);
     });
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    function refreshClipboard() {
+      window.shortpath.readClipboard().then((text) => {
+        setClipboardText(text.trim() || null);
+        setClipboardDismissed(false);
+      });
+    }
+    refreshClipboard();
+    window.addEventListener("focus", refreshClipboard);
+    return () => window.removeEventListener("focus", refreshClipboard);
   }, []);
 
   const fuse = useMemo(() => {
@@ -158,6 +174,7 @@ export default function App() {
     setExpandedGroups((prev) => new Set([...prev, entry.vertical]));
     setMode("browse");
     setEditingEntry(null);
+    setQuickAddPrefill(undefined);
   }
 
   function handleFormDelete() {
@@ -167,15 +184,26 @@ export default function App() {
     }
     setMode("browse");
     setEditingEntry(null);
+    setQuickAddPrefill(undefined);
   }
 
   function handleFormCancel() {
     setMode("browse");
     setEditingEntry(null);
+    setQuickAddPrefill(undefined);
   }
 
   function handleImportComplete() {
     // store-updated push from main will refresh entries/verticals
+    setMode("browse");
+  }
+
+  function handleSplitComplete(newEntries: Entry[], newVerticals: Vertical[]) {
+    setEntries((prev) => [...prev, ...newEntries]);
+    setVerticals(newVerticals);
+    for (const e of newEntries) {
+      setExpandedGroups((prev) => new Set([...prev, e.vertical]));
+    }
     setMode("browse");
   }
 
@@ -203,6 +231,8 @@ export default function App() {
           onSave={handleFormSave}
           onDelete={mode === "edit" ? handleFormDelete : undefined}
           onCancel={handleFormCancel}
+          quickAdd={mode === "add" && !editingEntry}
+          prefillBody={quickAddPrefill}
         />
       </div>
     );
@@ -216,6 +246,23 @@ export default function App() {
     );
   }
 
+  if (mode === "split") {
+    return (
+      <div className="app-shell">
+        <SplitImport
+          verticals={verticals}
+          onComplete={handleSplitComplete}
+          onCancel={() => setMode("browse")}
+        />
+      </div>
+    );
+  }
+
+  const showClipboardBanner =
+    mode === "browse" &&
+    !!clipboardText &&
+    !clipboardDismissed;
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -226,6 +273,13 @@ export default function App() {
           )}
           <button
             className="header-icon-btn"
+            onClick={() => setMode("split")}
+            title="Paste and split"
+          >
+            ✂
+          </button>
+          <button
+            className="header-icon-btn"
             onClick={() => setMode("import")}
             title="Import CSV"
           >
@@ -233,13 +287,39 @@ export default function App() {
           </button>
           <button
             className="add-btn"
-            onClick={() => { setEditingEntry(null); setMode("add"); }}
+            onClick={() => { setEditingEntry(null); setQuickAddPrefill(undefined); setMode("add"); }}
             title="Add entry"
           >
             +
           </button>
         </div>
       </header>
+
+      {showClipboardBanner && (
+        <div className="clipboard-banner">
+          <span className="clipboard-banner-preview">
+            Clipboard: "{clipboardText.length > 60 ? clipboardText.slice(0, 60) + "…" : clipboardText}"
+          </span>
+          <button
+            className="clipboard-banner-save"
+            onClick={() => {
+              setQuickAddPrefill(clipboardText);
+              setEditingEntry(null);
+              setMode("add");
+              setClipboardDismissed(true);
+            }}
+          >
+            Save as entry
+          </button>
+          <button
+            className="clipboard-banner-dismiss"
+            onClick={() => setClipboardDismissed(true)}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="search-container">
         <SearchBar value={query} onChange={setQuery} />
