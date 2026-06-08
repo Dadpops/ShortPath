@@ -43,6 +43,12 @@ Then begin work on whatever is marked next.
 - No half-finished implementations. If something is not built yet, leave a stub with a one-line comment pointing to the phase that will build it.
 - No features added beyond the current phase's scope. When tempted, add a task to the roadmap instead.
 
+## Standing rule: Help topics
+
+When any user-facing feature is added or changed, update its corresponding Help topic in `src/renderer/features/help/topics.ts` in the same commit (or the same PR). This applies to every phase from 4 onward. Phases 1-3 are covered retroactively in Phase 6.
+
+If a feature ships without an updated Help topic, the phase checklist task "Write Help topics for Phase N features" must remain unchecked.
+
 ## Commit conventions (Conventional Commits)
 
 ```
@@ -69,6 +75,7 @@ src/renderer/      React + Vite UI
     copy/          Copy-to-clipboard
     keyboard/      Keyboard navigation (arrows, Enter to copy, Esc to dismiss)
     support-tools/ Support Tools section
+    help/          In-app help panel: topics data (topics.ts), HelpPanel component
   styles/          Global CSS and design tokens
 src/shared/        Types and IPC channel constants shared across all processes
 src/store/         JSON store read/write, CSV import/export (PapaParse), store schema
