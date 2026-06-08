@@ -1,4 +1,4 @@
-import type { Entry, Vertical, Note } from "@shared/types";
+import type { Entry, Vertical, SubFolder, Note } from "@shared/types";
 
 interface LoadEntriesResult {
   entries: Entry[];
@@ -96,6 +96,10 @@ declare global {
       disconnectSync: () => Promise<void>;
       renameVertical: (id: string, newLabel: string) => Promise<void>;
       addVertical: (label: string) => Promise<Vertical>;
+      clearLocalEntries: () => Promise<void>;
+      addSubFolder: (verticalId: string, label: string) => Promise<SubFolder>;
+      renameSubFolder: (verticalId: string, subFolderId: string, newLabel: string) => Promise<void>;
+      removeSubFolder: (verticalId: string, subFolderId: string) => Promise<void>;
 
       configureSync: () => Promise<{ success: boolean; syncPath?: string; errors?: string[] }>;
       refreshSynced: () => Promise<{ success: boolean; errors?: string[] }>;

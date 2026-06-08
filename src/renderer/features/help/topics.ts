@@ -182,8 +182,8 @@ In the edit form, click the Delete button. A confirmation prompt appears — cli
   },
   {
     id: "managing-verticals",
-    title: "Managing verticals",
-    tags: ["verticals", "categories", "create vertical", "custom", "manage"],
+    title: "Managing verticals and sub-folders",
+    tags: ["verticals", "categories", "create vertical", "custom", "manage", "sub-folder", "subfolder", "folder", "organise"],
     content: `ShortPath comes with four built-in categories: Saved Replies, Documentation, Internal SOPs, and Support Tools.
 
 Creating a custom vertical
@@ -195,7 +195,17 @@ Renaming a vertical
 In Settings > Verticals, click Rename next to any vertical, type the new name, and press Save.
 
 Removing a vertical
-To remove a vertical, delete or reassign all its entries. Empty verticals stop appearing in the results.`,
+To remove a vertical, delete or reassign all its entries. Empty verticals stop appearing in the results.
+
+Sub-folders
+Each vertical can have any number of sub-folders to keep large libraries organised. Sub-folders appear as collapsible groups inside a vertical's results.
+
+To manage sub-folders: in Settings > Verticals, click the 📁 button next to any vertical to expand its sub-folder panel. From there you can add, rename, or remove sub-folders.
+
+To assign an entry to a sub-folder: when adding or editing an entry, a Sub-folder selector appears below the Vertical field once the selected vertical has at least one sub-folder. Entries without a sub-folder assigned remain at the top level of their vertical.
+
+Removing a sub-folder
+Click Remove next to the sub-folder name and confirm. Any entries assigned to the removed sub-folder move back to the top level of the vertical — they are not deleted.`,
   },
   {
     id: "importing-csv",
@@ -297,6 +307,9 @@ The window remembers its position and size between launches. Click "Reset to def
 
 Data
 Import CSV, Export all, Export mine, Download template, Paste and split, and Add new entry are all available in the Data section of Settings.
+
+Clear all entries
+Below the data action grid, a "Clear all entries" button permanently deletes every local entry. Synced entries are not affected. Use this to start fresh without reconfiguring sync. This cannot be undone — export your data first if you want a backup.
 
 Shared file sync
 See the "Shared file sync" help topic for full setup instructions.`,

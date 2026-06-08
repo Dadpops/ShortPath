@@ -2213,3 +2213,189 @@ body {
 .btn-danger:hover {
   background: #dc2626;
 }
+
+/* Subfolder groups in results */
+.subfolder-group {
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.subfolder-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 5px 14px 5px 22px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  text-align: left;
+  font-size: calc(var(--font-size-base) - 1px);
+  font-weight: 500;
+  transition: color 0.1s, background 0.1s;
+}
+
+.subfolder-header:hover {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.subfolder-chevron {
+  font-size: 11px;
+  line-height: 1;
+  display: inline-block;
+  transition: transform 0.15s;
+  transform: rotate(0deg);
+  color: var(--color-text-faint);
+}
+
+.subfolder-chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.subfolder-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.subfolder-label {
+  flex: 1;
+}
+
+.subfolder-count {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-faint);
+  background: var(--color-surface);
+  padding: 1px 5px;
+  border-radius: 8px;
+}
+
+.subfolder-result-list {
+  padding-left: 8px;
+}
+
+/* Vertical block in Settings (vertical row + subfolder panel) */
+.settings-vertical-block {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.settings-vertical-block .settings-vertical-row {
+  padding: 5px 8px;
+  background: var(--color-bg);
+}
+
+.settings-subfolders {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-surface);
+  padding: 6px 8px;
+}
+
+.settings-subfolder-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+
+.settings-subfolder-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.settings-subfolder-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.settings-add-subfolder-btn {
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  margin-top: 4px;
+  transition: color 0.1s, border-color 0.1s;
+}
+
+.settings-add-subfolder-btn:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* Danger zone in Settings */
+.settings-danger-zone {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.settings-danger-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-danger-warning {
+  font-size: 12px;
+  color: #fca5a5;
+  line-height: 1.5;
+}
+
+.settings-danger-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-danger-lg {
+  background: #b91c1c;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+
+.btn-danger-lg:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-danger-lg:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-danger-outline {
+  background: transparent;
+  border: 1px solid #7f1d1d;
+  color: #f87171;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background 0.1s, border-color 0.1s;
+  align-self: flex-start;
+}
+
+.btn-danger-outline:hover {
+  background: rgba(127, 29, 29, 0.15);
+  border-color: #f87171;
+}

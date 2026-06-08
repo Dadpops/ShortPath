@@ -44,6 +44,10 @@ contextBridge.exposeInMainWorld("shortpath", {
   minimizeWindow: () => ipcRenderer.invoke("minimize-window"),
   renameVertical: (id: string, newLabel: string) => ipcRenderer.invoke("rename-vertical", id, newLabel),
   addVertical: (label: string) => ipcRenderer.invoke("add-vertical", label),
+  clearLocalEntries: () => ipcRenderer.invoke("clear-local-entries"),
+  addSubFolder: (verticalId: string, label: string) => ipcRenderer.invoke("add-subfolder", verticalId, label),
+  renameSubFolder: (verticalId: string, subFolderId: string, newLabel: string) => ipcRenderer.invoke("rename-subfolder", verticalId, subFolderId, newLabel),
+  removeSubFolder: (verticalId: string, subFolderId: string) => ipcRenderer.invoke("remove-subfolder", verticalId, subFolderId),
   saveSourceMode: (mode: "local" | "sync", name?: string) => ipcRenderer.invoke("save-source-mode", mode, name),
   disconnectSync: () => ipcRenderer.invoke("disconnect-sync"),
 

@@ -7,10 +7,16 @@ export type VerticalId =
   | "support-tools"
   | string; // user-defined verticals
 
+export interface SubFolder {
+  id: string;
+  label: string;
+}
+
 export interface Vertical {
   id: VerticalId;
   label: string;
   builtIn: boolean;
+  subFolders?: SubFolder[];
 }
 
 export interface Entry {
@@ -22,6 +28,7 @@ export interface Entry {
   tags: string;          // pipe-separated: "billing|refund|payment"
   type: "reply" | "doc" | "link" | "sop" | "tool";
   source: "local" | "synced"; // "local" = user-created; "synced" = from shared team file
+  subFolderId?: string;  // optional reference to a SubFolder.id within the entry's vertical
   createdAt: string;     // ISO 8601
   updatedAt: string;
 }

@@ -452,9 +452,26 @@ export default function App() {
           onBack={handleGoHome}
           onEdit={handleEditEntry}
           onCopy={handleCopy}
-          onOpen={handleOpenOverlay}
+          onOpen={(entry) => { setMode("browse"); setOverlayEntry(entry); }}
           onToggleFavorite={handleToggleFavorite}
         />
+        {overlayEntry && (
+          <MacroOverlay
+            entry={overlayEntry}
+            verticals={verticals}
+            onClose={handleCloseOverlay}
+            onCopied={handleCopy}
+            isFavorite={favorites.has(overlayEntry.id)}
+            onToggleFavorite={() => handleToggleFavorite(overlayEntry.id)}
+            onEdit={handleEditFromOverlay}
+            onDuplicate={handleDuplicateEntry}
+            onAddNote={() => {
+              setPendingNoteEntry({ id: overlayEntry.id, title: overlayEntry.title });
+              setOverlayEntry(null);
+              setMode("notes");
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -496,6 +513,7 @@ export default function App() {
           <button className="header-icon-btn" onClick={() => setMode("help")} title="Help">?</button>
           <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings">⚙</button>
           <button className="header-icon-btn" onClick={() => void window.shortpath.minimizeWindow()} title="Minimize">−</button>
+          <button className="header-icon-btn" onClick={() => void window.shortpath.hideWindow()} title="Close">✕</button>
         </div>
       </header>
 
@@ -563,6 +581,7 @@ export default function App() {
             <VerticalGroupComponent
               key={group.verticalId}
               group={group}
+              subFolders={verticals.find((v) => v.id === group.verticalId)?.subFolders}
               onToggle={() => toggleGroup(group.verticalId)}
               onEdit={handleEditEntry}
               onCopy={handleCopy}

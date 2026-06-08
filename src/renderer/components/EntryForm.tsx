@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import type { Entry, Vertical } from "@shared/types";
 
 interface Props {
@@ -28,12 +28,19 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
   const [tags, setTags] = useState(entry?.tags ?? "");
   const [type, setType] = useState<Entry["type"]>(entry?.type ?? "reply");
   const [verticalId, setVerticalId] = useState(entry?.vertical ?? "saved-replies");
+  const [subFolderId, setSubFolderId] = useState(entry?.subFolderId ?? "");
   const [isNewVertical, setIsNewVertical] = useState(false);
   const [newVerticalLabel, setNewVerticalLabel] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showMore, setShowMore] = useState(false);
+
+  const selectedVertical = useMemo(
+    () => verticals.find((v) => v.id === (isNewVertical ? "" : verticalId)),
+    [verticals, verticalId, isNewVertical]
+  );
+  const availableSubFolders = selectedVertical?.subFolders ?? [];
 
   const finalVerticalId = isNewVertical ? slugify(newVerticalLabel) : verticalId;
 
@@ -54,6 +61,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
         link: link.trim() || null,
         tags: tags.trim(),
         type,
+        subFolderId: subFolderId || undefined,
       };
 
       if (isEdit && entry) {
@@ -95,6 +103,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
       setIsNewVertical(false);
       setVerticalId(e.target.value);
     }
+    setSubFolderId(""); // reset sub-folder when vertical changes
   }
 
   return (
@@ -147,6 +156,23 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
             />
           )}
         </div>
+
+        {availableSubFolders.length > 0 && (
+          <div className="form-field">
+            <label className="form-label">Sub-folder</label>
+            <select
+              className="form-select"
+              value={subFolderId}
+              onChange={(e) => setSubFolderId(e.target.value)}
+              disabled={saving}
+            >
+              <option value="">— None —</option>
+              {availableSubFolders.map((sf) => (
+                <option key={sf.id} value={sf.id}>{sf.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="form-field">
           <label className="form-label">Title <span className="required">*</span></label>

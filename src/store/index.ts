@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
-import type { Entry, Vertical } from "../shared/types";
+import type { Entry, Vertical, SubFolder } from "../shared/types";
 import { defaultStore, type StoreData } from "./schema";
 
 export type { StoreData };
@@ -149,6 +149,55 @@ export function reorderEntry(store: StoreData, entryId: string, direction: "up" 
   [newEntries[globalIdx], newEntries[globalSwapIdx]] = [newEntries[globalSwapIdx], newEntries[globalIdx]];
 
   return { ...store, entries: newEntries };
+}
+
+export function clearLocalEntries(store: StoreData): StoreData {
+  const syncedIds = new Set(store.entries.filter((e) => e.source === "synced").map((e) => e.id));
+  return {
+    ...store,
+    entries: store.entries.filter((e) => e.source === "synced"),
+    recents: store.recents.filter((id) => syncedIds.has(id)),
+    favorites: store.favorites.filter((id) => syncedIds.has(id)),
+  };
+}
+
+export function addSubFolder(store: StoreData, verticalId: string, label: string): { store: StoreData; subFolder: SubFolder } {
+  const slug = label.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const vertical = store.verticals.find((v) => v.id === verticalId);
+  const existing = vertical?.subFolders ?? [];
+  const baseId = slug || "folder";
+  let id = baseId;
+  let suffix = 1;
+  while (existing.find((sf) => sf.id === id)) {
+    id = `${baseId}-${suffix}`;
+    suffix++;
+  }
+  const subFolder: SubFolder = { id, label };
+  const verticals = store.verticals.map((v) =>
+    v.id === verticalId ? { ...v, subFolders: [...(v.subFolders ?? []), subFolder] } : v
+  );
+  return { store: { ...store, verticals }, subFolder };
+}
+
+export function renameSubFolder(store: StoreData, verticalId: string, subFolderId: string, newLabel: string): StoreData {
+  const verticals = store.verticals.map((v) =>
+    v.id === verticalId
+      ? { ...v, subFolders: (v.subFolders ?? []).map((sf) => sf.id === subFolderId ? { ...sf, label: newLabel } : sf) }
+      : v
+  );
+  return { ...store, verticals };
+}
+
+export function removeSubFolder(store: StoreData, verticalId: string, subFolderId: string): StoreData {
+  const verticals = store.verticals.map((v) =>
+    v.id === verticalId
+      ? { ...v, subFolders: (v.subFolders ?? []).filter((sf) => sf.id !== subFolderId) }
+      : v
+  );
+  const entries = store.entries.map((e) =>
+    e.subFolderId === subFolderId && e.vertical === verticalId ? { ...e, subFolderId: undefined } : e
+  );
+  return { ...store, verticals, entries };
 }
 
 export function addVertical(store: StoreData, label: string): { store: StoreData; vertical: Vertical } {

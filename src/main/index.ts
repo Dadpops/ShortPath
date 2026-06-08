@@ -13,7 +13,7 @@ import {
 } from "electron";
 import path from "path";
 import fs from "fs";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, renameVertical, addVertical } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
@@ -524,8 +524,33 @@ function registerIpcHandlers() {
     const result = addVertical(store, label);
     store = result.store;
     saveStore(userDataPath, store);
-    pushStoreUpdate();
     return result.vertical;
+  });
+
+  ipcMain.handle("clear-local-entries", () => {
+    store = clearLocalEntries(store);
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
+  });
+
+  ipcMain.handle("add-subfolder", (_e, verticalId: string, label: string) => {
+    const result = addSubFolder(store, verticalId, label);
+    store = result.store;
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
+    return result.subFolder;
+  });
+
+  ipcMain.handle("rename-subfolder", (_e, verticalId: string, subFolderId: string, newLabel: string) => {
+    store = renameSubFolder(store, verticalId, subFolderId, newLabel);
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
+  });
+
+  ipcMain.handle("remove-subfolder", (_e, verticalId: string, subFolderId: string) => {
+    store = removeSubFolder(store, verticalId, subFolderId);
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
   });
 
   ipcMain.handle("notes:create", (_e, fields: { title?: string; body: string; entryId?: string; entryTitle?: string }) => {
