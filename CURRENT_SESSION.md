@@ -1,16 +1,10 @@
 # Current Session State
 
-**Status:** Phases 1–7 complete. Header cleaned up (clipboard icon, ? help, no clutter). Support Tools grid with reorder. Help panel with all 16 topics. Import/export/add accessible from Settings.
+**Status:** Phases 1–8 complete. Entrance animation, tray icon active state, groups perf split, empty state copy all done.
 
-**Last session:** [2026-06-08 — Phase 6 + 7 + UI cleanup](docs/sessions/2026-06-08-phase6-7-ui.md)
+**Last session:** [2026-06-08 — Phase 8 polish](docs/sessions/2026-06-08-phase8-polish.md)
 
 **Next up:**
-
-**Phase 8 — Polish**
-- Show/hide animation for the popup window.
-- Tray icon states (active/inactive).
-- Consistent empty and error states throughout.
-- Performance check on large datasets (~10k entries).
 
 **Phase 9 — Packaging and distribution**
 - electron-builder targets: NSIS (Windows), DMG (Mac).

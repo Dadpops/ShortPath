@@ -176,11 +176,11 @@ Goal: in-app, searchable help covering every feature. No browser, no external li
 
 Goal: app feels intentional and complete.
 
-- [ ] Finalize design tokens and typography
-- [ ] Show/hide animation for the popup
-- [ ] Tray icon states (active/inactive)
-- [ ] Consistent empty and error states throughout
-- [ ] Performance check: search should feel instant on datasets up to ~10k entries
+- [x] Finalize design tokens and typography
+- [x] Show/hide animation for the popup
+- [x] Tray icon states (active/inactive)
+- [x] Consistent empty and error states throughout
+- [x] Performance check: search should feel instant on datasets up to ~10k entries
 
 ---
 
