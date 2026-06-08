@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Fuse, { type FuseResult } from "fuse.js";
 import type { Entry, Vertical, VerticalGroup, SearchResult } from "@shared/types";
 import SearchBar from "./components/SearchBar";
 import VerticalGroupComponent from "./components/VerticalGroup";
+import ResultItem from "./components/ResultItem";
 import EntryForm from "./components/EntryForm";
+import ImportScreen from "./components/ImportScreen";
 
 type AppStatus = "loading" | "ready" | "error";
-type AppMode = "browse" | "add" | "edit";
+type AppMode = "browse" | "add" | "edit" | "import";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -152,7 +154,6 @@ export default function App() {
     } else {
       setEntries((prev) => prev.map((e) => (e.id === entry.id ? entry : e)));
     }
-    // Refresh verticals in case a new one was created
     setVerticals(newVerticals);
     setExpandedGroups((prev) => new Set([...prev, entry.vertical]));
     setMode("browse");
@@ -171,6 +172,11 @@ export default function App() {
   function handleFormCancel() {
     setMode("browse");
     setEditingEntry(null);
+  }
+
+  function handleImportComplete() {
+    // store-updated push from main will refresh entries/verticals
+    setMode("browse");
   }
 
   const totalHits = groups.reduce((sum, g) => sum + g.hitCount, 0);
@@ -202,6 +208,14 @@ export default function App() {
     );
   }
 
+  if (mode === "import") {
+    return (
+      <div className="app-shell">
+        <ImportScreen onComplete={handleImportComplete} onCancel={() => setMode("browse")} />
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -210,6 +224,13 @@ export default function App() {
           {isSearching && totalHits > 0 && (
             <span className="app-hit-summary">{totalHits} result{totalHits !== 1 ? "s" : ""}</span>
           )}
+          <button
+            className="header-icon-btn"
+            onClick={() => setMode("import")}
+            title="Import CSV"
+          >
+            ↑
+          </button>
           <button
             className="add-btn"
             onClick={() => { setEditingEntry(null); setMode("add"); }}
@@ -225,7 +246,6 @@ export default function App() {
       </div>
 
       <main className="results-container">
-        {/* Recents section — shown when not searching and there are recent entries */}
         {!isSearching && recentEntries.length > 0 && (
           <div className="recents-section">
             <div className="recents-header">Recent</div>
@@ -250,7 +270,7 @@ export default function App() {
 
         {!isSearching && entries.length === 0 && (
           <div className="empty-state">
-            <p>No entries yet. Press <strong>+</strong> to add one or import a CSV from the tray menu.</p>
+            <p>No entries yet. Press <strong>+</strong> to add one or <strong>↑</strong> to import a CSV.</p>
           </div>
         )}
 

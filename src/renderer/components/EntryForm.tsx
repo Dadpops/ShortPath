@@ -161,7 +161,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
         <div className="form-field">
           <label className="form-label">Type</label>
           <div className="type-options">
-            {(["reply", "doc", "link", "sop"] as Entry["type"][]).map((t) => (
+            {(["reply", "doc", "link", "sop", "tool"] as Entry["type"][]).map((t) => (
               <label key={t} className={`type-option${type === t ? " selected" : ""}`}>
                 <input
                   type="radio"
@@ -171,7 +171,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
                   onChange={() => setType(t)}
                   disabled={saving}
                 />
-                {t === "reply" ? "Saved Reply" : t === "doc" ? "Doc" : t === "link" ? "Link" : "SOP"}
+                {t === "reply" ? "Reply" : t === "doc" ? "Doc" : t === "link" ? "Link" : t === "sop" ? "SOP" : "Tool"}
               </label>
             ))}
           </div>
@@ -208,7 +208,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
             type="text"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            placeholder="comma, separated, tags"
+            placeholder="pipe|separated|tags"
             disabled={saving}
           />
         </div>

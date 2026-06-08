@@ -1,4 +1,3 @@
-import React from "react";
 import type { Entry, VerticalGroup } from "@shared/types";
 import ResultItem from "./ResultItem";
 

@@ -597,3 +597,243 @@ body {
   border: 1px solid rgba(248, 113, 113, 0.3);
   border-radius: var(--radius);
 }
+
+/* Header icon button (import, etc.) */
+.header-icon-btn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.1s, border-color 0.1s;
+  -webkit-app-region: no-drag;
+}
+
+.header-icon-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+/* Import screen */
+.import-body {
+  gap: 16px;
+}
+
+.import-idle {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.import-format-ref {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.import-format-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.import-format-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.import-format-table th {
+  text-align: left;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  padding: 3px 6px 3px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.import-format-table td {
+  padding: 4px 6px 4px 0;
+  color: var(--color-text);
+  vertical-align: top;
+}
+
+.import-format-table td:first-child {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.import-format-table td:nth-child(2) {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  width: 56px;
+}
+
+.import-format-table td:nth-child(3) {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.import-format-note {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  margin-top: 8px;
+}
+
+.import-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.import-template-btn {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+/* Import preview */
+.import-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.import-preview-summary {
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.import-skip-count {
+  color: #fbbf24;
+}
+
+.import-preview-rows {
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.import-preview-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.import-preview-row:first-child {
+  border-top: none;
+}
+
+.preview-row-vertical {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.preview-row-title {
+  flex: 1;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-row-type {
+  font-size: 10px;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.import-preview-more {
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--color-text-faint);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.import-error-list {
+  background: rgba(248, 113, 113, 0.07);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 11px;
+  color: #fca5a5;
+}
+
+.import-error-heading {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #f87171;
+}
+
+.import-error-list ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* Import status messages */
+.import-status-msg {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* Import done state */
+.import-done {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.import-done-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.import-done-stats {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.import-done-stats strong {
+  color: var(--color-text);
+}
+
+/* Import error state */
+.import-error-state {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.import-error-msg {
+  font-size: 13px;
+  color: #f87171;
+}
