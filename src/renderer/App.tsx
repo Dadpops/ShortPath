@@ -315,10 +315,34 @@ export default function App() {
       setOverlayEntry(null);
     } else if (focusedEntryId) {
       setFocusedEntryId(null);
+    } else if (query) {
+      setQuery("");
     } else {
-      window.shortpath.hideWindow();
+      void window.shortpath.hideWindow();
     }
   }
+
+  // Window-level Esc: fires when focus is not inside a text input (those call
+  // handleEscape via onEscape prop on SearchBar). MacroOverlay's capture listener
+  // intercepts Esc first when the overlay is open, so no double-handling occurs.
+  useEffect(() => {
+    function onWindowKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      const active = document.activeElement;
+      if (active?.tagName === "INPUT" || active?.tagName === "TEXTAREA") return;
+      if (overlayEntry) {
+        setOverlayEntry(null);
+      } else if (focusedEntryId) {
+        setFocusedEntryId(null);
+      } else if (query) {
+        setQuery("");
+      } else {
+        void window.shortpath.hideWindow();
+      }
+    }
+    window.addEventListener("keydown", onWindowKeyDown);
+    return () => window.removeEventListener("keydown", onWindowKeyDown);
+  }, [overlayEntry, focusedEntryId, query]);
 
   function handleFormSave(entry: Entry, newVerticals: Vertical[]) {
     if (mode === "add") {
@@ -556,7 +580,7 @@ export default function App() {
 
         {isSearching && groups.length === 0 && (
           <div className="empty-state">
-            <p>No results for <strong>"{debouncedQuery}"</strong></p>
+            <p>No matches for "{debouncedQuery}" — try a different keyword.</p>
           </div>
         )}
 

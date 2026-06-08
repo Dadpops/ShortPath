@@ -41,8 +41,7 @@ export default function VerticalGroupComponent({ group, subFolders, onToggle, on
     <div className="vertical-group">
       <button className="group-header" onClick={onToggle}>
         <span className={`group-chevron${group.expanded ? " expanded" : ""}`}>›</span>
-        <span className="group-label">{group.label}</span>
-        <span className="group-count">{group.hitCount}</span>
+        <span className="group-label">{group.label} ({group.hitCount})</span>
       </button>
 
       {group.expanded && (

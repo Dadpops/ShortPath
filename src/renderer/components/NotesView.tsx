@@ -195,7 +195,7 @@ export default function NotesView({ onBack, initialEntry }: Props) {
             <p>
               {search
                 ? "No notes match your search."
-                : "No notes yet. Press + New to create one."}
+                : "No notes yet. Add one to get started."}
             </p>
           </div>
         )}
