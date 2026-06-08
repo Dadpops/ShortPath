@@ -1,13 +1,13 @@
 # Current Session State
 
-**Status:** Phase 1 and Phase 2 complete. App is in demo state — seed data loads, search works, copy button works.
+**Status:** Phase 3 complete. Entry management (add, edit, delete), recents tracking, and user-defined verticals all working.
 
-**Last session:** [2026-06-07 — Phase 1 + Phase 2 demo build](docs/sessions/2026-06-07-phase1-phase2-demo.md)
+**Last session:** [2026-06-07 — Phase 3 entry management](docs/sessions/2026-06-07-phase3-entry-management.md)
 
-**Next up:** Phase 3 — Copy and entry management.
-First task: add/edit/delete entry forms in the UI. Manual entries should live in the same JSON store as seeded/imported ones.
+**Next up:** Phase 4 — Window UX (core).
+First task: make the global hotkey reliably summon and dismiss the window, focus the search box on show, and persist window size/position between launches.
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the full checklist.
 
 **Open questions / blockers:**
-- `window.open(link)` in ResultItem should be replaced with `shell.openExternal` via IPC (Phase 4 item, flagged early).
-- Global hotkey (`CommandOrControl+Shift+Space`) should be tested. If it conflicts with another app, it silently fails — Phase 4 adds conflict detection and user configuration.
+- `window.open(link)` in ResultItem still needs to be replaced with `shell.openExternal` via IPC. Tracked for Phase 4.
+- Global hotkey (`CommandOrControl+Shift+Space`) silently fails if another app owns that key. Phase 4 adds conflict detection.

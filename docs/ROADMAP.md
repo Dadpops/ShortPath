@@ -73,12 +73,12 @@ Goal: the core search experience working end-to-end.
 
 Goal: users can copy results and manage their own entries.
 
-- [ ] CopyButton component: writes entry body or link to clipboard
-- [ ] Track recents: record entry access on copy or open
-- [ ] Add entry form: title, body, link, tags, type, vertical
-- [ ] Edit entry form
-- [ ] Delete entry with confirmation
-- [ ] User-defined verticals: create and name custom categories
+- [x] CopyButton component: writes entry body or link to clipboard
+- [x] Track recents: record entry access on copy or open
+- [x] Add entry form: title, body, link, tags, type, vertical
+- [x] Edit entry form
+- [x] Delete entry with confirmation
+- [x] User-defined verticals: create and name custom categories
 
 ---
 
