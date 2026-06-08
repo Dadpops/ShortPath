@@ -73,6 +73,8 @@ declare global {
       commitCsvImport: () => Promise<CsvCommitResult>;
       downloadTemplateCsv: () => Promise<{ success: boolean }>;
 
+      readClipboard: () => Promise<string>;
+
       onStoreUpdated: (
         callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[] }) => void
       ) => () => void;

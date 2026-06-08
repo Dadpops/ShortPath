@@ -59,4 +59,5 @@ export const IPC = {
   COMMIT_CSV_IMPORT: "commit-csv-import",
   DOWNLOAD_TEMPLATE_CSV: "download-template-csv",
   STORE_UPDATED: "store-updated",
+  READ_CLIPBOARD: "read-clipboard",
 } as const;

@@ -8,6 +8,7 @@ import {
   globalShortcut,
   ipcMain,
   dialog,
+  clipboard,
 } from "electron";
 import path from "path";
 import fs from "fs";
@@ -299,6 +300,8 @@ function registerIpcHandlers() {
       return { success: false, errors: [String(err)] };
     }
   });
+
+  ipcMain.handle("read-clipboard", () => clipboard.readText());
 
   ipcMain.handle("ping", () => "pong");
 }

@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld("shortpath", {
   commitCsvImport: () => ipcRenderer.invoke("commit-csv-import"),
   downloadTemplateCsv: () => ipcRenderer.invoke("download-template-csv"),
 
+  readClipboard: () => ipcRenderer.invoke("read-clipboard"),
+
   onStoreUpdated: (
     callback: (data: {
       entries: Entry[];
