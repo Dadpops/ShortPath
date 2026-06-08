@@ -82,4 +82,9 @@ contextBridge.exposeInMainWorld("shortpath", {
     ipcRenderer.on("sync-refreshed", callback);
     return () => ipcRenderer.removeListener("sync-refreshed", callback);
   },
+
+  loadNotes: () => ipcRenderer.invoke("notes:load"),
+  createNote: (fields: { title?: string; body: string }) => ipcRenderer.invoke("notes:create", fields),
+  updateNote: (id: string, updates: { title?: string; body: string }) => ipcRenderer.invoke("notes:update", id, updates),
+  deleteNote: (id: string) => ipcRenderer.invoke("notes:delete", id),
 });

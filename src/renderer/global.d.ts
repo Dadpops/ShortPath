@@ -1,4 +1,4 @@
-import type { Entry, Vertical } from "@shared/types";
+import type { Entry, Vertical, Note } from "@shared/types";
 
 interface LoadEntriesResult {
   entries: Entry[];
@@ -109,6 +109,11 @@ declare global {
       onStoreUpdated: (
         callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[]; favorites: string[] }) => void
       ) => () => void;
+
+      loadNotes: () => Promise<Note[]>;
+      createNote: (fields: { title?: string; body: string }) => Promise<Note>;
+      updateNote: (id: string, updates: { title?: string; body: string }) => Promise<Note>;
+      deleteNote: (id: string) => Promise<void>;
     };
   }
 }

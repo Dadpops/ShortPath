@@ -14,14 +14,15 @@ import {
 import path from "path";
 import fs from "fs";
 import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, renameVertical } from "../store/index";
+import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import type { StoreData } from "../store/schema";
-import type { Entry } from "../shared/types";
+import type { Entry, Note } from "../shared/types";
 
-const WINDOW_WIDTH = 480;
-const WINDOW_HEIGHT = 600;
+const WINDOW_WIDTH = 512;
+const WINDOW_HEIGHT = 632;
 const MARGIN = 12;
 
 let tray: Tray | null = null;
@@ -29,6 +30,7 @@ let trayIconBase: ReturnType<typeof nativeImage.createFromPath> | null = null;
 let trayIconActive: ReturnType<typeof nativeImage.createFromPath> | null = null;
 let win: BrowserWindow | null = null;
 let store: StoreData;
+let notesData: { notes: Note[] };
 let userDataPath: string;
 let settings: AppSettings;
 
@@ -65,7 +67,8 @@ function createWindow() {
     y: pos.y,
     resizable: true,
     frame: false,
-    transparent: false,
+    transparent: true,
+    backgroundColor: "#00000000",
     skipTaskbar: true,
     alwaysOnTop: false,
     show: false,
@@ -514,12 +517,34 @@ function registerIpcHandlers() {
   }));
 
   ipcMain.handle("ping", () => "pong");
+
+  ipcMain.handle("notes:load", () => notesData.notes);
+
+  ipcMain.handle("notes:create", (_e, fields: { title?: string; body: string }) => {
+    const result = storeCreateNote(notesData, fields);
+    notesData = result.data;
+    saveNotes(userDataPath, notesData);
+    return result.note;
+  });
+
+  ipcMain.handle("notes:update", (_e, id: string, updates: { title?: string; body: string }) => {
+    const result = storeUpdateNote(notesData, id, updates);
+    notesData = result.data;
+    saveNotes(userDataPath, notesData);
+    return result.note;
+  });
+
+  ipcMain.handle("notes:delete", (_e, id: string) => {
+    notesData = storeDeleteNote(notesData, id);
+    saveNotes(userDataPath, notesData);
+  });
 }
 
 app.whenReady().then(() => {
   userDataPath = app.getPath("userData");
   store = openStore(userDataPath);
   settings = loadSettings(userDataPath);
+  notesData = openNotes(userDataPath);
 
   if (store.entries.length === 0) {
     store = applySeed(store);

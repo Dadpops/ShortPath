@@ -44,6 +44,14 @@ export interface VerticalGroup {
   expanded: boolean;
 }
 
+export interface Note {
+  id: string;
+  title?: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // IPC channel names
 export const IPC = {
   PING: "ping",
