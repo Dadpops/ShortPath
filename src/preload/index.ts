@@ -28,6 +28,28 @@ contextBridge.exposeInMainWorld("shortpath", {
 
   readClipboard: () => ipcRenderer.invoke("read-clipboard"),
 
+  openExternal: (url: string) => ipcRenderer.invoke("open-external", url),
+  hideWindow: () => ipcRenderer.invoke("hide-window"),
+
+  getSettings: () => ipcRenderer.invoke("get-settings"),
+  changeHotkey: (accelerator: string) => ipcRenderer.invoke("change-hotkey", accelerator),
+  resetWindowPosition: () => ipcRenderer.invoke("reset-window-position"),
+
+  onFocusSearch: (callback: () => void) => {
+    ipcRenderer.on("focus-search", callback);
+    return () => ipcRenderer.removeListener("focus-search", callback);
+  },
+
+  onHotkeyFailed: (callback: (accelerator: string) => void) => {
+    ipcRenderer.on("hotkey-failed", (_event, accelerator) => callback(accelerator));
+    return () => ipcRenderer.removeAllListeners("hotkey-failed");
+  },
+
+  onOpenSettings: (callback: () => void) => {
+    ipcRenderer.on("open-settings", callback);
+    return () => ipcRenderer.removeListener("open-settings", callback);
+  },
+
   onStoreUpdated: (
     callback: (data: {
       entries: Entry[];

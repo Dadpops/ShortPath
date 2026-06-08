@@ -9,12 +9,14 @@ import {
   ipcMain,
   dialog,
   clipboard,
+  shell,
 } from "electron";
 import path from "path";
 import fs from "fs";
 import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess } from "../store/index";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, CSV_TEMPLATE_CONTENT } from "../store/csv";
+import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import type { StoreData } from "../store/schema";
 import type { Entry } from "../shared/types";
 
@@ -26,9 +28,13 @@ let tray: Tray | null = null;
 let win: BrowserWindow | null = null;
 let store: StoreData;
 let userDataPath: string;
+let settings: AppSettings;
 
 // Holds the last CSV string opened via preview-csv-import, waiting for commit-csv-import.
 let pendingCsvImport: string | null = null;
+
+// Debounce timer for saving window bounds after move/resize.
+let saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
 
 function getBottomLeftPosition() {
   const display = screen.getPrimaryDisplay();
@@ -40,11 +46,14 @@ function getBottomLeftPosition() {
 }
 
 function createWindow() {
-  const pos = getBottomLeftPosition();
+  const saved = settings.windowBounds;
+  const pos = saved ?? getBottomLeftPosition();
+  const width = saved?.width ?? WINDOW_WIDTH;
+  const height = saved?.height ?? WINDOW_HEIGHT;
 
   win = new BrowserWindow({
-    width: WINDOW_WIDTH,
-    height: WINDOW_HEIGHT,
+    width,
+    height,
     x: pos.x,
     y: pos.y,
     resizable: true,
@@ -73,6 +82,20 @@ function createWindow() {
   win.on("closed", () => {
     win = null;
   });
+
+  function scheduleSaveBounds() {
+    if (saveBoundsTimer) clearTimeout(saveBoundsTimer);
+    saveBoundsTimer = setTimeout(() => {
+      if (!win) return;
+      const [width, height] = win.getSize();
+      const [x, y] = win.getPosition();
+      settings = { ...settings, windowBounds: { x, y, width, height } };
+      saveSettings(userDataPath, settings);
+    }, 400);
+  }
+
+  win.on("move", scheduleSaveBounds);
+  win.on("resize", scheduleSaveBounds);
 }
 
 function createTray() {
@@ -86,6 +109,15 @@ function createTray() {
     { type: "separator" },
     { label: "Import CSV", click: handleImportFromTray },
     { label: "Export CSV", click: handleExportFromTray },
+    { type: "separator" },
+    {
+      label: "Settings",
+      click: () => {
+        if (!win) createWindow();
+        else { win.show(); win.focus(); }
+        win?.webContents.send("open-settings");
+      },
+    },
     { type: "separator" },
     { label: "Quit", click: () => app.quit() },
   ]);
@@ -103,10 +135,9 @@ function toggleWindow() {
   if (win.isVisible()) {
     win.hide();
   } else {
-    const pos = getBottomLeftPosition();
-    win.setPosition(pos.x, pos.y);
     win.show();
     win.focus();
+    win.webContents.send("focus-search");
   }
 }
 
@@ -303,15 +334,37 @@ function registerIpcHandlers() {
 
   ipcMain.handle("read-clipboard", () => clipboard.readText());
 
+  ipcMain.handle("open-external", (_e, url: string) => shell.openExternal(url));
+
+  ipcMain.handle("hide-window", () => win?.hide());
+
+  ipcMain.handle("get-settings", () => ({ hotkey: settings.hotkey }));
+
+  ipcMain.handle("change-hotkey", (_e, accelerator: string) => {
+    const ok = registerHotkey(accelerator);
+    if (ok) {
+      settings = { ...settings, hotkey: accelerator };
+      saveSettings(userDataPath, settings);
+    }
+    return { ok };
+  });
+
+  ipcMain.handle("reset-window-position", () => {
+    if (!win) return;
+    const pos = getBottomLeftPosition();
+    win.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    win.setPosition(pos.x, pos.y);
+    settings = { ...settings, windowBounds: { ...pos, width: WINDOW_WIDTH, height: WINDOW_HEIGHT } };
+    saveSettings(userDataPath, settings);
+  });
+
   ipcMain.handle("ping", () => "pong");
 }
-
-// Phase 5: replace this default with a user-configurable hotkey stored in settings.
-const DEFAULT_HOTKEY = "CommandOrControl+Shift+Space";
 
 app.whenReady().then(() => {
   userDataPath = app.getPath("userData");
   store = openStore(userDataPath);
+  settings = loadSettings(userDataPath);
 
   if (store.entries.length === 0) {
     store = applySeed(store);
@@ -321,12 +374,23 @@ app.whenReady().then(() => {
   registerIpcHandlers();
   createTray();
   createWindow();
-  registerHotkey(DEFAULT_HOTKEY);
+  registerHotkey(settings.hotkey);
 });
 
-function registerHotkey(accelerator: string) {
-  // Stub: full implementation in Phase 5 (unregister-before-reregister, conflict detection).
-  globalShortcut.register(accelerator, toggleWindow);
+let currentHotkey: string | null = null;
+
+function registerHotkey(accelerator: string): boolean {
+  if (currentHotkey) {
+    globalShortcut.unregister(currentHotkey);
+    currentHotkey = null;
+  }
+  const ok = globalShortcut.register(accelerator, toggleWindow);
+  if (ok) {
+    currentHotkey = accelerator;
+  } else {
+    win?.webContents.send("hotkey-failed", accelerator);
+  }
+  return ok;
 }
 
 app.on("will-quit", () => {

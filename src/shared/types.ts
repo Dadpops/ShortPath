@@ -60,4 +60,12 @@ export const IPC = {
   DOWNLOAD_TEMPLATE_CSV: "download-template-csv",
   STORE_UPDATED: "store-updated",
   READ_CLIPBOARD: "read-clipboard",
+  OPEN_EXTERNAL: "open-external",
+  HIDE_WINDOW: "hide-window",
+  FOCUS_SEARCH: "focus-search",
+  HOTKEY_FAILED: "hotkey-failed",
+  CHANGE_HOTKEY: "change-hotkey",
+  RESET_WINDOW_POSITION: "reset-window-position",
+  GET_SETTINGS: "get-settings",
+  OPEN_SETTINGS: "open-settings",
 } as const;

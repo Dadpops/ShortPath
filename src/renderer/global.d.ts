@@ -75,6 +75,17 @@ declare global {
 
       readClipboard: () => Promise<string>;
 
+      openExternal: (url: string) => Promise<void>;
+      hideWindow: () => Promise<void>;
+
+      getSettings: () => Promise<{ hotkey: string }>;
+      changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
+      resetWindowPosition: () => Promise<void>;
+
+      onFocusSearch: (callback: () => void) => () => void;
+      onHotkeyFailed: (callback: (accelerator: string) => void) => () => void;
+      onOpenSettings: (callback: () => void) => () => void;
+
       onStoreUpdated: (
         callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[] }) => void
       ) => () => void;
