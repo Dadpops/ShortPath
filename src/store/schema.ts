@@ -1,7 +1,4 @@
-// Store schema types and default structure.
-// Phase 1: define StoreData, default verticals, and version constant.
-
-import type { Entry, Vertical } from "@shared/types";
+import type { Entry, Vertical } from "../shared/types";
 
 export const STORE_VERSION = 1;
 
@@ -22,6 +19,6 @@ export function defaultStore(): StoreData {
   return {
     version: STORE_VERSION,
     entries: [],
-    verticals: DEFAULT_VERTICALS,
+    verticals: [...DEFAULT_VERTICALS],
   };
 }

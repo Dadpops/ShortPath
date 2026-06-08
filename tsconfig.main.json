@@ -12,14 +12,13 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "dist/main",
+    "outDir": "dist",
     "rootDir": "src",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["src/shared/*"],
-      "@db/*": ["src/db/*"]
+      "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*", "src/db/**/*"],
+  "include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*", "src/store/**/*"],
   "exclude": ["node_modules", "dist"]
 }

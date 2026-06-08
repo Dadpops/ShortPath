@@ -1,5 +1,21 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, screen, globalShortcut } from "electron";
+import {
+  app,
+  BrowserWindow,
+  Tray,
+  Menu,
+  nativeImage,
+  screen,
+  globalShortcut,
+  ipcMain,
+  dialog,
+} from "electron";
 import path from "path";
+import fs from "fs";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry } from "../store/index";
+import { applySeed } from "../store/seed";
+import { importCsv, exportCsv } from "../store/csv";
+import type { StoreData } from "../store/schema";
+import type { Entry } from "../shared/types";
 
 const WINDOW_WIDTH = 480;
 const WINDOW_HEIGHT = 600;
@@ -7,6 +23,8 @@ const MARGIN = 12;
 
 let tray: Tray | null = null;
 let win: BrowserWindow | null = null;
+let store: StoreData;
+let userDataPath: string;
 
 function getBottomLeftPosition() {
   const display = screen.getPrimaryDisplay();
@@ -62,6 +80,9 @@ function createTray() {
   const contextMenu = Menu.buildFromTemplate([
     { label: "Show ShortPath", click: toggleWindow },
     { type: "separator" },
+    { label: "Import CSV", click: handleImportFromTray },
+    { label: "Export CSV", click: handleExportFromTray },
+    { type: "separator" },
     { label: "Quit", click: () => app.quit() },
   ]);
 
@@ -85,20 +106,127 @@ function toggleWindow() {
   }
 }
 
+async function handleImportFromTray() {
+  const { filePaths } = await dialog.showOpenDialog({
+    filters: [{ name: "CSV", extensions: ["csv"] }],
+    properties: ["openFile"],
+  });
+  if (!filePaths[0]) return;
+
+  try {
+    const csvString = fs.readFileSync(filePaths[0], "utf-8");
+    const result = importCsv(store, csvString);
+    store = result.store;
+    saveStore(userDataPath, store);
+    win?.webContents.send("store-updated", { entries: store.entries, verticals: store.verticals });
+  } catch (err) {
+    console.error("CSV import failed:", err);
+  }
+}
+
+async function handleExportFromTray() {
+  const { filePath } = await dialog.showSaveDialog({
+    defaultPath: "shortpath-export.csv",
+    filters: [{ name: "CSV", extensions: ["csv"] }],
+  });
+  if (!filePath) return;
+
+  try {
+    fs.writeFileSync(filePath, exportCsv(store.entries), "utf-8");
+  } catch (err) {
+    console.error("CSV export failed:", err);
+  }
+}
+
+function registerIpcHandlers() {
+  ipcMain.handle("load-entries", () => ({
+    entries: store.entries,
+    verticals: store.verticals,
+  }));
+
+  ipcMain.handle("create-entry", (_e, fields: Omit<Entry, "id" | "createdAt" | "updatedAt">) => {
+    const result = addEntry(store, fields);
+    store = result.store;
+    saveStore(userDataPath, store);
+    return result.entry;
+  });
+
+  ipcMain.handle("update-entry", (_e, id: string, updates: Partial<Entry>) => {
+    const result = updateEntry(store, id, updates);
+    store = result.store;
+    saveStore(userDataPath, store);
+    return result.entry;
+  });
+
+  ipcMain.handle("delete-entry", (_e, id: string) => {
+    store = deleteEntry(store, id);
+    saveStore(userDataPath, store);
+  });
+
+  ipcMain.handle("import-csv", async () => {
+    const { filePaths } = await dialog.showOpenDialog(win!, {
+      filters: [{ name: "CSV", extensions: ["csv"] }],
+      properties: ["openFile"],
+    });
+    if (!filePaths[0]) return { success: false };
+
+    try {
+      const csvString = fs.readFileSync(filePaths[0], "utf-8");
+      const result = importCsv(store, csvString);
+      store = result.store;
+      saveStore(userDataPath, store);
+      return {
+        success: true,
+        entries: store.entries,
+        verticals: store.verticals,
+        imported: result.imported,
+        updated: result.updated,
+        skipped: result.skipped,
+        errors: result.errors,
+      };
+    } catch (err) {
+      return { success: false, errors: [String(err)] };
+    }
+  });
+
+  ipcMain.handle("export-csv", async () => {
+    const { filePath } = await dialog.showSaveDialog(win!, {
+      defaultPath: "shortpath-export.csv",
+      filters: [{ name: "CSV", extensions: ["csv"] }],
+    });
+    if (!filePath) return { success: false };
+
+    try {
+      fs.writeFileSync(filePath, exportCsv(store.entries), "utf-8");
+      return { success: true };
+    } catch (err) {
+      return { success: false, errors: [String(err)] };
+    }
+  });
+
+  ipcMain.handle("ping", () => "pong");
+}
+
 // Phase 4: replace this default with a user-configurable hotkey stored in settings.
 const DEFAULT_HOTKEY = "CommandOrControl+Shift+Space";
 
 app.whenReady().then(() => {
+  userDataPath = app.getPath("userData");
+  store = openStore(userDataPath);
+
+  if (store.entries.length === 0) {
+    store = applySeed(store);
+    saveStore(userDataPath, store);
+  }
+
+  registerIpcHandlers();
   createTray();
   createWindow();
-
-  // Phase 4: registerHotkey is a stub — wires up globalShortcut to toggleWindow.
   registerHotkey(DEFAULT_HOTKEY);
 });
 
 function registerHotkey(accelerator: string) {
-  // Stub: full implementation in Phase 4 (includes unregister-before-reregister,
-  // conflict detection, and user-facing error if the key is taken).
+  // Stub: full implementation in Phase 4 (unregister-before-reregister, conflict detection).
   globalShortcut.register(accelerator, toggleWindow);
 }
 
@@ -106,7 +234,8 @@ app.on("will-quit", () => {
   globalShortcut.unregisterAll();
 });
 
-// Keep the app running when all windows are closed (tray app behavior)
-app.on("window-all-closed", (e: Event) => {
-  e.preventDefault();
+// Keep the app running when all windows are closed (tray app behavior).
+// Simply attaching a listener without calling app.quit() is enough.
+app.on("window-all-closed", () => {
+  // intentionally empty
 });
