@@ -16,7 +16,6 @@ export function openStore(userDataPath: string): StoreData {
   try {
     const raw = fs.readFileSync(storePath, "utf-8");
     const parsed = JSON.parse(raw) as Partial<StoreData>;
-    // Backfill fields added after initial release so existing store.json files keep working.
     return migrate({
       recents: [],
       ...parsed,
@@ -38,17 +37,37 @@ export function saveStore(userDataPath: string, data: StoreData): void {
 }
 
 function migrate(data: StoreData): StoreData {
-  // Future version migrations go here.
-  return data;
+  const entries = data.entries.map((e) => {
+    const entry = { ...e };
+
+    // Backfill source field added in Phase 1 additions.
+    if (!entry.source) {
+      entry.source = "local";
+    }
+
+    // Migrate comma-separated tags to pipe-separated.
+    if (entry.tags && !entry.tags.includes("|") && entry.tags.includes(",")) {
+      entry.tags = entry.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .join("|");
+    }
+
+    return entry;
+  });
+
+  return { ...data, entries };
 }
 
+// Callers never set source or id/timestamps — addEntry always assigns source: "local".
 export function addEntry(
   store: StoreData,
-  fields: Omit<Entry, "id" | "createdAt" | "updatedAt">,
+  fields: Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">,
   verticalLabel?: string
 ): { store: StoreData; entry: Entry } {
   const now = new Date().toISOString();
-  const entry: Entry = { ...fields, id: randomUUID(), createdAt: now, updatedAt: now };
+  const entry: Entry = { ...fields, source: "local", id: randomUUID(), createdAt: now, updatedAt: now };
 
   let verticals = store.verticals;
   if (!verticals.find((v) => v.id === entry.vertical)) {
@@ -64,10 +83,11 @@ export function addEntry(
   };
 }
 
+// source is excluded from updates — sync status is set at import time and never changed.
 export function updateEntry(
   store: StoreData,
   id: string,
-  updates: Partial<Omit<Entry, "id" | "createdAt">>
+  updates: Partial<Omit<Entry, "id" | "createdAt" | "source">>
 ): { store: StoreData; entry: Entry } {
   const idx = store.entries.findIndex((e) => e.id === id);
   if (idx === -1) throw new Error(`Entry not found: ${id}`);
