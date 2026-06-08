@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, screen } from "electron";
+import { app, BrowserWindow, Tray, Menu, nativeImage, screen, globalShortcut } from "electron";
 import path from "path";
 
 const WINDOW_WIDTH = 480;
@@ -84,9 +84,25 @@ function toggleWindow() {
   }
 }
 
+// Phase 4: replace this default with a user-configurable hotkey stored in settings.
+const DEFAULT_HOTKEY = "CommandOrControl+Shift+Space";
+
 app.whenReady().then(() => {
   createTray();
   createWindow();
+
+  // Phase 4: registerHotkey is a stub — wires up globalShortcut to toggleWindow.
+  registerHotkey(DEFAULT_HOTKEY);
+});
+
+function registerHotkey(accelerator: string) {
+  // Stub: full implementation in Phase 4 (includes unregister-before-reregister,
+  // conflict detection, and user-facing error if the key is taken).
+  globalShortcut.register(accelerator, toggleWindow);
+}
+
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
 });
 
 // Keep the app running when all windows are closed (tray app behavior)

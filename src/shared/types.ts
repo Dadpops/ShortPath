@@ -1,5 +1,4 @@
 // Types shared between the main process, preload, and renderer.
-// Phase 1 will expand this with full entry and search types.
 
 export type VerticalId =
   | "saved-replies"
@@ -8,12 +7,18 @@ export type VerticalId =
   | "support-tools"
   | string; // user-defined verticals
 
+export interface Vertical {
+  id: VerticalId;
+  label: string;
+  builtIn: boolean;
+}
+
 export interface Entry {
-  id: number;
+  id: string;             // UUID, generated on create
   vertical: VerticalId;
   title: string;
-  body: string | null;   // full text for saved replies / docs
-  link: string | null;   // URL for link-type entries
+  body: string | null;   // full text for saved replies / docs; null for link-only
+  link: string | null;   // URL for link-type entries; null for text-only
   tags: string;          // comma-separated
   type: "reply" | "doc" | "link" | "sop";
   createdAt: string;     // ISO 8601
@@ -22,7 +27,12 @@ export interface Entry {
 
 export interface SearchResult {
   entry: Entry;
-  snippet: string;       // FTS5 highlight snippet
+  matches: FuseMatch[]; // match ranges for highlight rendering
+}
+
+export interface FuseMatch {
+  key: string;
+  indices: [number, number][];
 }
 
 export interface VerticalGroup {
@@ -36,8 +46,7 @@ export interface VerticalGroup {
 // IPC channel names
 export const IPC = {
   PING: "ping",
-  SEARCH: "search",
-  GET_ENTRY: "get-entry",
+  LOAD_ENTRIES: "load-entries",
   CREATE_ENTRY: "create-entry",
   UPDATE_ENTRY: "update-entry",
   DELETE_ENTRY: "delete-entry",
