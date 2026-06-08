@@ -1,24 +1,22 @@
 # Current Session State
 
-**Status:** Sync + capture planning done. `source` field added to schema, shared-file sync architecture documented, easy capture features added to Phase 3, new Phase 4 (sync) added, phases renumbered to 9 total. No feature code built.
+**Status:** Phase 1 additions complete. Source field, tool type, pipe-separated tags, two-step import screen with preview, template download, and export-mine are all shipped and tested.
 
-**Last session:** [2026-06-07 — Sync + capture roadmap revision](docs/sessions/2026-06-07-sync-capture-planning.md)
+**Last session:** [2026-06-07 — Phase 1 additions](docs/sessions/2026-06-07-phase1-additions.md)
 
-**Next up — two paths, decide at session start:**
+**Next up — two options:**
 
-**Path A (recommended): Phase 1 additions first**
-The `source` field needs to be in the code before more entries are created, and the CSV schema fixes should land before any real imports happen.
-1. Add `source: "local" | "synced"` to `Entry` in `src/shared/types.ts`.
-2. Update `src/store/index.ts`: set `source: "local"` on `addEntry`, backfill `source: "local"` for entries missing the field on `openStore`.
-3. Update `src/store/csv.ts`: rename `link` column to `url`, switch tag separator to `|`, add `source` inference on import.
-4. Add `tool` type to `src/shared/types.ts` and EntryForm.tsx.
-5. Wire `download-template-csv` IPC handler and import screen preview step.
-6. Then move to Phase 3 easy capture OR Phase 5 Window UX.
+**Option A: Phase 3 easy capture features (recommended for user value)**
+- Add-from-clipboard: when the popup opens and clipboard has text, offer to pre-fill a new local entry.
+- Quick add: minimal form (title + body/url + vertical; type and tags collapsed/optional).
+- Paste-and-split: paste a multi-section document, split on headings, each section becomes an entry.
 
-**Path B: Phase 5 Window UX first**
-Hotkey and keyboard navigation are the core product UX. Phase 1 additions are schema correctness work that can slot in as a short sprint before first real user imports.
+**Option B: Phase 5 Window UX (recommended for daily use feel)**
+- Global hotkey reliability: unregister before re-register, conflict detection and error message.
+- Keyboard navigation: arrows through results, Enter to copy focused result, Esc to dismiss.
+- `shell.openExternal` for link and tool entries (currently uses window.open which is broken).
+- Persist window size and position between launches.
 
 **Open questions / blockers:**
-- CSV currently uses comma tags and a `link` column. Do not hand to real users until Phase 1 additions are done.
-- File watcher for Phase 4 sync: `fs.watch` (built-in, some reliability issues) vs `chokidar` (additional dependency). Decide when Phase 4 starts.
-- Paste-and-split heading heuristic: markdown `#`? All-caps lines? Decide when building the feature.
+- Tags entered in the form are stored as-is with no pipe enforcement. The placeholder says pipe|separated but users could still type commas. Low-priority polish, not blocking anything.
+- Existing store.json files with comma tags are converted to pipe on next load by migrate(). This is transparent to the user.

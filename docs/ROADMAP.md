@@ -50,19 +50,19 @@ Goal: working local JSON store with CSV import/export and seed data.
 
 **Phase 1 additions — CSV template and locked schema:**
 
-- [ ] Lock CSV schema: canonical column order is `title, vertical, type, body, url, tags`
-- [ ] Update csv.ts: rename the CSV column from `link` to `url` (maps to internal `Entry.link` field)
-- [ ] Update csv.ts: switch tag separator from comma (`,`) to pipe (`|`) in both import and export
-- [ ] Add `tool` as a valid `type` value in `src/shared/types.ts` (join: `reply | doc | link | sop | tool`)
-- [ ] Add `source: "local" | "synced"` to the `Entry` type in `src/shared/types.ts`
-- [ ] Update store functions: set `source: "local"` on all entries created via add/edit form or clipboard capture
-- [ ] Backfill existing entries in store.json on load: if `source` is missing, set it to `"local"`
-- [ ] Update EntryForm.tsx: add `tool` to the type selector radio buttons
-- [ ] Static template file `src/store/template/shortpath-template.csv` — created; confirm it matches locked schema before wiring download
-- [ ] IPC handler: `download-template-csv` — copies template file to user-chosen path via dialog.showSaveDialog
-- [ ] Import screen (renderer): show inline format reference — column table, pipe-tag note, multi-line body note
-- [ ] Import screen: download template button triggers `download-template-csv` IPC
-- [ ] Import preview step: parse on file select, show first 5 rows + total count + flagged rows, user confirms before commit
+- [x] Lock CSV schema: canonical column order is `title, vertical, type, body, url, tags`
+- [x] Update csv.ts: rename the CSV column from `link` to `url` (maps to internal `Entry.link` field)
+- [x] Update csv.ts: switch tag separator from comma (`,`) to pipe (`|`) in both import and export
+- [x] Add `tool` as a valid `type` value in `src/shared/types.ts` (join: `reply | doc | link | sop | tool`)
+- [x] Add `source: "local" | "synced"` to the `Entry` type in `src/shared/types.ts`
+- [x] Update store functions: set `source: "local"` on all entries created via add/edit form or clipboard capture
+- [x] Backfill existing entries in store.json on load: if `source` is missing, set it to `"local"`
+- [x] Update EntryForm.tsx: add `tool` to the type selector radio buttons
+- [x] Static template file `src/store/template/shortpath-template.csv` — confirmed; content bundled as constant in csv.ts for packaged builds
+- [x] IPC handler: `download-template-csv` — writes bundled template content to user-chosen path via dialog.showSaveDialog
+- [x] Import screen (renderer): shows inline format reference — column table, pipe-tag note
+- [x] Import screen: download template button triggers `download-template-csv` IPC
+- [x] Import preview step: parse on file select, show first 5 rows + total count + flagged rows, user confirms before commit
 
 ---
 
