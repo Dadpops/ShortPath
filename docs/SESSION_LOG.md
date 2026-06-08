@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-08 — Phase 4 shared-file sync](sessions/2026-06-08-phase4-sync.md) — File watcher, replaceSyncedEntries, sync settings UI, source badge. All Phase 4 tasks complete.
 - [2026-06-08 — Macro overlay](sessions/2026-06-08-macro-overlay.md) — Click result or Enter to open full-entry panel with copy, URL link, tag chips. Esc dismisses overlay before focus/window.
 - [2026-06-08 — Phase 5 window UX](sessions/2026-06-08-phase5-window-ux.md) — Keyboard nav, hotkey reliability, shell.openExternal, persisted window bounds, settings screen. All Phase 5 tasks complete.
 - [2026-06-08 — Phase 3 easy capture](sessions/2026-06-08-phase3-easy-capture.md) — Clipboard banner, quick add (type/tags collapsed), paste-and-split on markdown headings. All Phase 3 additions complete.
