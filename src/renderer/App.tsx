@@ -3,15 +3,17 @@ import Fuse, { type FuseResult } from "fuse.js";
 import type { Entry, Vertical, VerticalGroup, SearchResult } from "@shared/types";
 import SearchBar from "./components/SearchBar";
 import VerticalGroupComponent from "./components/VerticalGroup";
+import SupportToolsGroup from "./components/SupportToolsGroup";
 import ResultItem from "./components/ResultItem";
 import EntryForm from "./components/EntryForm";
 import ImportScreen from "./components/ImportScreen";
 import SplitImport from "./components/SplitImport";
 import SettingsScreen from "./components/SettingsScreen";
+import HelpPanel from "./components/HelpPanel";
 import MacroOverlay from "./components/MacroOverlay";
 
 type AppStatus = "loading" | "ready" | "error";
-type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings";
+type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -224,6 +226,18 @@ export default function App() {
     });
   }
 
+  function handleClipboardIconClick() {
+    setQuickAddPrefill(clipboardText!);
+    setEditingEntry(null);
+    setMode("add");
+    setClipboardDismissed(true);
+  }
+
+  function handleReorderEntry(entryId: string, direction: "up" | "down") {
+    void window.shortpath.reorderEntry(entryId, direction);
+    // store-updated push from main will refresh entries
+  }
+
   function handleOpenOverlay(entry: Entry) {
     setOverlayEntry(entry);
   }
@@ -346,15 +360,23 @@ export default function App() {
   if (mode === "settings") {
     return (
       <div className="app-shell">
-        <SettingsScreen onClose={() => setMode("browse")} />
+        <SettingsScreen
+          onClose={() => setMode("browse")}
+          onNavigate={(target) => { setMode(target); }}
+        />
       </div>
     );
   }
 
-  const showClipboardBanner =
-    mode === "browse" &&
-    !!clipboardText &&
-    !clipboardDismissed;
+  if (mode === "help") {
+    return (
+      <div className="app-shell">
+        <HelpPanel onClose={() => setMode("browse")} />
+      </div>
+    );
+  }
+
+  const hasClipboard = !!clipboardText && !clipboardDismissed;
 
   return (
     <div className="app-shell">
@@ -364,27 +386,17 @@ export default function App() {
           {isSearching && totalHits > 0 && (
             <span className="app-hit-summary">{totalHits} result{totalHits !== 1 ? "s" : ""}</span>
           )}
-          <button
-            className="header-icon-btn"
-            onClick={() => setMode("settings")}
-            title="Settings"
-          >
-            ⚙
-          </button>
-          <button
-            className="header-icon-btn"
-            onClick={() => setMode("split")}
-            title="Paste and split"
-          >
-            ✂
-          </button>
-          <button
-            className="header-icon-btn"
-            onClick={() => setMode("import")}
-            title="Import CSV"
-          >
-            ↑
-          </button>
+          {hasClipboard && (
+            <button
+              className="header-icon-btn clipboard-indicator"
+              onClick={handleClipboardIconClick}
+              title="Save clipboard as entry"
+            >
+              ⎘
+            </button>
+          )}
+          <button className="header-icon-btn" onClick={() => setMode("help")} title="Help">?</button>
+          <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings">⚙</button>
           <button
             className="add-btn"
             onClick={() => { setEditingEntry(null); setQuickAddPrefill(undefined); setMode("add"); }}
@@ -399,32 +411,6 @@ export default function App() {
         <div className="hotkey-error-banner">
           <span>{hotkeyError}</span>
           <button className="clipboard-banner-dismiss" onClick={() => setHotkeyError(null)} aria-label="Dismiss">✕</button>
-        </div>
-      )}
-
-      {showClipboardBanner && (
-        <div className="clipboard-banner">
-          <span className="clipboard-banner-preview">
-            Clipboard: "{clipboardText.length > 60 ? clipboardText.slice(0, 60) + "…" : clipboardText}"
-          </span>
-          <button
-            className="clipboard-banner-save"
-            onClick={() => {
-              setQuickAddPrefill(clipboardText);
-              setEditingEntry(null);
-              setMode("add");
-              setClipboardDismissed(true);
-            }}
-          >
-            Save as entry
-          </button>
-          <button
-            className="clipboard-banner-dismiss"
-            onClick={() => setClipboardDismissed(true)}
-            aria-label="Dismiss"
-          >
-            ✕
-          </button>
         </div>
       )}
 
@@ -471,17 +457,29 @@ export default function App() {
           </div>
         )}
 
-        {groups.map((group) => (
-          <VerticalGroupComponent
-            key={group.verticalId}
-            group={group}
-            onToggle={() => toggleGroup(group.verticalId)}
-            onEdit={handleEditEntry}
-            onCopy={handleCopy}
-            onOpen={handleOpenOverlay}
-            focusedEntryId={focusedEntryId}
-          />
-        ))}
+        {groups.map((group) =>
+          group.verticalId === "support-tools" ? (
+            <SupportToolsGroup
+              key={group.verticalId}
+              group={group}
+              onToggle={() => toggleGroup(group.verticalId)}
+              onEdit={handleEditEntry}
+              onCopy={handleCopy}
+              onReorder={handleReorderEntry}
+              isSearching={isSearching}
+            />
+          ) : (
+            <VerticalGroupComponent
+              key={group.verticalId}
+              group={group}
+              onToggle={() => toggleGroup(group.verticalId)}
+              onEdit={handleEditEntry}
+              onCopy={handleCopy}
+              onOpen={handleOpenOverlay}
+              focusedEntryId={focusedEntryId}
+            />
+          )
+        )}
       </main>
 
       {overlayEntry && (

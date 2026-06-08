@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 interface Props {
   onClose: () => void;
+  onNavigate: (mode: "import" | "split" | "add") => void;
 }
 
 type HotkeyState = "idle" | "capturing" | "saving" | "error";
@@ -51,12 +52,15 @@ function displayAccelerator(acc: string): string {
     .replace(/\+/g, " + ");
 }
 
-export default function SettingsScreen({ onClose }: Props) {
+export default function SettingsScreen({ onClose, onNavigate }: Props) {
   const [currentHotkey, setCurrentHotkey] = useState("Loading…");
   const [hotkeyState, setHotkeyState] = useState<HotkeyState>("idle");
   const [capturedAccelerator, setCapturedAccelerator] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [positionReset, setPositionReset] = useState(false);
+
+  const [exportingAll, setExportingAll] = useState(false);
+  const [exportingMine, setExportingMine] = useState(false);
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [refreshState, setRefreshState] = useState<RefreshState>("idle");
@@ -127,6 +131,18 @@ export default function SettingsScreen({ onClose }: Props) {
     setTimeout(() => setPositionReset(false), 2000);
   }
 
+  async function handleExportAll() {
+    setExportingAll(true);
+    await window.shortpath.exportCsv();
+    setExportingAll(false);
+  }
+
+  async function handleExportMine() {
+    setExportingMine(true);
+    await window.shortpath.exportMine();
+    setExportingMine(false);
+  }
+
   async function handleConfigureSync() {
     const result = await window.shortpath.configureSync();
     if (result.success) reloadSyncStatus();
@@ -166,6 +182,30 @@ export default function SettingsScreen({ onClose }: Props) {
       </div>
 
       <div className="settings-body">
+        <section className="settings-section">
+          <div className="settings-section-title">Data</div>
+          <div className="settings-data-grid">
+            <button className="settings-data-btn" onClick={() => onNavigate("add")}>
+              + Add entry
+            </button>
+            <button className="settings-data-btn" onClick={() => onNavigate("import")}>
+              ↑ Import CSV
+            </button>
+            <button className="settings-data-btn" onClick={() => onNavigate("split")}>
+              ✂ Paste and split
+            </button>
+            <button className="settings-data-btn" onClick={() => window.shortpath.downloadTemplateCsv()}>
+              ↓ Download template
+            </button>
+            <button className="settings-data-btn" onClick={handleExportAll} disabled={exportingAll}>
+              {exportingAll ? "Saving…" : "Export all"}
+            </button>
+            <button className="settings-data-btn" onClick={handleExportMine} disabled={exportingMine}>
+              {exportingMine ? "Saving…" : "Export mine"}
+            </button>
+          </div>
+        </section>
+
         <section className="settings-section">
           <div className="settings-section-title">Global hotkey</div>
 
