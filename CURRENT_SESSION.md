@@ -1,8 +1,8 @@
 # Current Session State
 
-**Status:** Phases 1–9 complete. Post-phase features: rounded window, recents dropdown, Notes system, add-vertical, note-entry linking, data info buttons.
+**Status:** Phases 1–9 complete. Post-phase features: rounded window, recents dropdown, Notes system, add-vertical, note-entry linking, data info buttons, sub-folders, clear-local-entries, close button.
 
-**Last session:** [2026-06-08 — Polish and new features](docs/sessions/2026-06-08-polish-features.md)
+**Last session:** [2026-06-08 — Sub-folders, danger zone, close button](docs/sessions/2026-06-08-subfolders-danger-zone.md)
 
 **Open polish items:**
 - Settings hotkey display shows "Ctrl" regardless of platform; should show "Cmd" on Mac.

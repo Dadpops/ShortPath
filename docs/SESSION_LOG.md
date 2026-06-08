@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-08 — Sub-folders, danger zone, close button](sessions/2026-06-08-subfolders-danger-zone.md) — Sub-folders per vertical (Settings + EntryForm + results grouping), clear-local-entries danger zone, ✕ close button, README rewrite.
 - [2026-06-08 — Polish and new features](sessions/2026-06-08-polish-features.md) — ESLint CI fix, shadow, drag fix, font scaling, add-vertical, note-entry linking, data info buttons.
 - [2026-06-08 — Rounded window, recents dropdown, Notes](sessions/2026-06-08-rounded-window-notes.md) — Transparent floating window, recents dropdown on search focus, internal Notes CRUD system.
 - [2026-06-08 — UI improvements](sessions/2026-06-08-ui-improvements.md) — Slider, light/dark mode, auto-local, minimize btn, FAB, vertical rename, collapsible settings.
