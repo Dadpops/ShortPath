@@ -26,12 +26,26 @@ Every resource in ShortPath is an entry. Entries are stored as an array of objec
 | `link` | string or null | URL. Null for text-only entries. Both body and link can be set. |
 | `tags` | string | Pipe-separated tag strings (`billing|refund|chat`). Empty string when none. |
 | `type` | string | One of: `reply`, `doc`, `link`, `sop`, `tool` |
+| `source` | string | `local` or `synced`. See below. |
 | `createdAt` | string | ISO 8601 datetime |
 | `updatedAt` | string | ISO 8601 datetime, updated on every write |
 
 The `type` field hints at rendering (e.g. `reply` shows a copy button prominently, `link` and `tool` show an open-in-browser button). The `vertical` field drives grouping.
 
 Note on IDs: uses UUID strings so entries created manually and entries imported from CSV do not collide, and so JSON files are self-contained without a database sequence.
+
+## The `source` field
+
+Every entry has a `source` value. There are two possible values:
+
+- **`local`** — the user created this entry themselves (via the add form, quick add, clipboard capture, or paste-and-split). Local entries are fully editable. They are never touched by a sync operation.
+- **`synced`** — this entry came from the team's shared file. It is treated as read-only in the local UI; changes happen in the master file and flow back through sync. Synced entries are replaced or removed when the shared file changes, but only synced entries are ever affected.
+
+The store holds both kinds in the same entries array. The app uses `source` to tell them apart at render time. In the UI, local and synced entries are visually distinguished (a small tag or color cue) and may be shown as separate top-level groups.
+
+**Why this field exists now, before sync is built:** once sync is added in Phase 4, the promise "sync never clobbers your personal entries" must be guaranteed in code. That guarantee requires every entry to carry its origin. Adding `source` now means the schema is ready and no migration is needed when Phase 4 ships.
+
+**`source` is a store field, not a CSV column.** The shared file (the team's master) contains only synced content by definition -- everything in that file gets `source: "synced"` on load. Everything a user adds locally gets `source: "local"`. There is no ambiguity and no column needed. See the CSV format section below.
 
 ## TypeScript representation
 
@@ -45,6 +59,7 @@ interface Entry {
   link: string | null;
   tags: string;          // pipe-separated: "billing|refund|chat"
   type: "reply" | "doc" | "link" | "sop" | "tool";
+  source: "local" | "synced";
   createdAt: string;
   updatedAt: string;
 }
@@ -144,3 +159,11 @@ A static CSV template lives at `src/store/template/shortpath-template.csv`. It c
 ### Internal field name vs CSV column name
 
 The internal `Entry` type uses `link` for the URL field. The CSV column is named `url` (more intuitive to non-developers). The import/export layer maps between them.
+
+### The `source` field is not a CSV column
+
+`source` does not appear in the CSV schema. The value is inferred at import time:
+
+- Entries loaded from the team's shared file get `source: "synced"`.
+- Entries added by the user locally get `source: "local"`.
+- On export (both "export all" and "export mine"), `source` is omitted. Re-importing a previously exported file treats all rows as `local`, which is the correct behavior for a user re-importing their own backup.
