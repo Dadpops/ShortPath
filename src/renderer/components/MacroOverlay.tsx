@@ -1,0 +1,99 @@
+import { useState, useEffect } from "react";
+import type { Entry, Vertical } from "@shared/types";
+
+interface Props {
+  entry: Entry;
+  verticals: Vertical[];
+  onClose: () => void;
+  onCopied: (entryId: string) => void;
+}
+
+export default function MacroOverlay({ entry, verticals, onClose, onCopied }: Props) {
+  const [copied, setCopied] = useState(false);
+
+  const verticalLabel = verticals.find((v) => v.id === entry.vertical)?.label ?? entry.vertical;
+  const tags = entry.tags ? entry.tags.split("|").map((t) => t.trim()).filter(Boolean) : [];
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
+  }, [onClose]);
+
+  function handleCopy() {
+    const text = entry.body ?? entry.link ?? entry.title;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      onCopied(entry.id);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  function handleOpenLink(e: React.MouseEvent) {
+    e.preventDefault();
+    if (entry.link) window.shortpath.openExternal(entry.link);
+  }
+
+  return (
+    <div className="macro-backdrop" onClick={onClose}>
+      <div className="macro-panel" onClick={(e) => e.stopPropagation()}>
+
+        <div className="macro-header">
+          <div className="macro-header-meta">
+            <span className="macro-badge macro-badge-vertical">{verticalLabel}</span>
+            <span className="macro-badge macro-badge-type">{entry.type}</span>
+          </div>
+          <h2 className="macro-title">{entry.title}</h2>
+          <div className="macro-header-actions">
+            <button
+              className={`macro-copy-btn${copied ? " copied" : ""}`}
+              onClick={handleCopy}
+            >
+              {copied ? "Copied ✓" : "Copy"}
+            </button>
+            <button className="macro-close-btn" onClick={onClose} aria-label="Close">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div className="macro-body">
+          {entry.body ? (
+            <pre className="macro-body-text">{entry.body}</pre>
+          ) : (
+            <p className="macro-body-empty">No body text.</p>
+          )}
+        </div>
+
+        {(entry.link || tags.length > 0) && (
+          <div className="macro-footer">
+            {entry.link && (
+              <a
+                className="macro-link"
+                href={entry.link}
+                onClick={handleOpenLink}
+                title={entry.link}
+              >
+                ↗ {entry.link}
+              </a>
+            )}
+            {tags.length > 0 && (
+              <div className="macro-tags">
+                {tags.map((tag) => (
+                  <span key={tag} className="macro-tag-chip">{tag}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}

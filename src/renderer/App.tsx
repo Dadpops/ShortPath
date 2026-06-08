@@ -8,6 +8,7 @@ import EntryForm from "./components/EntryForm";
 import ImportScreen from "./components/ImportScreen";
 import SplitImport from "./components/SplitImport";
 import SettingsScreen from "./components/SettingsScreen";
+import MacroOverlay from "./components/MacroOverlay";
 
 type AppStatus = "loading" | "ready" | "error";
 type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings";
@@ -36,6 +37,7 @@ export default function App() {
   const [focusedEntryId, setFocusedEntryId] = useState<string | null>(null);
   const [focusTrigger, setFocusTrigger] = useState(0);
   const [hotkeyError, setHotkeyError] = useState<string | null>(null);
+  const [overlayEntry, setOverlayEntry] = useState<Entry | null>(null);
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -204,14 +206,6 @@ export default function App() {
     setRecents((prev) => [entryId, ...prev.filter((id) => id !== entryId)].slice(0, 10));
   }
 
-  function performCopy(entry: Entry) {
-    const text = entry.body ?? entry.link ?? entry.title;
-    navigator.clipboard.writeText(text).then(() => {
-      handleCopy(entry.id);
-      window.shortpath.recordAccess(entry.id);
-    });
-  }
-
   function navigateDown() {
     if (flatResults.length === 0) return;
     setFocusedEntryId((prev) => {
@@ -230,15 +224,25 @@ export default function App() {
     });
   }
 
+  function handleOpenOverlay(entry: Entry) {
+    setOverlayEntry(entry);
+  }
+
+  function handleCloseOverlay() {
+    setOverlayEntry(null);
+  }
+
   function handleEnter() {
     if (focusedEntryId) {
       const entry = flatResults.find((e) => e.id === focusedEntryId);
-      if (entry) performCopy(entry);
+      if (entry) setOverlayEntry(entry);
     }
   }
 
   function handleEscape() {
-    if (focusedEntryId) {
+    if (overlayEntry) {
+      setOverlayEntry(null);
+    } else if (focusedEntryId) {
       setFocusedEntryId(null);
     } else {
       window.shortpath.hideWindow();
@@ -447,6 +451,7 @@ export default function App() {
                   result={{ entry, matches: [] }}
                   onEdit={handleEditEntry}
                   onCopy={handleCopy}
+                  onOpen={handleOpenOverlay}
                   isFocused={focusedEntryId === entry.id}
                 />
               ))}
@@ -473,10 +478,20 @@ export default function App() {
             onToggle={() => toggleGroup(group.verticalId)}
             onEdit={handleEditEntry}
             onCopy={handleCopy}
+            onOpen={handleOpenOverlay}
             focusedEntryId={focusedEntryId}
           />
         ))}
       </main>
+
+      {overlayEntry && (
+        <MacroOverlay
+          entry={overlayEntry}
+          verticals={verticals}
+          onClose={handleCloseOverlay}
+          onCopied={handleCopy}
+        />
+      )}
     </div>
   );
 }
