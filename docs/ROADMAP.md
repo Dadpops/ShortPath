@@ -150,11 +150,11 @@ Goal: keyboard-first interaction that makes the app genuinely fast.
 
 Goal: dedicated surface for quick-access utilities and links.
 
-- [ ] Support Tools vertical with distinct UI treatment
-- [ ] Add/edit/remove tool entries (links + labels)
-- [ ] Quick-launch: open link in default browser via shell.openExternal
-- [ ] Reorder tools via drag or keyboard
-- [ ] Write Help topics for Phase 6 features (Support Tools section, reordering)
+- [x] Support Tools vertical with distinct UI treatment (2-col grid, launch on click)
+- [x] Add/edit/remove tool entries (links + labels)
+- [x] Quick-launch: open link in default browser via shell.openExternal
+- [x] Reorder tools via keyboard (↑↓ buttons, order persisted in store)
+- [x] Write Help topics for Phase 6 features (Support Tools section, reordering)
 
 ---
 
@@ -162,29 +162,13 @@ Goal: dedicated surface for quick-access utilities and links.
 
 Goal: in-app, searchable help covering every feature. No browser, no external links.
 
-- [ ] Help button `?` in main window header (top-right, next to add button)
-- [ ] Help panel: slide-over or in-window view — NOT a separate BrowserWindow, NOT shell.openExternal
-- [ ] Help panel: dismissable with Esc or a close x button
-- [ ] Help panel: search box that filters topics by title and content keywords
-- [ ] Help topic data structure stubbed at `src/renderer/features/help/topics.ts`
-- [ ] Author all 16 Help topics with full content:
-  - Getting started (what ShortPath is, how to install and launch)
-  - Opening and closing (hotkey, tray click, Esc to dismiss)
-  - Searching (fuzzy search, tips for good queries, minimum 2 chars)
-  - Understanding results (verticals, hit counts, expand/collapse groups)
-  - Copying an entry (copy button, what gets copied, keyboard shortcut)
-  - Keyboard navigation (arrows, Enter to copy, Esc to dismiss)
-  - Filtering by vertical (per-vertical scope filter)
-  - Recents (what they are, how they update, capped at 10)
-  - Adding an entry (form fields, types, pick or create a vertical)
-  - Editing and deleting (edit button, inline delete confirmation)
-  - Managing verticals (create, rename, which are built-in)
-  - Importing a CSV (template, column format, pipe tags, preview step)
-  - Exporting a CSV (export all vs export mine, re-import behavior)
-  - Support Tools (dedicated vertical, quick-launch links, reordering)
-  - Settings (change hotkey, reset window position, configure sync)
-  - Troubleshooting (hotkey conflicts, app not opening, entries missing, sync not updating)
-- [ ] Retroactively write Help content for Phase 1-4 features (CSV, search, entry management, sync)
+- [x] Help button `?` in main window header
+- [x] Help panel: in-window view (mode swap like settings, Esc/Back to dismiss)
+- [x] Help panel: dismissable with Back button or Esc
+- [x] Help panel: search box that filters topics by title, tags, and content
+- [x] Help topic data structure at `src/renderer/features/help/topics.ts`
+- [x] Author all 16 Help topics with full content (all topics written)
+- [x] Retroactively wrote Help content for Phase 1-4 features (CSV, search, entry management, sync)
 
 ---
 
