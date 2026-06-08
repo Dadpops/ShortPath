@@ -74,4 +74,8 @@ export const IPC = {
   CLEAR_SYNCED: "clear-synced",
   GET_SYNC_STATUS: "get-sync-status",
   SYNC_REFRESHED: "sync-refreshed",
+  TOGGLE_FAVORITE: "toggle-favorite",
+  SAVE_SOURCE_MODE: "save-source-mode",
+  SET_FONT_SIZE: "set-font-size",
+  DISCONNECT_SYNC: "disconnect-sync",
 } as const;

@@ -4,6 +4,10 @@ interface LoadEntriesResult {
   entries: Entry[];
   verticals: Vertical[];
   recents: string[];
+  favorites: string[];
+  fontSize: "small" | "medium" | "large";
+  sourceMode: "local" | "sync" | null;
+  sourceName: string | null;
 }
 
 interface CreateEntryResult {
@@ -79,9 +83,14 @@ declare global {
       openExternal: (url: string) => Promise<void>;
       hideWindow: () => Promise<void>;
 
-      getSettings: () => Promise<{ hotkey: string }>;
+      getSettings: () => Promise<{ hotkey: string; fontSize: "small" | "medium" | "large" }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
+
+      toggleFavorite: (entryId: string) => Promise<void>;
+      setFontSize: (size: "small" | "medium" | "large") => Promise<void>;
+      saveSourceMode: (mode: "local" | "sync", name?: string) => Promise<void>;
+      disconnectSync: () => Promise<void>;
 
       configureSync: () => Promise<{ success: boolean; syncPath?: string; errors?: string[] }>;
       refreshSynced: () => Promise<{ success: boolean; errors?: string[] }>;
@@ -94,7 +103,7 @@ declare global {
       onSyncRefreshed: (callback: () => void) => () => void;
 
       onStoreUpdated: (
-        callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[] }) => void
+        callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[]; favorites: string[] }) => void
       ) => () => void;
     };
   }

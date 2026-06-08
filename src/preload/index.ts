@@ -38,6 +38,11 @@ contextBridge.exposeInMainWorld("shortpath", {
   changeHotkey: (accelerator: string) => ipcRenderer.invoke("change-hotkey", accelerator),
   resetWindowPosition: () => ipcRenderer.invoke("reset-window-position"),
 
+  toggleFavorite: (entryId: string) => ipcRenderer.invoke("toggle-favorite", entryId),
+  setFontSize: (size: "small" | "medium" | "large") => ipcRenderer.invoke("set-font-size", size),
+  saveSourceMode: (mode: "local" | "sync", name?: string) => ipcRenderer.invoke("save-source-mode", mode, name),
+  disconnectSync: () => ipcRenderer.invoke("disconnect-sync"),
+
   onFocusSearch: (callback: () => void) => {
     ipcRenderer.on("focus-search", callback);
     return () => ipcRenderer.removeListener("focus-search", callback);
@@ -58,6 +63,7 @@ contextBridge.exposeInMainWorld("shortpath", {
       entries: Entry[];
       verticals: { id: string; label: string; builtIn: boolean }[];
       recents: string[];
+      favorites: string[];
     }) => void
   ) => {
     ipcRenderer.on("store-updated", (_event, data) => callback(data));

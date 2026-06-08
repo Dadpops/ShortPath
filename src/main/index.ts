@@ -13,7 +13,7 @@ import {
 } from "electron";
 import path from "path";
 import fs from "fs";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite } from "../store/index";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
@@ -174,6 +174,7 @@ function pushStoreUpdate() {
     entries: store.entries,
     verticals: store.verticals,
     recents: store.recents,
+    favorites: store.favorites,
   });
 }
 
@@ -249,6 +250,10 @@ function registerIpcHandlers() {
     entries: store.entries,
     verticals: store.verticals,
     recents: store.recents,
+    favorites: store.favorites,
+    fontSize: settings.fontSize ?? "medium",
+    sourceMode: settings.sourceMode ?? null,
+    sourceName: settings.sourceName ?? null,
   }));
 
   ipcMain.handle(
@@ -407,7 +412,37 @@ function registerIpcHandlers() {
 
   ipcMain.handle("hide-window", () => win?.hide());
 
-  ipcMain.handle("get-settings", () => ({ hotkey: settings.hotkey }));
+  ipcMain.handle("get-settings", () => ({
+    hotkey: settings.hotkey,
+    fontSize: settings.fontSize ?? "medium",
+  }));
+
+  ipcMain.handle("toggle-favorite", (_e, entryId: string) => {
+    store = toggleFavorite(store, entryId);
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
+  });
+
+  ipcMain.handle("set-font-size", (_e, size: "small" | "medium" | "large") => {
+    settings = { ...settings, fontSize: size };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("save-source-mode", (_e, mode: "local" | "sync", name?: string) => {
+    settings = { ...settings, sourceMode: mode, sourceName: name };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("disconnect-sync", () => {
+    stopSyncWatcher();
+    store = replaceSyncedEntries(store, []);
+    saveStore(userDataPath, store);
+    settings = { ...settings, syncPath: undefined };
+    saveSettings(userDataPath, settings);
+    lastRefreshed = null;
+    pushStoreUpdate();
+    win?.webContents.send("sync-refreshed");
+  });
 
   ipcMain.handle("change-hotkey", (_e, accelerator: string) => {
     const ok = registerHotkey(accelerator);
