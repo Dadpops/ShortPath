@@ -16,7 +16,7 @@ Goal: repo, scaffold, docs, tray window proof, version-control workflow.
 - [x] eslint config
 - [x] electron-builder.yml
 - [x] vite.config.ts
-- [x] Folder scaffold: src/main, src/preload, src/renderer, src/shared, src/db
+- [x] Folder scaffold: src/main, src/preload, src/renderer, src/shared, src/store
 - [x] Placeholder/stub files in every folder
 - [x] Bare Electron tray app: opens a resizable window at bottom-left
 - [x] React renderer: placeholder shell with design tokens
@@ -34,33 +34,38 @@ Goal: repo, scaffold, docs, tray window proof, version-control workflow.
 
 ---
 
-## Phase 1 — Data layer and import
+## Phase 1 — Data layer
 
-Goal: working local database with CSV import/export and seed data.
+Goal: working local JSON store with CSV import/export and seed data.
 
-- [ ] Open SQLite database on app start (path in user data dir)
-- [ ] Create schema on first run (entries table + FTS5 virtual table + triggers)
-- [ ] IPC handlers: ping, search, get-entry, create-entry, update-entry, delete-entry
-- [ ] CSV import: parse file, validate columns, bulk insert entries
-- [ ] CSV export: dump all entries to file
+- [ ] Define JSON store structure (store.json): version, entries array, verticals array
+- [ ] Write store module (src/store/index.ts): open, read, write, migrate on version bump
+- [ ] IPC handlers in main: load-entries, create-entry, update-entry, delete-entry
+- [ ] Expose store operations to renderer via preload bridge
+- [ ] CSV import (PapaParse): parse file, validate required columns, merge into store
+- [ ] CSV export (PapaParse): serialize store to CSV, write to user-chosen path
 - [ ] Seed data: sample entries across all built-in verticals
-- [ ] Expose db operations to renderer via preload bridge
-- [ ] Basic error handling for malformed CSV
+- [ ] Basic error handling: malformed CSV rows skipped with a warning returned to renderer
+- [ ] Tray icon: replace empty placeholder with a minimal PNG asset
 
 ---
 
-## Phase 2 — Cross-vertical search
+## Phase 2 — Keyword search
 
 Goal: the core search experience working end-to-end.
 
-- [ ] Search bar component in renderer
-- [ ] FTS5 query from renderer via IPC on each keystroke (debounced)
+- [ ] On window open: main sends full entry list to renderer via load-entries IPC
+- [ ] Fuse.js index built in renderer from entry list
+- [ ] Search bar component (debounced, ~100ms)
+- [ ] Fuse.js query on each keystroke: title-weighted, tag-aware, conservative fuzzy threshold
 - [ ] Group results by vertical with hit counts
 - [ ] VerticalGroup component: header with hit count, expand/collapse toggle
 - [ ] ResultList component: renders entries within a group
 - [ ] Folder-path style result display (vertical / title)
-- [ ] Highlight matched terms in result snippets (FTS5 snippet function)
-- [ ] Empty state and loading state
+- [ ] Highlight matched terms in results (using Fuse.js match ranges)
+- [ ] Recents shown when search box is empty (last 10 opened/copied entries)
+- [ ] Per-vertical filter: scope search to one vertical at a time
+- [ ] Empty state (no results) and loading state
 
 ---
 
@@ -68,17 +73,29 @@ Goal: the core search experience working end-to-end.
 
 Goal: users can copy results and manage their own entries.
 
-- [ ] CopyButton component: writes entry body or link to clipboard via IPC
+- [ ] CopyButton component: writes entry body or link to clipboard
+- [ ] Track recents: record entry access on copy or open
 - [ ] Add entry form: title, body, link, tags, type, vertical
 - [ ] Edit entry form
 - [ ] Delete entry with confirmation
 - [ ] User-defined verticals: create and name custom categories
-- [ ] User shortcuts: pin frequently used entries
-- [ ] Persist window size and position between sessions
 
 ---
 
-## Phase 4 — Support Tools section
+## Phase 4 — Window UX (core, not polish)
+
+Goal: keyboard-first interaction that makes the app genuinely fast.
+
+- [ ] Global hotkey to summon and dismiss the popup (configurable, default: e.g. Cmd/Ctrl+Shift+Space)
+- [ ] On hotkey: show window, focus search box immediately
+- [ ] Keyboard navigation: arrow keys move through results, Enter copies focused result, Esc dismisses
+- [ ] Persist window size and position between launches
+- [ ] Tray menu: Show, Import CSV, Export CSV, Settings, Quit
+- [ ] Settings surface: change hotkey, reset position
+
+---
+
+## Phase 5 — Support Tools section
 
 Goal: dedicated surface for quick-access utilities and links.
 
@@ -89,27 +106,24 @@ Goal: dedicated surface for quick-access utilities and links.
 
 ---
 
-## Phase 5 — Polish and window UX
+## Phase 6 — Polish
 
-Goal: app feels intentional and fast.
+Goal: app feels intentional and complete.
 
 - [ ] Finalize design tokens and typography
-- [ ] Bottom-left popup behavior: show/hide with smooth animation
-- [ ] Resize persistence across sessions
-- [ ] Tray icon with real asset (not empty placeholder)
-- [ ] Global show/hide hotkey (configurable)
-- [ ] Keyboard navigation throughout (arrow keys, Enter to copy, Escape to close)
-- [ ] Context menu on tray icon (Show, Quit)
-- [ ] Performance: search should feel instant on datasets up to ~10k entries
+- [ ] Show/hide animation for the popup
+- [ ] Tray icon states (active/inactive)
+- [ ] Consistent empty and error states throughout
+- [ ] Performance check: search should feel instant on datasets up to ~10k entries
 
 ---
 
-## Phase 6 — Packaging and distribution
+## Phase 7 — Packaging and distribution
 
 Goal: installable builds for Windows and Mac.
 
 - [ ] electron-builder targets: NSIS (Windows), DMG (Mac)
-- [ ] Code signing notes documented (certificates not committed)
+- [ ] Code signing: document Apple Developer cert and Windows signing requirements (certificates not committed)
 - [ ] Auto-update scaffold (electron-updater) — optional for v1
-- [ ] Build script in package.json
+- [ ] Build and release scripts in package.json
 - [ ] First tagged release (v0.1.0) on GitHub
