@@ -19,6 +19,9 @@ Press the hotkey (default: Ctrl+Shift+Space) from anywhere on your desktop. The 
 
 Everything is stored on your machine. Nothing is sent to a server. No login required.
 
+First launch
+When you open ShortPath for the first time, it asks whether you are using it solo (Local) or with a team via a shared CSV (File Share Sync). You can change this later from Settings. See the "Local vs File Share Sync" help topic for details.
+
 First steps
 1. Press the hotkey now: Ctrl+Shift+Space (Cmd+Shift+Space on Mac).
 2. Type a few characters to search the sample entries.
@@ -253,7 +256,10 @@ Synced entries show a small "synced" badge in search results so you can tell the
 
 Switching or disconnecting
 - To use a different file, click "Change file" in Settings.
-- To disconnect entirely, click "Clear synced" — this removes all synced entries but leaves your own entries untouched.`,
+- To remove synced entries without stopping sync, click "Clear synced entries". The watcher keeps running; entries reload on the next file change.
+- To stop syncing entirely, click "Disconnect sync". This stops the file watcher, clears the sync path from settings, and removes all synced entries. No further reloads until you reconfigure.
+
+See the "Disconnecting sync" help topic for a full comparison of the two actions.`,
   },
   {
     id: "support-tools",
@@ -292,6 +298,81 @@ Import CSV, Export all, Export mine, Download template, Paste and split, and Add
 
 Shared file sync
 See the "Shared file sync" help topic for full setup instructions.`,
+  },
+  {
+    id: "text-size",
+    title: "Adjusting text size",
+    tags: ["font", "text", "size", "appearance", "small", "large", "accessibility"],
+    content: `ShortPath supports three text sizes for entry content: Small, Medium, and Large. Medium is the default.
+
+To change the text size, open Settings (⚙ in the header) and find the Appearance section at the top. Click Small, Medium, or Large. The change applies immediately — no restart needed.
+
+The setting is saved and will persist across app launches.
+
+What scales: entry titles in the result list, and the body text in the expanded overlay. Header and chrome elements stay fixed so the layout does not shift.`,
+  },
+  {
+    id: "favorites",
+    title: "Favorites",
+    tags: ["star", "favorites", "bookmark", "saved", "quick access"],
+    content: `You can star any entry to save it to your Favorites list.
+
+Adding and removing favorites
+On any result row, hover to reveal action buttons. The ☆ star button is on the left side of the row. Click it to star the entry; it turns ★ amber and stays visible even when you stop hovering. Click again to unstar.
+
+In the expanded overlay (click any result to open it), the star appears in the top-left of the header. Click it to toggle.
+
+Opening Favorites
+Click the ☆ icon in the main header (next to ? Help). This opens the Favorites view, which lists all your starred entries. Every entry in the list supports the same copy, edit, and open actions as the main search.
+
+Click ← Back (or the header path) to return to the main list.
+
+Notes
+Favorites are stored on your machine in the local store. If an entry is deleted, it is removed from favorites automatically. Synced entries can be starred just like local ones — the favorite status is yours and is not affected by sync refreshes.`,
+  },
+  {
+    id: "source-mode",
+    title: "Local vs File Share Sync",
+    tags: ["setup", "source", "mode", "local", "sync", "team", "first launch"],
+    content: `On first launch, ShortPath asks how you plan to use it.
+
+Local (just me)
+All entries live only on your machine. Nothing is shared. This is the right choice for solo users. You can always add sync later from Settings > Shared file sync.
+
+File Share Sync (team)
+You provide a friendly name (like "Acme Support Team") that appears in the header path. ShortPath is designed to read a shared CSV that your cloud service (Drive, Dropbox, OneDrive) keeps in sync across machines. See the "Shared file sync" help topic for full setup steps.
+
+The header path
+The top-left of every screen shows "shortpath / Local" or "shortpath / [your source name]". Clicking it returns you to the main list and clears the current search from anywhere in the app.
+
+Changing source name
+If you need to update the source name, re-run setup is not available yet — edit settings.json in your app data folder (see Troubleshooting for the path) and change the sourceName field.`,
+  },
+  {
+    id: "editing-overlay",
+    title: "Editing entries from the overlay",
+    tags: ["edit", "overlay", "duplicate", "synced", "local", "in-place"],
+    content: `When you open an entry in the overlay (click any result, or press Enter on a focused result), an edit section appears below the body text.
+
+Local entries
+For entries you created yourself (source: local), a "✎ Edit entry" button opens the full edit form. You can change the title, vertical, type, body, URL, and tags. Save writes the change immediately to the store.
+
+Synced entries
+Synced entries come from the shared team CSV file. ShortPath does not write back to that file, so any change you made would be overwritten the next time the file refreshes. Instead of editing in place, ShortPath offers "⊕ Duplicate to local and edit". This creates a new local copy of the entry (with source: local) and opens it in the edit form. The original synced entry is unchanged. Your local copy is yours to keep and will not be affected by future sync refreshes.`,
+  },
+  {
+    id: "disconnect-sync",
+    title: "Disconnecting sync",
+    tags: ["sync", "disconnect", "stop", "clear", "watcher", "file"],
+    content: `When a sync file is configured, the Settings > Shared file sync section shows two separate actions for removing synced content.
+
+Clear synced entries
+Removes all synced entries from the local store. The file watcher keeps running. If the sync file changes, or if you click "Refresh now", synced entries will reload. Use this when you want a clean slate without stopping sync.
+
+Disconnect sync
+Stops the file watcher completely, clears the sync file path from settings, and removes all synced entries. After disconnecting, no further reloads will occur until you click "Configure sync file" again. Use this when you are switching files or want to stop syncing permanently.
+
+Both actions require a second click to confirm. Neither action touches your local entries.`,
   },
   {
     id: "troubleshooting",
