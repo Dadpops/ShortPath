@@ -1,14 +1,13 @@
 # Current Session State
 
-**Status:** Phase 0 complete. Stack realigned. No features built.
+**Status:** Phase 1 and Phase 2 complete. App is in demo state — seed data loads, search works, copy button works.
 
-**Last session:** [2026-06-07 — Course correction](docs/sessions/2026-06-07-course-correction.md)
+**Last session:** [2026-06-07 — Phase 1 + Phase 2 demo build](docs/sessions/2026-06-07-phase1-phase2-demo.md)
 
-**Next up:** Phase 1 — Data layer.
-First task: implement `src/store/index.ts` to open or create `store.json` in the Electron userData directory on app start.
-Second task: wire the `load-entries` IPC handler so the renderer receives the full entry list when the window opens.
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the full Phase 1 checklist.
+**Next up:** Phase 3 — Copy and entry management.
+First task: add/edit/delete entry forms in the UI. Manual entries should live in the same JSON store as seeded/imported ones.
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the full checklist.
 
 **Open questions / blockers:**
-- Tray icon is still an empty placeholder. Add a minimal PNG asset early in Phase 1.
-- Run `npm install` before starting Phase 1 — fuse.js and papaparse are declared but not yet installed.
+- `window.open(link)` in ResultItem should be replaced with `shell.openExternal` via IPC (Phase 4 item, flagged early).
+- Global hotkey (`CommandOrControl+Shift+Space`) should be tested. If it conflicts with another app, it silently fails — Phase 4 adds conflict detection and user configuration.
