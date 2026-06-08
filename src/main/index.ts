@@ -54,8 +54,9 @@ function createWindow() {
 }
 
 function createTray() {
-  // Placeholder icon — replace with real asset in Phase 5
-  const icon = nativeImage.createEmpty();
+  const icon = nativeImage.createFromPath(
+    path.join(app.getAppPath(), "icons/png/tray-32.png")
+  );
   tray = new Tray(icon);
 
   const contextMenu = Menu.buildFromTemplate([

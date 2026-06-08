@@ -9,25 +9,26 @@ directories:
 files:
   - dist/**/*
   - node_modules/**/*
+  - icons/**/*
   - package.json
 
 win:
   target:
     - target: nsis
       arch: [x64]
-  icon: build/icon.ico
+  icon: icons/icon.ico
 
 mac:
   target:
     - target: dmg
       arch: [x64, arm64]
-  icon: build/icon.icns
+  icon: icons/icon.icns
   category: public.app-category.productivity
 
 linux:
   target:
     - target: AppImage
-  icon: build/icon.png
+  icon: icons/icon.png
 
 nsis:
   oneClick: false
