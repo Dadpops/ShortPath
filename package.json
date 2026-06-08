@@ -15,7 +15,7 @@
     "build:main": "tsc -p tsconfig.main.json",
     "electron": "electron .",
     "start": "npm run build && npm run electron",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",

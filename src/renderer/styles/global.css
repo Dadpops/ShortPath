@@ -72,7 +72,7 @@ body {
   position: relative;
   background: var(--color-bg);
   border-radius: 12px;
-  box-shadow: 0 8px 32px var(--color-shadow);
+  box-shadow: 0 4px 12px var(--color-shadow);
 }
 
 .app-shell.animate-in {
@@ -199,7 +199,7 @@ body {
   cursor: pointer;
   color: var(--color-text-muted);
   text-align: left;
-  font-size: 11px;
+  font-size: calc(var(--font-size-base) - 2px);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -397,7 +397,7 @@ body {
 
 .recents-header {
   padding: 8px 14px;
-  font-size: 11px;
+  font-size: calc(var(--font-size-base) - 2px);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -421,6 +421,14 @@ body {
   background: var(--color-surface);
   flex-shrink: 0;
   min-height: 42px;
+  -webkit-app-region: drag;
+}
+
+.form-header button,
+.form-header input,
+.form-header a,
+.form-header select {
+  -webkit-app-region: no-drag;
 }
 
 .form-back-btn {
@@ -1178,30 +1186,116 @@ body {
   margin-top: 4px;
 }
 
-.settings-data-btn {
-  background: var(--color-bg);
+.settings-data-cell {
+  display: flex;
+  align-items: stretch;
   border: 1px solid var(--color-border);
-  color: var(--color-text);
   border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color 0.1s;
+}
+
+.settings-data-cell:has(.settings-data-btn:hover),
+.settings-data-cell:has(.settings-info-btn.active) {
+  border-color: var(--color-accent);
+}
+
+.settings-data-btn {
+  flex: 1;
+  background: var(--color-bg);
+  border: none;
+  color: var(--color-text);
   padding: 6px 10px;
   font-size: 12px;
   text-align: left;
   cursor: pointer;
-  transition: background 0.1s, border-color 0.1s;
+  transition: background 0.1s, color 0.1s;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .settings-data-btn:hover {
   background: var(--color-surface-hover);
-  border-color: var(--color-accent);
   color: var(--color-accent);
 }
 
 .settings-data-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.settings-info-btn {
+  background: var(--color-bg);
+  border: none;
+  border-left: 1px solid var(--color-border);
+  color: var(--color-text-faint);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 7px;
+  transition: color 0.1s, background 0.1s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.settings-info-btn:hover {
+  color: var(--color-accent);
+  background: var(--color-surface-hover);
+}
+
+.settings-info-btn.active {
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+}
+
+.settings-info-popup {
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent-dim);
+  border-radius: var(--radius);
+  padding: 10px 28px 10px 12px;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+  position: relative;
+}
+
+.settings-info-popup-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 6px;
+}
+
+.settings-info-popup-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-faint);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+}
+
+.settings-info-popup-close:hover {
+  color: var(--color-text);
+}
+
+.settings-info-popup-body {
+  font-size: 12px;
 }
 
 /* Clipboard indicator in header */
@@ -1929,7 +2023,7 @@ body {
 
 .recents-dropdown-header {
   padding: 6px 12px 4px;
-  font-size: 10px;
+  font-size: calc(var(--font-size-base) - 3px);
   color: var(--color-text-muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -2016,6 +2110,24 @@ body {
 .notes-list-date {
   font-size: 10px;
   color: var(--color-text-faint);
+}
+
+.notes-list-entry-ref {
+  font-size: 10px;
+  color: var(--color-accent);
+  margin-bottom: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notes-entry-ref {
+  font-size: 11px;
+  color: var(--color-accent);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Notes editor */
