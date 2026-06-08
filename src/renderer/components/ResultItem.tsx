@@ -5,14 +5,15 @@ interface Props {
   result: SearchResult;
   onEdit: (entry: Entry) => void;
   onCopy: (entryId: string) => void;
+  isFocused?: boolean;
 }
 
-export default function ResultItem({ result, onEdit, onCopy }: Props) {
+export default function ResultItem({ result, onEdit, onCopy, isFocused }: Props) {
   const [copied, setCopied] = useState(false);
   const { entry } = result;
 
   const textToCopy = entry.body ?? entry.link ?? entry.title;
-  const isLink = entry.type === "link" && !entry.body;
+  const isOpenable = !!entry.link && (entry.type === "link" || entry.type === "tool");
 
   function handleCopy() {
     navigator.clipboard.writeText(textToCopy).then(() => {
@@ -26,19 +27,18 @@ export default function ResultItem({ result, onEdit, onCopy }: Props) {
   function handleOpen(e: React.MouseEvent) {
     e.stopPropagation();
     if (entry.link) {
-      // Phase 4: replace with shell.openExternal via IPC
-      window.open(entry.link, "_blank");
+      window.shortpath.openExternal(entry.link);
     }
   }
 
   return (
-    <li className="result-item">
+    <li className={`result-item${isFocused ? " focused" : ""}`} data-focused={isFocused ? "true" : undefined}>
       <div className="result-content">
         <span className="result-title">{entry.title}</span>
         {entry.tags && <span className="result-tags">{entry.tags}</span>}
       </div>
       <div className="result-actions">
-        {isLink && entry.link && (
+        {isOpenable && (
           <button className="action-btn open-btn" onClick={handleOpen} title="Open link">
             ↗
           </button>

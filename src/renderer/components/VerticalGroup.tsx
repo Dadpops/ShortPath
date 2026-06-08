@@ -6,9 +6,10 @@ interface Props {
   onToggle: () => void;
   onEdit: (entry: Entry) => void;
   onCopy: (entryId: string) => void;
+  focusedEntryId?: string | null;
 }
 
-export default function VerticalGroupComponent({ group, onToggle, onEdit, onCopy }: Props) {
+export default function VerticalGroupComponent({ group, onToggle, onEdit, onCopy, focusedEntryId }: Props) {
   return (
     <div className="vertical-group">
       <button className="group-header" onClick={onToggle}>
@@ -24,6 +25,7 @@ export default function VerticalGroupComponent({ group, onToggle, onEdit, onCopy
               result={result}
               onEdit={onEdit}
               onCopy={onCopy}
+              isFocused={focusedEntryId === result.entry.id}
             />
           ))}
         </ul>

@@ -3,14 +3,40 @@ import { useRef, useEffect } from "react";
 interface Props {
   value: string;
   onChange: (value: string) => void;
+  focusTrigger?: number;       // increment to imperatively focus the input
+  onNavigateDown?: () => void; // ArrowDown pressed in search bar
+  onNavigateUp?: () => void;   // ArrowUp pressed in search bar
+  onEnter?: () => void;        // Enter pressed in search bar
+  onEscape?: () => void;       // Escape pressed in search bar
 }
 
-export default function SearchBar({ value, onChange }: Props) {
+export default function SearchBar({ value, onChange, focusTrigger, onNavigateDown, onNavigateUp, onEnter, onEscape }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (focusTrigger !== undefined && focusTrigger > 0) {
+      inputRef.current?.focus();
+    }
+  }, [focusTrigger]);
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      onNavigateDown?.();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      onNavigateUp?.();
+    } else if (e.key === "Enter") {
+      onEnter?.();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onEscape?.();
+    }
+  }
 
   return (
     <div className="search-bar">
@@ -25,6 +51,7 @@ export default function SearchBar({ value, onChange }: Props) {
         placeholder="Search..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
         spellCheck={false}
       />
       {value && (
