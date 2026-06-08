@@ -22,19 +22,57 @@ interface ImportCsvResult {
   errors?: string[];
 }
 
+interface CsvPreviewRow {
+  title: string;
+  vertical: string;
+  type: string;
+  hasBody: boolean;
+  hasUrl: boolean;
+  tags: string;
+}
+
+interface CsvPreviewResult {
+  success: boolean;
+  totalRows?: number;
+  previewRows?: CsvPreviewRow[];
+  skippedCount?: number;
+  errors?: string[];
+}
+
+interface CsvCommitResult {
+  success: boolean;
+  imported?: number;
+  updated?: number;
+  skipped?: number;
+  errors?: string[];
+}
+
 declare global {
   interface Window {
     shortpath: {
       loadEntries: () => Promise<LoadEntriesResult>;
+
       createEntry: (
-        fields: Omit<Entry, "id" | "createdAt" | "updatedAt">,
+        fields: Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">,
         verticalLabel?: string
       ) => Promise<CreateEntryResult>;
-      updateEntry: (id: string, updates: Partial<Entry>) => Promise<Entry>;
+
+      updateEntry: (
+        id: string,
+        updates: Partial<Omit<Entry, "id" | "createdAt" | "source">>
+      ) => Promise<Entry>;
+
       deleteEntry: (id: string) => Promise<void>;
       recordAccess: (entryId: string) => Promise<void>;
+
       importCsv: () => Promise<ImportCsvResult>;
       exportCsv: () => Promise<{ success: boolean }>;
+      exportMine: () => Promise<{ success: boolean }>;
+
+      previewCsvImport: () => Promise<CsvPreviewResult>;
+      commitCsvImport: () => Promise<CsvCommitResult>;
+      downloadTemplateCsv: () => Promise<{ success: boolean }>;
+
       onStoreUpdated: (
         callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[] }) => void
       ) => () => void;
