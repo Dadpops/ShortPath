@@ -1,11 +1,10 @@
 # Current Session State
 
-**Status:** Phases 1–9 complete. Post-phase features: rounded window, recents dropdown, Notes system, add-vertical, note-entry linking, data info buttons, sub-folders, clear-local-entries, close button.
+**Status:** v0.1.0 tagged and released. All phases complete. Installer built and smoke-tested.
 
-**Last session:** [2026-06-08 — Sub-folders, danger zone, close button](docs/sessions/2026-06-08-subfolders-danger-zone.md)
+**Last session:** [2026-06-08 — Release prep: bug fixes, polish, v0.1.0](docs/sessions/2026-06-08-release-prep.md)
 
-**Open polish items:**
-- Settings hotkey display shows "Ctrl" regardless of platform; should show "Cmd" on Mac.
-- Tag enforcement (pipe vs comma) in the add form not enforced at input time.
-- fs.watch can miss events on network drives; chokidar would be more reliable if users report issues.
-- Build and test the updated installer (`npm run build && npm run dist:win`).
+**Open items (post-v0.1.0):**
+- Add screenshots to README once a signed build is available.
+- Investigate chokidar as a replacement for fs.watch on network drives (noted in CHANGELOG Known Limitations).
+- Set up auto-update scaffold (electron-updater) so users do not have to manually reinstall for each release.
