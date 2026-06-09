@@ -8,9 +8,16 @@ directories:
 
 files:
   - dist/**/*
-  - node_modules/**/*
   - icons/**/*
   - package.json
+  # pdfjs-dist ships a 18 MB legacy build and other extras not needed for
+  # text extraction. Exclude them; only pdfjs-dist/build is used at runtime.
+  - "!node_modules/pdfjs-dist/legacy/**"
+  - "!node_modules/pdfjs-dist/image_decoders/**"
+  - "!node_modules/pdfjs-dist/wasm/**"
+  - "!node_modules/pdfjs-dist/web/**"
+  - "!node_modules/pdfjs-dist/types/**"
+  - "!node_modules/**/*.map"
 
 # User data lives in app.getPath("userData") — outside the app bundle — so
 # reinstalling never affects saved entries or settings.

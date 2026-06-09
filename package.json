@@ -23,7 +23,15 @@
     "dist:mac": "electron-builder --mac"
   },
   "devDependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "@tiptap/extension-code-block": "^3.26.0",
+    "@tiptap/extension-link": "^3.26.0",
+    "@tiptap/extension-underline": "^3.26.0",
+    "@tiptap/pm": "^3.26.0",
+    "@tiptap/react": "^3.26.0",
+    "@tiptap/starter-kit": "^3.26.0",
     "@types/jsdom": "^28.0.3",
+    "@types/jszip": "^3.4.1",
     "@types/node": "^20.14.0",
     "@types/papaparse": "^5.5.2",
     "@types/pdf-parse": "^1.1.5",
@@ -36,32 +44,23 @@
     "electron": "^31.0.1",
     "electron-builder": "^24.13.3",
     "eslint": "^8.57.0",
+    "fuse.js": "^7.0.0",
+    "jsdom": "^29.1.1",
     "playwright-core": "^1.60.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "typescript": "^5.4.5",
     "vite": "^5.3.1",
     "vite-plugin-electron": "^0.28.7"
   },
   "dependencies": {
-    "@mozilla/readability": "^0.6.0",
-    "@tiptap/extension-code-block": "^3.26.0",
-    "@tiptap/extension-link": "^3.26.0",
-    "@tiptap/extension-underline": "^3.26.0",
-    "@tiptap/pm": "^3.26.0",
-    "@tiptap/react": "^3.26.0",
-    "@tiptap/starter-kit": "^3.26.0",
-    "@types/jszip": "^3.4.1",
     "chokidar": "^3.6.0",
     "electron-updater": "^6.8.9",
-    "fuse.js": "^7.0.0",
-    "jsdom": "^29.1.1",
     "jszip": "^3.10.1",
-    "marked": "^18.0.5",
     "papaparse": "^5.4.1",
-    "pdf-parse": "^2.4.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "pdf-parse": "^2.4.5"
   },
   "notes": {
-    "deps": "fuse.js and papaparse added in Phase 1 realignment. better-sqlite3 removed — storage is local JSON, not SQLite. SQLite remains a documented future option if entry counts grow to tens of thousands."
+    "deps": "fuse.js and papaparse added in Phase 1 realignment. better-sqlite3 removed — storage is local JSON, not SQLite. SQLite remains a documented future option if entry counts grow to tens of thousands. Renderer-only packages (react, react-dom, tiptap, fuse.js, readability, jsdom) are devDependencies — Vite bundles them and electron-builder excludes devDeps from the installer."
   }
 }
