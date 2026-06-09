@@ -14,9 +14,10 @@ import FavoritesView from "./components/FavoritesView";
 import NotesView from "./components/NotesView";
 import RecentsDropdown from "./components/RecentsDropdown";
 import ResultItem from "./components/ResultItem";
+import ExportSelectScreen from "./components/ExportSelectScreen";
 
 type AppStatus = "loading" | "ready" | "error";
-type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "favorites" | "notes";
+type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "favorites" | "notes" | "export-select";
 type SortMode = "relevance" | "most-used" | "recently-added" | "a-to-z";
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -562,12 +563,24 @@ export default function App() {
     );
   }
 
+  if (mode === "export-select") {
+    return (
+      <div className={shellClass}>
+        <ExportSelectScreen
+          entries={entries}
+          verticals={verticals}
+          onCancel={() => setMode("settings")}
+        />
+      </div>
+    );
+  }
+
   if (mode === "settings") {
     return (
       <div className={shellClass}>
         <SettingsScreen
           onClose={() => setMode("browse")}
-          onNavigate={(target) => { setMode(target); }}
+          onNavigate={(target) => { setMode(target as AppMode); }}
           verticals={verticals}
           onVerticalRenamed={(id, newLabel) => {
             setVerticals((prev) => prev.map((v) => (v.id === id ? { ...v, label: newLabel } : v)));
@@ -758,7 +771,7 @@ export default function App() {
         )
       )}
 
-      {/* Sort control */}
+      {/* Sort control + collapse-all */}
       <div className="sort-bar">
         <span className="sort-label">Sort:</span>
         <select
@@ -771,6 +784,26 @@ export default function App() {
           <option value="recently-added">Recently added</option>
           <option value="a-to-z">A to Z</option>
         </select>
+        {groups.length > 0 && (
+          expandedGroups.size > 0
+            ? (
+              <button
+                className="collapse-all-btn"
+                onClick={() => setExpandedGroups(new Set())}
+                title="Collapse all sections"
+              >
+                ⊟ Collapse
+              </button>
+            ) : (
+              <button
+                className="collapse-all-btn"
+                onClick={() => setExpandedGroups(new Set(groups.map((g) => g.verticalId)))}
+                title="Expand all sections"
+              >
+                ⊞ Expand
+              </button>
+            )
+        )}
       </div>
 
       <main className="results-container">

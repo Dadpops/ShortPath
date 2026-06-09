@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld("shortpath", {
   importCsv: () => ipcRenderer.invoke("import-csv"),
   exportCsv: () => ipcRenderer.invoke("export-csv"),
   exportMine: () => ipcRenderer.invoke("export-mine"),
+  exportSelected: (ids: string[]) => ipcRenderer.invoke("export-selected", ids),
 
   previewCsvImport: () => ipcRenderer.invoke("preview-csv-import"),
   commitCsvImport: () => ipcRenderer.invoke("commit-csv-import"),

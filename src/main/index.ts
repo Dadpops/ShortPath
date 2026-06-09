@@ -458,6 +458,23 @@ function registerIpcHandlers() {
     }
   });
 
+  ipcMain.handle("export-selected", async (_e, ids: string[]) => {
+    const { filePath } = await dialog.showSaveDialog(win!, {
+      defaultPath: "shortpath-export.csv",
+      filters: [{ name: "CSV", extensions: ["csv"] }],
+    });
+    if (!filePath) return { success: false };
+
+    try {
+      const idSet = new Set(ids);
+      const selected = store.entries.filter((e) => idSet.has(e.id));
+      fs.writeFileSync(filePath, exportCsv(selected, store.verticals), "utf-8");
+      return { success: true };
+    } catch (err) {
+      return { success: false, errors: [String(err)] };
+    }
+  });
+
   ipcMain.handle("download-template-csv", async () => {
     const { filePath } = await dialog.showSaveDialog(win!, {
       defaultPath: "shortpath-template.csv",

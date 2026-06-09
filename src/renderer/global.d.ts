@@ -85,6 +85,7 @@ declare global {
       importCsv: () => Promise<ImportCsvResult>;
       exportCsv: () => Promise<{ success: boolean }>;
       exportMine: () => Promise<{ success: boolean }>;
+      exportSelected: (ids: string[]) => Promise<{ success: boolean }>;
 
       previewCsvImport: () => Promise<CsvPreviewResult>;
       commitCsvImport: () => Promise<CsvCommitResult>;

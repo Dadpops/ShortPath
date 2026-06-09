@@ -6,7 +6,7 @@ import FolderIcon from "./FolderIcon";
 
 interface Props {
   onClose: () => void;
-  onNavigate: (mode: "import" | "split" | "add") => void;
+  onNavigate: (mode: "import" | "split" | "add" | "export-select") => void;
   verticals: Vertical[];
   onVerticalRenamed: (id: string, newLabel: string) => void;
   onVerticalAdded: (v: Vertical) => void;
@@ -63,7 +63,6 @@ export default function SettingsScreen({
   const [windowSize, setWindowSize] = useState<"small" | "medium" | "large" | null>(null);
   const [density, setDensity] = useState<"compact" | "comfortable">("comfortable");
   const [exportingAll, setExportingAll] = useState(false);
-  const [exportingMine, setExportingMine] = useState(false);
 
   // Vertical management
   const [editingVerticalId, setEditingVerticalId] = useState<string | null>(null);
@@ -167,11 +166,6 @@ export default function SettingsScreen({
     setExportingAll(false);
   }
 
-  async function handleExportMine() {
-    setExportingMine(true);
-    await window.shortpath.exportMine();
-    setExportingMine(false);
-  }
 
   function handleFontSize(size: number) {
     setFontSize(size);
@@ -381,7 +375,7 @@ export default function SettingsScreen({
     { label: "✂ Paste and split", topicId: "adding-entries", onClick: () => onNavigate("split") },
     { label: "↓ Download template", topicId: "importing-csv", onClick: () => window.shortpath.downloadTemplateCsv() },
     { label: exportingAll ? "Saving…" : "Export all", topicId: "exporting-csv", onClick: handleExportAll, disabled: exportingAll },
-    { label: exportingMine ? "Saving…" : "Export mine", topicId: "exporting-csv", onClick: handleExportMine, disabled: exportingMine },
+    { label: "Export selected", topicId: "exporting-csv", onClick: () => onNavigate("export-select") },
   ];
 
   return (
