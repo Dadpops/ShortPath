@@ -59,8 +59,9 @@ export default function App() {
   const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [pinned, setPinned] = useState<Set<string>>(new Set());
-  const [sourceMode, setSourceMode] = useState<"local" | "sync" | undefined>(undefined);
-  const [sourceName, setSourceName] = useState<string | undefined>(undefined);
+  const [activeSource, setActiveSource] = useState<string>(() => localStorage.getItem("sp_active_source") ?? "local");
+  const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
+  const sourcePickerRef = useRef<HTMLDivElement>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [pendingNoteEntry, setPendingNoteEntry] = useState<{ id: string; title: string } | null>(null);
   const [autoHideOnCopy, setAutoHideOnCopy] = useState(false);
@@ -70,16 +71,19 @@ export default function App() {
   const [activeVerticalFilter, setActiveVerticalFilter] = useState<string | null>(null);
   const [verticalOrder, setVerticalOrder] = useState<string[]>([]);
   const [pinLimitMsg, setPinLimitMsg] = useState(false);
+  const [pinnedExpanded, setPinnedExpanded] = useState(true);
   const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null);
   const [updateDownloaded, setUpdateDownloaded] = useState(false);
   const [capturePayload, setCapturePayload] = useState<CapturePayload | null>(null);
+  const [syncSources, setSyncSources] = useState<Array<{ id: string; path: string; label: string }>>([]);
+  const [easterEgg, setEasterEgg] = useState(false);
 
   const debouncedQuery = useDebounce(query, 120);
 
   useEffect(() => {
     window.shortpath
       .loadEntries()
-      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, fontSize: fs, sourceMode: sm, sourceName: sn, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc, alwaysOnTop: aot }) => {
+      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, fontSize: fs, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc, alwaysOnTop: aot }) => {
         setEntries(e);
         setVerticals(v);
         setRecents(r);
@@ -93,19 +97,16 @@ export default function App() {
         document.documentElement.setAttribute("data-theme", t);
         if (accentColor) applyAccent(accentColor);
         if (density === "compact") document.body.setAttribute("data-density", "compact");
-        if (sm === null || sm === undefined) {
-          setSourceMode("local");
-          void window.shortpath.saveSourceMode("local");
-        } else {
-          setSourceMode(sm);
-          setSourceName(sn ?? undefined);
-        }
         setStatus("ready");
       })
       .catch((err) => {
         console.error("Failed to load entries:", err);
         setStatus("error");
       });
+
+    void window.shortpath.getSyncStatus().then((status) => {
+      setSyncSources(status.sources);
+    });
 
     const unsubscribe = window.shortpath.onStoreUpdated(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins }) => {
       setEntries(e);
@@ -159,6 +160,9 @@ export default function App() {
       setQuickAddPrefill(undefined);
       setMode("add");
     });
+    const unsubSync = window.shortpath.onSyncRefreshed(() => {
+      void window.shortpath.getSyncStatus().then((status) => setSyncSources(status.sources));
+    });
     return () => {
       unsubFocus();
       unsubHotkey();
@@ -166,8 +170,48 @@ export default function App() {
       unsubUpdate();
       unsubDownloaded();
       unsubCapture();
+      unsubSync();
     };
   }, []);
+
+  // Validate activeSource whenever syncSources update — fall back to "local" if source was removed
+  useEffect(() => {
+    if (activeSource !== "local" && activeSource !== "all") {
+      if (!syncSources.find(s => s.id === activeSource)) {
+        setActiveSource("local");
+        localStorage.setItem("sp_active_source", "local");
+      }
+    }
+  }, [syncSources, activeSource]);
+
+  // Close source picker when clicking outside
+  useEffect(() => {
+    if (!sourcePickerOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (sourcePickerRef.current && !sourcePickerRef.current.contains(e.target as Node)) {
+        setSourcePickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [sourcePickerOpen]);
+
+  function getSourceLabel(src: { id: string; path: string; label: string }): string {
+    return src.label || src.path.split(/[/\\]/).pop() || "Sync";
+  }
+
+  function getActiveSourceDisplayLabel(): string {
+    if (activeSource === "local") return "Local";
+    if (activeSource === "all") return "All";
+    const src = syncSources.find(s => s.id === activeSource);
+    return src ? getSourceLabel(src) : "Local";
+  }
+
+  function handleSetActiveSource(src: string) {
+    setActiveSource(src);
+    localStorage.setItem("sp_active_source", src);
+    setSourcePickerOpen(false);
+  }
 
   const fuse = useMemo(() => {
     if (!entries.length) return null;
@@ -187,11 +231,11 @@ export default function App() {
     const verticalMap = new Map(verticals.map((v) => [v.id, v]));
     const trimmed = debouncedQuery.trim();
     const isSearching = trimmed.length >= 2;
+    const isAllMode = activeSource === "all";
 
     let items: { entry: Entry; matches: SearchResult["matches"] }[];
 
     if (!isSearching) {
-      // When not searching, apply sort mode
       let sorted = [...entries];
       const effectiveSort = sortMode === "relevance" ? "most-used" : sortMode;
       if (effectiveSort === "most-used") {
@@ -212,7 +256,6 @@ export default function App() {
             indices: [...m.indices] as [number, number][],
           })) ?? [],
       }));
-      // Apply non-relevance sort during search too
       if (sortMode === "most-used") {
         resultItems.sort((a, b) => (b.entry.copyCount ?? 0) - (a.entry.copyCount ?? 0));
       } else if (sortMode === "recently-added") {
@@ -230,16 +273,32 @@ export default function App() {
       items = items.filter((i) => i.entry.vertical === activeVerticalFilter);
     }
 
-    const byVertical = new Map<string, typeof items>();
+    // Filter by source (non-"all" modes)
+    if (activeSource === "local") {
+      items = items.filter(i => i.entry.source === "local");
+    } else if (!isAllMode) {
+      items = items.filter(i => i.entry.syncSource === activeSource);
+    }
+
+    const getSrcKey = (entry: Entry) =>
+      entry.source === "local" ? "local" : (entry.syncSource ?? "unknown");
+    const getSrcDisplayLabel = (key: string) => {
+      if (key === "local") return "Local";
+      const s = syncSources.find(x => x.id === key);
+      return s ? getSourceLabel(s) : "Sync";
+    };
+    const getGroupKey = (entry: Entry) =>
+      isAllMode ? `${getSrcKey(entry)}::${entry.vertical}` : entry.vertical;
+
+    const byGroup = new Map<string, typeof items>();
     for (const item of items) {
-      const vid = item.entry.vertical;
-      if (!byVertical.has(vid)) byVertical.set(vid, []);
-      byVertical.get(vid)!.push(item);
+      const key = getGroupKey(item.entry);
+      if (!byGroup.has(key)) byGroup.set(key, []);
+      byGroup.get(key)!.push(item);
     }
 
     const result: Array<{ verticalId: string; label: string; hitCount: number; results: SearchResult[] }> = [];
 
-    // Render verticals in custom order (if set), then any remaining
     const orderedVerticals = verticalOrder.length > 0
       ? [
           ...verticalOrder.map(id => verticals.find(v => v.id === id)).filter(Boolean) as Vertical[],
@@ -247,33 +306,61 @@ export default function App() {
         ]
       : verticals;
 
-    for (const v of orderedVerticals) {
-      const groupItems = byVertical.get(v.id);
-      const hasEntries = (groupItems?.length ?? 0) > 0;
-      const hasSubFolders = (v.subFolders?.length ?? 0) > 0;
-      // When searching, only show verticals with matching results.
-      // When browsing, also show verticals that have sub-folders defined (even if empty).
-      if (!hasEntries && (isSearching || !hasSubFolders)) continue;
-      result.push({
-        verticalId: v.id,
-        label: v.label,
-        hitCount: groupItems?.length ?? 0,
-        results: (groupItems ?? []).map((i) => ({ entry: i.entry, matches: i.matches })),
-      });
-    }
-
-    for (const [vid, groupItems] of byVertical) {
-      if (orderedVerticals.find((v) => v.id === vid)) continue;
-      result.push({
-        verticalId: vid,
-        label: verticalMap.get(vid)?.label ?? vid,
-        hitCount: groupItems.length,
-        results: groupItems.map((i) => ({ entry: i.entry, matches: i.matches })),
-      });
+    if (!isAllMode) {
+      for (const v of orderedVerticals) {
+        if (activeVerticalFilter && v.id !== activeVerticalFilter) continue;
+        const groupItems = byGroup.get(v.id);
+        if (!groupItems || groupItems.length === 0) continue;
+        result.push({
+          verticalId: v.id,
+          label: v.label,
+          hitCount: groupItems.length,
+          results: groupItems.map(i => ({ entry: i.entry, matches: i.matches })),
+        });
+      }
+      for (const [key, groupItems] of byGroup) {
+        if (orderedVerticals.find(v => v.id === key)) continue;
+        result.push({
+          verticalId: key,
+          label: verticalMap.get(key)?.label ?? key,
+          hitCount: groupItems.length,
+          results: groupItems.map(i => ({ entry: i.entry, matches: i.matches })),
+        });
+      }
+    } else {
+      // All mode: Local groups first, then sync sources in configured order
+      const sourceOrder = ["local", ...syncSources.map(s => s.id)];
+      for (const srcKey of sourceOrder) {
+        for (const v of orderedVerticals) {
+          const compositeKey = `${srcKey}::${v.id}`;
+          const groupItems = byGroup.get(compositeKey);
+          if (!groupItems || groupItems.length === 0) continue;
+          result.push({
+            verticalId: compositeKey,
+            label: `${getSrcDisplayLabel(srcKey)} / ${v.label}`,
+            hitCount: groupItems.length,
+            results: groupItems.map(i => ({ entry: i.entry, matches: i.matches })),
+          });
+        }
+      }
+      // Any source+vertical combos not covered above
+      for (const [key, groupItems] of byGroup) {
+        const sep = key.indexOf("::");
+        if (sep === -1) continue;
+        const srcKey = key.slice(0, sep);
+        const vid = key.slice(sep + 2);
+        if (sourceOrder.includes(srcKey) && orderedVerticals.find(v => v.id === vid)) continue;
+        result.push({
+          verticalId: key,
+          label: `${getSrcDisplayLabel(srcKey)} / ${verticalMap.get(vid)?.label ?? vid}`,
+          hitCount: groupItems.length,
+          results: groupItems.map(i => ({ entry: i.entry, matches: i.matches })),
+        });
+      }
     }
 
     return result;
-  }, [entries, verticals, debouncedQuery, fuse, sortMode, activeVerticalFilter, verticalOrder]);
+  }, [entries, verticals, debouncedQuery, fuse, sortMode, activeVerticalFilter, verticalOrder, activeSource, syncSources]);
 
   const groups = useMemo((): VerticalGroup[] => {
     return rawGroups.map((g) => ({ ...g, expanded: expandedGroups.has(g.verticalId) }));
@@ -430,6 +517,10 @@ export default function App() {
   }
 
   function handleEnter() {
+    if (query.trim() === "shrekisloveshrekislife") {
+      setEasterEgg(true);
+      return;
+    }
     if (focusedEntryId) {
       const entry = flatResults.find((e) => e.id === focusedEntryId);
       if (entry) setOverlayEntry(entry);
@@ -681,12 +772,49 @@ export default function App() {
 
   const hasClipboard = !!clipboardText && !clipboardDismissed;
 
+  if (easterEgg) {
+    return (
+      <div className={shellClass}>
+        <div className="easter-egg-screen">
+          <button className="easter-egg-close" onClick={() => { setEasterEgg(false); setQuery(""); }}>✕</button>
+          <div className="easter-egg-content">
+            <div className="easter-egg-title">It's all ogre, now.</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={shellClass}>
       <header className="app-header">
-        <button className="app-path-btn" onClick={handleGoHome} title="Go home">
-          shortpath / {sourceMode === "sync" && sourceName ? sourceName : "Local"}
-        </button>
+        <div className="app-path-group">
+          <button className="app-path-btn" onClick={handleGoHome} title="Go home">
+            shortpath
+          </button>
+          {syncSources.length > 0 && (
+            <div className="source-picker-wrap" ref={sourcePickerRef}>
+              <button
+                className="app-source-btn"
+                onClick={() => setSourcePickerOpen((p) => !p)}
+                title="Switch source"
+              >
+                / {getActiveSourceDisplayLabel()} ▾
+              </button>
+              {sourcePickerOpen && (
+                <div className="source-picker-dropdown">
+                  <button className={`source-option${activeSource === "local" ? " active" : ""}`} onClick={() => handleSetActiveSource("local")}>Local</button>
+                  {syncSources.map(s => (
+                    <button key={s.id} className={`source-option${activeSource === s.id ? " active" : ""}`} onClick={() => handleSetActiveSource(s.id)}>
+                      {getSourceLabel(s)}
+                    </button>
+                  ))}
+                  <button className={`source-option${activeSource === "all" ? " active" : ""}`} onClick={() => handleSetActiveSource("all")}>All</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <div className="header-actions">
           {isSearching && totalHits > 0 && (
             <span className="app-hit-summary">{totalHits} result{totalHits !== 1 ? "s" : ""}</span>
@@ -810,7 +938,7 @@ export default function App() {
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value as SortMode)}
         >
-          <option value="relevance">{isSearching ? "Relevance" : "Most used"}</option>
+          <option value="relevance">Relevance</option>
           <option value="most-used">Most used</option>
           <option value="recently-added">Recently added</option>
           <option value="a-to-z">A to Z</option>
@@ -854,28 +982,33 @@ export default function App() {
         {/* Pinned section — only when not searching */}
         {!isSearching && pinnedEntries.length > 0 && (
           <div className="pinned-section">
-            <div className="section-header-row">
-              <span className="section-header-label">Pinned</span>
-            </div>
-            {pinLimitMsg && (
-              <div className="pin-limit-msg">Unpin an entry to pin this one (max 8).</div>
+            <button className="group-header" onClick={() => setPinnedExpanded((p) => !p)}>
+              <span className={`group-chevron${pinnedExpanded ? " expanded" : ""}`}>›</span>
+              <span className="group-label">Pinned ({pinnedEntries.length})</span>
+            </button>
+            {pinnedExpanded && (
+              <>
+                {pinLimitMsg && (
+                  <div className="pin-limit-msg">Unpin an entry to pin this one (max 8).</div>
+                )}
+                <ul className="result-list">
+                  {pinnedEntries.map((entry) => (
+                    <ResultItem
+                      key={entry.id}
+                      result={{ entry, matches: [] }}
+                      onEdit={handleEditEntry}
+                      onCopy={handleCopy}
+                      onOpen={handleOpenOverlay}
+                      isFocused={focusedEntryId === entry.id}
+                      isFavorite={favorites.has(entry.id)}
+                      onToggleFavorite={handleToggleFavorite}
+                      isPinned={true}
+                      onTogglePin={(id) => void handleTogglePin(id)}
+                    />
+                  ))}
+                </ul>
+              </>
             )}
-            <ul className="result-list">
-              {pinnedEntries.map((entry) => (
-                <ResultItem
-                  key={entry.id}
-                  result={{ entry, matches: [] }}
-                  onEdit={handleEditEntry}
-                  onCopy={handleCopy}
-                  onOpen={handleOpenOverlay}
-                  isFocused={focusedEntryId === entry.id}
-                  isFavorite={favorites.has(entry.id)}
-                  onToggleFavorite={handleToggleFavorite}
-                  isPinned={true}
-                  onTogglePin={(id) => void handleTogglePin(id)}
-                />
-              ))}
-            </ul>
           </div>
         )}
 
@@ -910,8 +1043,9 @@ export default function App() {
           </div>
         )}
 
-        {groups.map((group) =>
-          group.verticalId === "support-tools" ? (
+        {groups.map((group) => {
+          const actualVId = group.verticalId.includes("::") ? group.verticalId.split("::")[1] : group.verticalId;
+          return actualVId === "support-tools" ? (
             <SupportToolsGroup
               key={group.verticalId}
               group={group}
@@ -922,12 +1056,14 @@ export default function App() {
               isSearching={isSearching}
               favorites={favorites}
               onToggleFavorite={handleToggleFavorite}
+              pinned={pinned}
+              onTogglePin={(id) => void handleTogglePin(id)}
             />
           ) : (
             <VerticalGroupComponent
               key={group.verticalId}
               group={group}
-              subFolders={verticals.find((v) => v.id === group.verticalId)?.subFolders}
+              subFolders={verticals.find((v) => v.id === actualVId)?.subFolders}
               onToggle={() => toggleGroup(group.verticalId)}
               onEdit={handleEditEntry}
               onCopy={handleCopy}
@@ -938,8 +1074,8 @@ export default function App() {
               pinned={pinned}
               onTogglePin={(id) => void handleTogglePin(id)}
             />
-          )
-        )}
+          );
+        })}
       </main>
 
       <button

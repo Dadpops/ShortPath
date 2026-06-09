@@ -8,10 +8,17 @@ export interface WindowBounds {
   height: number;
 }
 
+export interface SyncSourceConfig {
+  id: string;
+  path: string;
+  label: string;
+}
+
 export interface AppSettings {
   hotkey: string;
   windowBounds?: WindowBounds;
-  syncPath?: string;
+  syncPath?: string;               // legacy single-source; migrated to syncSources on first use
+  syncSources?: SyncSourceConfig[]; // multi-source sync paths
   fontSize?: number;  // px value, 11–16; default 13
   sourceMode?: "local" | "sync";
   sourceName?: string;

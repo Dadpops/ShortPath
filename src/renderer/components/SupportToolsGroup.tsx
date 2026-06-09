@@ -9,9 +9,11 @@ interface Props {
   isSearching: boolean;
   favorites?: Set<string>;
   onToggleFavorite?: (id: string) => void;
+  pinned?: Set<string>;
+  onTogglePin?: (id: string) => void;
 }
 
-export default function SupportToolsGroup({ group, onToggle, onEdit, onCopy, onReorder, isSearching, favorites, onToggleFavorite }: Props) {
+export default function SupportToolsGroup({ group, onToggle, onEdit, onCopy, onReorder, isSearching, favorites, onToggleFavorite, pinned, onTogglePin }: Props) {
   function launch(entry: Entry) {
     if (entry.link) {
       window.shortpath.openExternal(entry.link);
@@ -35,18 +37,30 @@ export default function SupportToolsGroup({ group, onToggle, onEdit, onCopy, onR
             const isFirst = idx === 0;
             const isLast = idx === group.results.length - 1;
             const isFav = favorites?.has(entry.id) ?? false;
+            const isPinned = pinned?.has(entry.id) ?? false;
             return (
               <div key={entry.id} className="tool-card" onClick={() => launch(entry)}>
                 <div className="tool-card-body">
-                  <span className="tool-card-title">{entry.title}</span>
+                  <div className="tool-card-title-row">
+                    <span className="tool-card-title">{entry.title}</span>
+                  </div>
                   {entry.link && (
                     <span className="tool-card-url">{entry.link.replace(/^https?:\/\//, "")}</span>
                   )}
                 </div>
                 <div className="tool-card-actions" onClick={(e) => e.stopPropagation()}>
+                  {onTogglePin && (
+                    <button
+                      className={`tool-action-btn pin-btn${isPinned ? " pinned" : ""}`}
+                      onClick={() => onTogglePin(entry.id)}
+                      title={isPinned ? "Unpin" : "Pin to top"}
+                    >
+                      {isPinned ? "📌" : "📍"}
+                    </button>
+                  )}
                   {onToggleFavorite && (
                     <button
-                      className={`tool-action-btn star-toggle${isFav ? " starred" : ""}`}
+                      className={`tool-action-btn star-btn${isFav ? " starred" : ""}`}
                       onClick={() => onToggleFavorite(entry.id)}
                       title={isFav ? "Remove from favorites" : "Add to favorites"}
                     >

@@ -56,8 +56,8 @@ export default function EntryForm({ entry, verticals, allEntries, onSave, onDele
   // URL import state
   const [showUrlImport, setShowUrlImport] = useState(false);
   const [importUrl, setImportUrl] = useState("");
-  const [urlImportStatus, setUrlImportStatus] = useState<"idle" | "loading" | "sections" | "error">("idle");
-  const [urlSections, setUrlSections] = useState<UrlSection[]>([]);
+  const [urlImportStatus, setUrlImportStatus] = useState<"idle" | "loading" | "preview" | "error">("idle");
+  const [urlExtractedText, setUrlExtractedText] = useState("");
   const [urlImportError, setUrlImportError] = useState("");
 
   const capturedFromUrl = capturePayload?.url ?? entry?.sourceUrl ?? "";
@@ -113,8 +113,14 @@ export default function EntryForm({ entry, verticals, allEntries, onSave, onDele
       }
       const contentDoc = new DOMParser().parseFromString(article.content, "text/html");
       const sections = splitByHeadings(contentDoc, article.title ?? "");
-      setUrlSections(sections);
-      setUrlImportStatus("sections");
+      // Combine sections into a single editable text block
+      const combined = sections
+        .map((s) => (s.heading && s.heading !== article.title ? `${s.heading}\n\n${s.body}` : s.body))
+        .join("\n\n")
+        .trim();
+      setUrlExtractedText(combined);
+      if (!title.trim() && article.title) setTitle(article.title);
+      setUrlImportStatus("preview");
     } catch (err) {
       setUrlImportError(String(err));
       setUrlImportStatus("error");
@@ -144,16 +150,8 @@ export default function EntryForm({ entry, verticals, allEntries, onSave, onDele
     return sections.length > 0 ? sections : [{ heading: fallbackTitle, body: doc.body.textContent?.trim() ?? "" }];
   }
 
-  function applyUrlSection(section: UrlSection) {
-    setBody(section.body);
-    if (!title.trim()) setTitle(section.heading);
-    setShowUrlImport(false);
-    setUrlImportStatus("idle");
-  }
-
-  function applyAllUrlSections() {
-    const combined = urlSections.map((s) => `${s.heading}\n\n${s.body}`).join("\n\n---\n\n");
-    setBody(combined);
+  function applyUrlText() {
+    setBody(urlExtractedText);
     setShowUrlImport(false);
     setUrlImportStatus("idle");
   }
@@ -392,23 +390,32 @@ export default function EntryForm({ entry, verticals, allEntries, onSave, onDele
               {urlImportStatus === "error" && (
                 <p className="url-import-error">{urlImportError}</p>
               )}
-              {urlImportStatus === "sections" && urlSections.length > 0 && (
-                <div className="url-sections-list">
-                  <div className="url-sections-header">
-                    <span className="url-sections-label">{urlSections.length} section{urlSections.length !== 1 ? "s" : ""} found</span>
-                    <button type="button" className="btn-link" onClick={applyAllUrlSections}>Use all</button>
-                  </div>
-                  {urlSections.map((s, i) => (
+              {urlImportStatus === "preview" && (
+                <div className="url-preview">
+                  <p className="url-preview-hint">Edit or trim the text below, then click "Use this text".</p>
+                  <textarea
+                    className="url-preview-textarea"
+                    value={urlExtractedText}
+                    onChange={(e) => setUrlExtractedText(e.target.value)}
+                    rows={8}
+                  />
+                  <div className="url-preview-actions">
                     <button
-                      key={i}
                       type="button"
-                      className="url-section-item"
-                      onClick={() => applyUrlSection(s)}
+                      className="btn-secondary"
+                      onClick={() => { setShowUrlImport(false); setUrlImportStatus("idle"); }}
                     >
-                      <span className="url-section-heading">{s.heading}</span>
-                      <span className="url-section-preview">{s.body.slice(0, 80)}{s.body.length > 80 ? "…" : ""}</span>
+                      Discard
                     </button>
-                  ))}
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={applyUrlText}
+                      disabled={!urlExtractedText.trim()}
+                    >
+                      Use this text
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

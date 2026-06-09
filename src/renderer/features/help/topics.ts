@@ -19,15 +19,12 @@ Press the hotkey (default: Ctrl+Shift+Space) from anywhere on your desktop. The 
 
 Everything is stored on your machine. Nothing is sent to a server. No login required.
 
-First launch
-When you open ShortPath for the first time, a setup wizard walks you through three steps: choose Local or File Share Sync, optionally import a CSV, and see the quick-start tips. You can change any of these settings later from Settings.
-
 First steps
-1. Press the hotkey now: Ctrl+Shift+Space (Cmd+Shift+Space on Mac).
+1. Press the hotkey: Ctrl+Shift+Space (Cmd+Shift+Space on Mac).
 2. Type a few characters to search the sample entries.
-3. Click any result to open it, or use the ⎘ copy button on the right of each row.
+3. Click any result to open it, or use the ⎘ copy button that appears on hover.
 4. Use the + button in the header to add your first real entry.
-5. If your team has a shared CSV file, configure it in Settings > Shared file sync.`,
+5. If your team has a shared CSV file, configure it in Settings > Sync.`,
   },
   {
     id: "opening-closing",
@@ -47,7 +44,7 @@ Quitting
 Right-click the tray icon and choose Quit to stop the app completely.
 
 Changing the hotkey
-Open Settings (⚙ in the header), then use the "Change hotkey" button. If the combination is already taken by another app, you will see an error — try a different one.`,
+Open Settings (⚙ in the header), go to Behavior, then use the "Change hotkey" button. If the combination is already taken by another app, you will see an error — try a different one.`,
   },
   {
     id: "searching",
@@ -71,7 +68,7 @@ When the search box is empty, the app shows your recently accessed entries.`,
   {
     id: "understanding-results",
     title: "Understanding results",
-    tags: ["results", "verticals", "groups", "hit count", "expand", "collapse", "categories"],
+    tags: ["results", "verticals", "groups", "hit count", "expand", "collapse", "categories", "source number"],
     content: `Results are grouped by category (called verticals). Each group header shows the category name and the number of matching entries.
 
 Expanding and collapsing groups
@@ -84,10 +81,11 @@ Entry types
 - link: an external URL to open in the browser.
 - tool: a quick-launch link shown in the Support Tools grid.
 
-Source labels
-If a team-shared sync file is configured, entries from that file show a small "synced" label. These are read-only — they cannot be edited locally.
+Sync source numbers
+If one or more sync files are connected, entries from those files show a small muted number to the right of the title (e.g. #1, #2). The number matches the source's position in Settings > Sync. This replaces the old "synced" badge and works when multiple CSV sources are connected at once.
 
-Entries you created yourself have no label (they are "mine" by default).`,
+Hover actions
+Hovering any result row reveals action buttons on the right: pin (📍), star (☆), edit (✎), and copy (⎘). Entries that are already pinned or starred show their action buttons faintly even without hovering so you can see their state at a glance.`,
   },
   {
     id: "copying",
@@ -95,7 +93,7 @@ Entries you created yourself have no label (they are "mine" by default).`,
     tags: ["copy", "clipboard", "copy button", "paste"],
     content: `Click any entry to open a detail panel showing the full content. Use the Copy button in the panel to copy the text to your clipboard.
 
-You can also use the ⎘ copy button on each result row to copy without opening the panel.
+You can also hover a result row and click the ⎘ copy button on the right to copy without opening the panel.
 
 What gets copied
 - Entries with a body: the full body text.
@@ -128,12 +126,12 @@ The hotkey (Ctrl+Shift+Space) summons the window from anywhere on your desktop. 
   {
     id: "filtering-by-vertical",
     title: "Filtering by vertical",
-    tags: ["filter", "vertical", "scope", "category", "group"],
-    content: `Search results are grouped by vertical (category). To focus on one vertical, collapse the other groups by clicking their headers.
+    tags: ["filter", "vertical", "scope", "category", "group", "tab"],
+    content: `Use the vertical tab bar to scope results to one category. Click any tab to filter; click "All" or the same tab again to remove the filter.
 
-Keyboard navigation only cycles through expanded groups, so collapsing a group effectively filters it out of the keyboard path.
+You can also collapse groups by clicking their headers. Collapsed groups are excluded from keyboard navigation.
 
-There is no single-click "show only this vertical" toggle in the current version — the collapse/expand controls serve that purpose.`,
+Tab order can be customized in Settings > Organization > Tab order.`,
   },
   {
     id: "recents",
@@ -151,7 +149,7 @@ Recents give fast access to the replies and tools you use most. They are stored 
     id: "adding-entries",
     title: "Adding an entry",
     tags: ["add", "create", "new entry", "form", "vertical", "save", "quick add"],
-    content: `Press the + button in the header (or go to Settings > Add entry) to open the add form.
+    content: `Press the + button in the header (or go to Settings > Data > Add entry) to open the add form.
 
 Required fields
 - Title: a short name used in search results.
@@ -167,15 +165,18 @@ Body vs URL
 - Both can be filled in on the same entry.
 
 Clipboard shortcut
-If your clipboard has text when you open ShortPath, a clipboard icon (📋) appears in the header. Click it to open the add form with the clipboard content pre-filled — one action from copy to saved entry.`,
+If your clipboard has text when you open ShortPath, a clipboard icon (📋) appears in the header. Click it to open the add form with the clipboard content pre-filled — one action from copy to saved entry.
+
+Import from URL
+In the add form, click "Import from URL" to fetch the readable content from a web page. An editable text preview appears — trim or adjust the text, then click "Use this text" to populate the body field.`,
   },
   {
     id: "editing-deleting",
     title: "Editing and deleting",
     tags: ["edit", "delete", "update", "remove", "change"],
-    content: `Click the ✎ edit button on any entry row to open the edit form. All fields can be changed including type, tags, and vertical.
+    content: `Hover any result row and click the ✎ edit button (right side) to open the edit form. All fields can be changed including type, tags, and vertical.
 
-Synced entries (from a team-shared file) cannot be edited locally — the edit button only appears on your own entries.
+Synced entries (from a team-shared file) cannot be edited locally — the edit button opens a "Duplicate to local and edit" option instead.
 
 Deleting an entry
 In the edit form, click the Delete button. A confirmation prompt appears — click "Yes, delete" to confirm. Deleted entries are removed from search results and from Recents immediately.`,
@@ -187,22 +188,19 @@ In the edit form, click the Delete button. A confirmation prompt appears — cli
     content: `ShortPath comes with four built-in categories: Saved Replies, Documentation, Internal SOPs, and Support Tools.
 
 Creating a custom vertical
-In Settings > Verticals, click "+ Add vertical", type a name, and press Add. The new vertical is ready immediately for use in the Add or Edit entry form.
+In Settings > Organization, click "+ Add vertical", type a name, and press Add. The new vertical is ready immediately for use in the Add or Edit entry form.
 
 You can also create a vertical on the fly: in the Add or Edit form, type a new category name in the Vertical field and select the create option.
 
 Renaming a vertical
-In Settings > Verticals, click Rename next to any vertical, type the new name, and press Save.
-
-Removing a vertical
-To remove a vertical, delete or reassign all its entries. Empty verticals stop appearing in the results.
+In Settings > Organization, click Rename next to any vertical, type the new name, and press Save.
 
 Sub-folders
 Each vertical can have any number of sub-folders to keep large libraries organised. Sub-folders appear as collapsible groups inside a vertical's results.
 
-To manage sub-folders: in Settings > Verticals, click the 📁 button next to any vertical to expand its sub-folder panel. From there you can add, rename, or remove sub-folders.
+To manage sub-folders: in Settings > Organization, click the 📁 button next to any vertical to expand its sub-folder panel. From there you can add, rename, or remove sub-folders.
 
-To assign an entry to a sub-folder: when adding or editing an entry, a Sub-folder selector appears below the Vertical field once the selected vertical has at least one sub-folder. Entries without a sub-folder assigned remain at the top level of their vertical.
+To assign an entry to a sub-folder: when adding or editing an entry, a Sub-folder selector appears below the Vertical field once the selected vertical has at least one sub-folder.
 
 Removing a sub-folder
 Click Remove next to the sub-folder name and confirm. Any entries assigned to the removed sub-folder move back to the top level of the vertical — they are not deleted.`,
@@ -211,84 +209,79 @@ Click Remove next to the sub-folder name and confirm. Any entries assigned to th
     id: "importing-csv",
     title: "Importing a CSV",
     tags: ["import", "csv", "template", "upload", "bulk", "file", "subfolder", "folder", "column mapping", "drag"],
-    content: `Go to Settings > Import CSV to add entries in bulk from a spreadsheet.
+    content: `Go to Settings > Data > Import CSV to add entries in bulk from a spreadsheet.
 
 How to import
-Drag a CSV file onto the drop zone, or click "Choose file..." to open a file picker. ShortPath shows a preview before committing.
+Drag a CSV file onto the drop zone, or click "Choose file..." to open a file picker. ShortPath always shows a column mapping screen before importing.
 
-File format
+Column mapping
+ShortPath detects your file's headers and suggests mappings automatically. Use the dropdowns to assign each ShortPath field to the correct column in your file. Title and Vertical are required; all other fields are optional. This works with any CSV regardless of its column names.
+
+File format (when using the template)
 Required columns: title, vertical, type
 Optional columns: body, url, subfolder, tags
 
 Type must be one of: reply, doc, sop, link, tool
 Tags use pipe separators: billing|refund|payment
-The url column maps to the link field internally.
-Column names are not case-sensitive: "Title" and "title" both work.
 
 Sub-folders
-Include a subfolder column in your CSV to place entries in a specific folder within a vertical. Use the folder's exact name (e.g. "Billing"). If the folder doesn't exist yet, ShortPath creates it automatically on import.
-
-To use existing folders: create them first in Settings > Organization, then use their exact names in the CSV's subfolder column.
-
-Column mapping
-If your CSV uses different column names (e.g. "Category" instead of "vertical", "Response" instead of "body"), ShortPath will detect the mismatch and show a column mapping screen. Use the dropdowns to assign each ShortPath field to the matching column in your file. Title and Vertical are required; all other fields are optional.
+Include a subfolder column in your CSV to place entries in a specific folder within a vertical. If the folder doesn't exist yet, ShortPath creates it automatically on import.
 
 Download a template
-Use Settings > Download template to get an example file showing the exact column format.
-
-Import preview
-Before committing, ShortPath shows a preview of the first 5 rows and flags any rows with errors. Review the preview, then click Import to confirm.
+Use Settings > Data > Download template to get an example file showing the exact column format.
 
 Update behavior
-If a row's title + vertical matches an existing entry, that entry is updated. Otherwise a new entry is created. Source is preserved on update — re-importing a local entry does not change it to synced.`,
+If a row's title + vertical matches an existing entry, that entry is updated. Otherwise a new entry is created.`,
   },
   {
     id: "exporting-csv",
     title: "Exporting a CSV",
     tags: ["export", "csv", "backup", "download", "export mine"],
-    content: `Go to Settings to access export options.
+    content: `Go to Settings > Data to access export options.
 
 Export all
 Writes every entry — your own and any synced team entries — to a CSV file. Use this for a full backup.
 
 Export mine
-Writes only your own entries (source: local). Use this to share your personal library with a team admin who can fold it into the shared master file. This is the standard bottom-up path for building a team resource from individual collections.
+Writes only your own entries (source: local). Use this to share your personal library with a team admin who can fold it into the shared master file.
 
 The exported file uses the same column format as the import template, so it can be re-imported into any ShortPath instance without modification.`,
   },
   {
     id: "shared-file-sync",
     title: "Shared file sync",
-    tags: ["sync", "shared file", "team", "dropbox", "drive", "onedrive", "refresh", "synced"],
+    tags: ["sync", "shared file", "team", "dropbox", "drive", "onedrive", "refresh", "synced", "multiple sources"],
     content: `Shared file sync lets a team share a master CSV file via Dropbox, Google Drive, OneDrive, or any folder that syncs to a local path. Each team member points ShortPath at the same file and gets updates automatically.
 
+You can connect multiple CSV files simultaneously — each one is an independent sync source.
+
 Setup
-1. Open Settings (⚙ in the header).
-2. In the "Shared file sync" section, click "Configure sync file".
-3. Select the CSV file from your synced folder (e.g. ~/Dropbox/Team/shortpath-team.csv).
-4. ShortPath loads the file immediately and starts watching it.
+1. Install a desktop sync client: Google Drive for Desktop, Dropbox, or OneDrive. Sign in and let it sync a folder on your machine.
+2. Put your CSV file inside that synced folder.
+3. Open Settings > Sync in ShortPath.
+4. Click "+ Add sync source" and select the CSV file.
+5. ShortPath loads the file immediately and starts watching it for changes.
+
+For Google Drive: upload your CSV at drive.google.com, then find it in your local Google Drive folder (created by Google Drive for Desktop) and select it from there.
 
 How it works
-ShortPath watches the file for changes. When the file is saved (e.g. by the team admin), ShortPath reloads it automatically within about a second. No restart needed.
+ShortPath watches the file for changes. When the file is saved (e.g. by the team admin updating it in Google Sheets and re-exporting), ShortPath reloads it automatically within about a second. No restart needed.
 
-If the watcher misses an update (can happen on network drives), use "Refresh now" in Settings to reload manually.
+If the watcher misses an update (can happen on network drives), use "Refresh" on the source card to reload manually.
+
+Source numbers
+Each connected source is assigned a number (#1, #2, …). This number appears next to any entry that came from that source so you can tell at a glance which file it belongs to.
 
 Your own entries are safe
-Sync only touches entries marked as "synced". Your own entries are never modified, overwritten, or deleted by any sync operation — not even when you clear synced entries or switch to a different file.
+Sync only touches entries from that source. Your own entries are never modified, overwritten, or deleted by any sync operation.
 
-Synced entries show a small "synced" badge in search results so you can tell them apart.
-
-Switching or disconnecting
-- To use a different file, click "Change file" in Settings.
-- To remove synced entries without stopping sync, click "Clear synced entries". The watcher keeps running; entries reload on the next file change.
-- To stop syncing entirely, click "Disconnect sync". This stops the file watcher, clears the sync path from settings, and removes all synced entries. No further reloads until you reconfigure.
-
-See the "Disconnecting sync" help topic for a full comparison of the two actions.`,
+Adding more sources
+Click "+ Add sync source" again to connect a second CSV. Both files are watched simultaneously. Each source's entries are tracked independently — refreshing or disconnecting one does not affect the other.`,
   },
   {
     id: "support-tools",
     title: "Support Tools",
-    tags: ["support tools", "links", "quick launch", "utilities", "grid", "reorder"],
+    tags: ["support tools", "links", "quick launch", "utilities", "grid", "reorder", "pin", "favorite"],
     content: `Support Tools is a dedicated category for links you open regularly — admin panels, dashboards, forms, and other utilities.
 
 Support Tools entries appear in a grid layout for faster scanning, separate from the text-based saved replies and docs.
@@ -297,10 +290,13 @@ Launching a tool
 Click anywhere on a tool card to open its link in your default browser. The tool is also added to your Recents list.
 
 Adding a tool
-Click + in the header, set the Type to "tool", and fill in the Title and URL. Assign it to the Support Tools vertical (or any vertical — the grid layout applies specifically to the Support Tools vertical).
+Click + in the header, set the Type to "tool", and fill in the Title and URL.
 
 Reordering tools
 When browsing (not searching), each tool card shows ↑ and ↓ buttons. Click them to change the order. The new order is saved immediately.
+
+Favoriting and pinning tools
+Hover a tool card to reveal the star (☆) and pin (📍) buttons alongside the edit button. Starring adds the tool to your Favorites list. Pinning adds it to the Pinned section at the top of the main results view. Both work the same as for regular entries.
 
 Editing and removing
 Click ✎ on any tool card to open the edit form. You can change the title, URL, tags, or delete the tool.`,
@@ -308,23 +304,25 @@ Click ✎ on any tool card to open the edit form. You can change the title, URL,
   {
     id: "settings",
     title: "Settings",
-    tags: ["settings", "hotkey", "config", "window", "position", "sync"],
+    tags: ["settings", "hotkey", "config", "window", "position", "sync", "navigation", "pages"],
     content: `Open Settings from the ⚙ button in the header, or from the tray menu.
 
-Global hotkey
-The default shortcut is Ctrl+Shift+Space (Cmd+Shift+Space on Mac). To change it, click "Change hotkey", hold your new combination, then release to save. Press Esc to cancel without saving. If the combination is already in use by another app, you will see an error.
+Settings are organized into five pages. Click any page from the main Settings menu to open it. Click "← Settings" in the page header to return to the menu.
 
-Window
-The window remembers its position and size between launches. Click "Reset to default position" to snap it back to the bottom-left corner at the default size.
+Appearance
+Text size, theme (dark/light), accent color, opacity, window size, and density.
+
+Behavior
+Hide window after copying, keep window on top, summon hotkey, window position reset, and update check.
+
+Organization
+Tab order (drag to reorder), vertical management (rename, delete), and sub-folder management.
+
+Sync
+Connect CSV files from cloud-synced folders. See the "Shared file sync" help topic for full setup instructions.
 
 Data
-Import CSV, Export all, Export mine, Download template, Paste and split, and Add new entry are all available in the Data section of Settings.
-
-Clear all entries
-Below the data action grid, a "Clear all entries" button permanently deletes every local entry. Synced entries are not affected. Use this to start fresh without reconfiguring sync. This cannot be undone — export your data first if you want a backup.
-
-Shared file sync
-See the "Shared file sync" help topic for full setup instructions.`,
+Add entry, Import CSV, Paste and split, Download template, Export all, Export mine, Export selected, Export Stream Deck profile, and Clear all entries.`,
   },
   {
     id: "text-size",
@@ -340,15 +338,15 @@ What scales: search input, entry titles, body text, form fields, buttons, and he
     tags: ["theme", "dark", "light", "mode", "appearance", "color"],
     content: `ShortPath supports dark mode (default) and light mode.
 
-To switch, open Settings (⚙ in the header) and find the Appearance section. Click Dark or Light under Theme. The change applies instantly and is saved across launches.`,
+To switch, open Settings > Appearance and click Dark or Light under Theme. The change applies instantly and is saved across launches.`,
   },
   {
     id: "vertical-rename",
     title: "Renaming verticals",
     tags: ["vertical", "rename", "category", "name", "settings"],
-    content: `You can rename any vertical from Settings > Verticals.
+    content: `You can rename any vertical from Settings > Organization.
 
-Open Settings, expand the Verticals section, and click Rename next to any vertical. Type the new name and press Enter (or click Save). Press Esc to cancel without saving.
+Click Rename next to any vertical, type the new name, and press Enter (or click Save). Press Esc to cancel without saving.
 
 The rename applies everywhere: group headers, entry forms, and the overlay badge. The vertical's internal ID does not change, so all entries remain linked correctly.`,
   },
@@ -359,9 +357,12 @@ The rename applies everywhere: group headers, entry forms, and the overlay badge
     content: `You can star any entry to save it to your Favorites list.
 
 Adding and removing favorites
-On any result row, hover to reveal action buttons. The ☆ star button is on the left side of the row. Click it to star the entry; it turns ★ amber and stays visible even when you stop hovering. Click again to unstar.
+Hover any result row to reveal action buttons on the right side. Click the ☆ star button to star the entry — it turns ★ amber. Click again to unstar. Entries that are already starred show their action buttons faintly even without hovering.
 
-In the expanded overlay (click any result to open it), the star appears in the top-left of the header. Click it to toggle.
+In the expanded overlay (click any result to open it), the star appears in the header. Click it to toggle.
+
+Support Tools
+Tool cards in the Support Tools grid also support starring. Hover a card and click ☆ to add it to Favorites.
 
 Opening Favorites
 Click the ☆ icon in the main header (next to ? Help). This opens the Favorites view, which lists all your starred entries. Every entry in the list supports the same copy, edit, and open actions as the main search.
@@ -393,15 +394,12 @@ Synced entries come from the shared team CSV file. ShortPath does not write back
     id: "disconnect-sync",
     title: "Disconnecting sync",
     tags: ["sync", "disconnect", "stop", "clear", "watcher", "file"],
-    content: `When a sync file is configured, the Settings > Shared file sync section shows two separate actions for removing synced content.
+    content: `When sync sources are connected, each source card in Settings > Sync has a Disconnect button.
 
-Clear synced entries
-Removes all synced entries from the local store. The file watcher keeps running. If the sync file changes, or if you click "Refresh now", synced entries will reload. Use this when you want a clean slate without stopping sync.
+Disconnect (per source)
+Stops the file watcher for that source, removes it from settings, and removes all entries that came from that file. Other sync sources are not affected. No further reloads from that file until you add it back with "+ Add sync source".
 
-Disconnect sync
-Stops the file watcher completely, clears the sync file path from settings, and removes all synced entries. After disconnecting, no further reloads will occur until you click "Configure sync file" again. Use this when you are switching files or want to stop syncing permanently.
-
-Both actions require a second click to confirm. Neither action touches your local entries.`,
+Both the Refresh and Disconnect actions are per-source, so you can manage each connected file independently. Neither action touches your local entries.`,
   },
   {
     id: "notes",
@@ -415,22 +413,20 @@ Click the ✎ icon in the header to open the Notes view.
 Creating a note
 Click + New. A blank note opens immediately in the editor. Start typing — your note is saved automatically as you type.
 
+Saving a note
+Click Save (or press Enter on the Save button) to save and return to the notes list.
+
 Linking a note to a resource
 Open a resource by clicking on it in search results, then click "Add note" in the edit strip at the bottom of the panel. A new note opens in the editor, linked to that resource. In the Notes list, linked notes show the resource name in blue beneath the title.
 
 Editing a note
 From the notes list, click any note to open it in the editor. The title field is optional. The body field is a plain-text area — you can write freely without formatting.
 
-Notes auto-save about a second after you stop typing. You do not need to click a Save button.
-
 Deleting a note
 While viewing a note in the editor, click "Delete note". A confirmation prompt appears in the same footer bar. Click Delete to confirm, or Cancel to go back.
 
 Searching notes
 In the notes list, type in the search box to filter notes by title or body. The filter applies in real time.
-
-Sorting
-Click the Newest / Oldest button to toggle sort order. Newest (default) shows the most recently updated note first.
 
 Data
 Notes are stored in notes.json in your app data folder, separate from store.json. They are local only and are never synced or exported.`,
@@ -442,16 +438,16 @@ Notes are stored in notes.json in your app data folder, separate from store.json
     content: `The Appearance section in Settings lets you personalize how ShortPath looks and fits on your screen.
 
 Accent color
-Choose from six presets: Ocean (blue), Violet, Rose, Amber, Teal, and Slate. The chosen color drives highlights throughout the app — the active tab underline, copy button glow, focused row border, and input focus ring. The active swatch shows a thin ring in that color.
+Choose from six presets: Ocean (blue), Violet, Rose, Amber, Teal, and Slate. The chosen color drives highlights throughout the app — the active tab underline, copy button glow, focused row border, and input focus ring.
 
 Opacity
 Drag the slider between 70% and 100% to make the window semi-transparent. At 70% you can see content behind the window while keeping it usable. Restore to 100% for a fully opaque window. The value is saved and restored on next launch.
 
 Window size
-Choose Small (380×520), Medium (480×640, default), or Large (580×760). Clicking a size button resizes the window immediately and saves the choice. After picking a preset the window still shows that size at next launch.
+Choose Small (380×520), Medium (480×640, default), or Large (580×760). Clicking a size button resizes the window immediately and saves the choice.
 
 Density
-Comfortable (default) shows entries at their standard spacing. Compact reduces padding and font size slightly, fitting 2–3 more results on screen without scrolling. Pick the one that suits your screen size.`,
+Comfortable (default) shows entries at their standard spacing. Compact reduces padding and font size slightly, fitting 2–3 more results on screen without scrolling.`,
   },
   {
     id: "pinned-entries",
@@ -460,10 +456,12 @@ Comfortable (default) shows entries at their standard spacing. Compact reduces p
     content: `Pin up to 8 entries to keep them at the top of the main list when you open ShortPath.
 
 Pinning an entry
-Hover any result row to reveal the 📍 pin button on the left side of the row. Click it to pin the entry — the icon changes to 📌 and the button stays visible. You can also pin from the expanded overlay using the 📍 button in the header.
+Hover any result row to reveal action buttons on the right side. Click the 📍 pin button to pin the entry — the icon changes to 📌 and the entry's action buttons remain faintly visible even without hovering. You can also pin from the expanded overlay using the 📍 button in the header.
+
+Support Tools can also be pinned. Hover a tool card and click the 📍 button to pin it.
 
 Pinned section
-When the search bar is empty, a "Pinned" section appears at the top of the results above everything else. Pinned entries are also visible in this section in the order you pinned them.
+When the search bar is empty, a "Pinned" section appears at the top of the results above everything else. Pinned entries are also visible in this section in the order you pinned them. Click the section header to collapse or expand it.
 
 During search
 When you type a search query, pins are no longer forced to the top — results rank by relevance. The pin icon still shows on pinned rows, but relevance wins.
@@ -540,11 +538,18 @@ The global hotkey still works when pinned — pressing it will hide the window e
   {
     id: "stream-deck-export",
     title: "Stream Deck profile export",
-    tags: ["stream deck", "elgato", "profile", "export", "hardware", "buttons"],
+    tags: ["stream deck", "elgato", "profile", "export", "hardware", "buttons", "layout"],
     content: `Settings > Data > Export Stream Deck Profile creates a .streamDeckProfile file you can import directly into the Elgato Stream Deck app.
 
-What the file contains
-Each entry in your library is mapped to one button on a 5-column grid. The button label is the entry title. Buttons are ordered left-to-right, top-to-bottom in the same order as your entry list. Profiles are capped at 32 buttons (one full XL page). If you have more than 32 entries, the first 32 are exported.
+Device layout
+Before exporting, a dialog lets you choose your device model or set a custom layout:
+- Mini: 3×2 (6 buttons)
+- Standard: 5×3 (15 buttons)
+- XL: 8×4 (32 buttons)
+- Neo: 4×2 (8 buttons)
+- Custom: enter any columns × rows
+
+The export creates buttons to fill that grid exactly. If you have more entries than buttons, the first N entries are used (N = columns × rows).
 
 How to import it
 1. Double-click the .streamDeckProfile file — Stream Deck app opens and prompts you to import.
@@ -553,7 +558,7 @@ How to import it
 3. Switch to it and you will see your entries as labeled buttons.
 
 Wiring up button actions
-The exported buttons have labels but no action assigned yet. After import, click any button in the Stream Deck editor and assign the action you want: a hotkey that triggers a text-insert macro, a website open action, a system shortcut, etc. ShortPath exports the layout and labels so you spend less time creating buttons by hand.`,
+The exported buttons have labels but no action assigned yet. After import, click any button in the Stream Deck editor and assign the action you want.`,
   },
   {
     id: "rich-text",
@@ -574,28 +579,24 @@ Each entry has a "Copy as" setting below the editor:
 
 Plain text (default): strips all HTML tags before writing to the clipboard. What you see in the editor is what gets pasted as plain text into your support tool or browser field.
 
-HTML: writes the formatted HTML to the clipboard, plus a plain-text fallback. Paste into a rich-text field (an email editor, Notion, Google Docs) and the formatting is preserved. Paste into a plain-text field and you get the stripped version automatically.
-
-Existing entries created before this feature are treated as plain text. Their body content will render as-is in the editor with no formatting applied.`,
+HTML: writes the formatted HTML to the clipboard, plus a plain-text fallback. Paste into a rich-text field (an email editor, Notion, Google Docs) and the formatting is preserved. Paste into a plain-text field and you get the stripped version automatically.`,
   },
   {
     id: "import-from-url",
     title: "Importing from a URL",
-    tags: ["url", "import", "web", "page", "fetch", "readability", "sections"],
+    tags: ["url", "import", "web", "page", "fetch", "readability", "preview"],
     content: `Any add-entry or edit-entry form can pull content from a web page.
 
 How to use it
 1. Open the add form (+ button in the header) or the edit form for an existing entry.
 2. Click "Import from URL" above the body field.
 3. Paste the page URL into the input that appears and click Fetch.
-4. ShortPath downloads the page and extracts the readable content, splitting it at heading boundaries into sections.
-5. Each section shows the heading name. Click any section row to paste its text into the body field.
-6. To use all sections at once, click "Use all" — the body is populated with every section joined together.
+4. ShortPath downloads the page and extracts the readable content.
+5. An editable text preview appears. Trim, rearrange, or remove any content you don't need.
+6. Click "Use this text" to populate the body field with whatever remains in the preview.
+7. Click Discard to cancel without changing the body.
 
-After applying a section the URL import panel stays open so you can refine your choice. Click the X button or click "Import from URL" again to dismiss it.
-
-Captured URL
-If an entry was sent from the browser extension, a read-only "Captured from" field shows the source URL. You can still use "Import from URL" to fetch content from a different URL if needed.
+If the title field is empty when you fetch, ShortPath auto-fills it from the page title.
 
 Error handling
 If the page cannot be fetched (network error, access denied, or parsing failure), an error message appears below the URL input. Check that the URL is public and reachable.`,
@@ -607,7 +608,7 @@ If the page cannot be fetched (network error, access denied, or parsing failure)
     content: `You can drag a Markdown (.md) file onto the Import screen to create multiple entries from a single file.
 
 How to import
-1. Open Settings and click the Import tab, or go to Settings > Import CSV.
+1. Open Settings and click the Import tab, or go to Settings > Data > Import CSV.
 2. Drag a .md file onto the drop zone.
 3. ShortPath parses the file and splits it at ## and ### headings, treating each section as a potential entry.
 4. A preview screen shows all detected sections with checkboxes. Each section shows its heading as the title and the body text below.
@@ -616,9 +617,7 @@ How to import
 7. Click Import. ShortPath creates one entry per checked section, with type "doc" and the chosen vertical.
 
 Heading detection
-Top-level headings (# Title) are not treated as section boundaries — they become the lead-in text of the first section. Sections split at ## and ### headings only. If the file has no ## or ### headings, the entire file is one section.
-
-After import, click "Import another file" to continue or use the header to navigate away.`,
+Top-level headings (# Title) are not treated as section boundaries — they become the lead-in text of the first section. Sections split at ## and ### headings only. If the file has no ## or ### headings, the entire file is one section.`,
   },
   {
     id: "import-pdf",
@@ -627,7 +626,7 @@ After import, click "Import another file" to continue or use the header to navig
     content: `You can drag a PDF (.pdf) file onto the Import screen to create entries from extracted text.
 
 How to import
-1. Open Settings and click the Import tab, or go to Settings > Import CSV.
+1. Open Settings and click the Import tab, or go to Settings > Data > Import CSV.
 2. Drag a .pdf file onto the drop zone.
 3. ShortPath extracts the text and splits it into sections based on detected headings and paragraph breaks.
 4. A preview screen shows all detected sections with checkboxes.
@@ -637,7 +636,7 @@ How to import
 ShortPath creates one entry per checked section with type "doc".
 
 Limitations
-Text extraction is best-effort. Section detection is automatic and may not match the visual structure of the PDF exactly. Scanned PDFs (images of text) are not supported — no text will be extracted. If the sections look wrong, import them and edit the entries manually after.`,
+Text extraction is best-effort. Scanned PDFs (images of text) are not supported — no text will be extracted. If the sections look wrong, import them and edit the entries manually after.`,
   },
   {
     id: "browser-extension",
@@ -658,7 +657,7 @@ Click the ShortPath icon in the browser toolbar to see the connection status.
 - Red dot: ShortPath is not running. The queued item count is shown. Items will be imported automatically when ShortPath next opens.
 
 Queue behavior
-Queued captures are stored in browser local storage. They are sent when the extension starts up and ShortPath is already running, or when you click "Import now" in the popup. Items remain in the queue until they are successfully imported.
+Queued captures are stored in browser local storage. They are sent when the extension starts up and ShortPath is already running, or when you click "Import now" in the popup.
 
 Installing in Chrome
 1. Build the extension: node build.js chrome (from the packages/browser-extension directory).
@@ -678,16 +677,16 @@ If the extension shows "not running" when ShortPath is open, check that nothing 
     title: "Troubleshooting",
     tags: ["troubleshooting", "hotkey conflict", "not opening", "missing entries", "sync", "problem"],
     content: `Hotkey not working
-The global hotkey may be blocked if another app registered the same combination. Open Settings > Global hotkey and try a different one, such as Ctrl+Shift+1 or Ctrl+Alt+Space.
+The global hotkey may be blocked if another app registered the same combination. Open Settings > Behavior > Change hotkey and try a different one, such as Ctrl+Shift+1 or Ctrl+Alt+Space.
 
 Window not appearing
 If the window does not show when you press the hotkey, click the ShortPath icon in the system tray. If the icon is missing, the app may have stopped running — relaunch it from your Applications folder or Start menu.
 
 Entries missing after import
-Check the import result for skipped-row errors. Common causes: missing required columns (title, vertical, type), an invalid type value, or column names that do not match the expected format. Download the template from Settings to see the exact format.
+Check the import result for skipped-row errors. Common causes: missing required columns (title, vertical, type), an invalid type value, or column names that do not match. Use the column mapping screen to reassign columns, or download the template to see the exact format.
 
 Sync not updating
-If the sync file is on a network drive or cloud folder, the file watcher may be delayed or unreliable. Use Settings > Shared file sync > Refresh now to reload manually.
+If the sync file is on a network drive or cloud folder, the file watcher may be delayed or unreliable. Use the Refresh button on the source card in Settings > Sync to reload manually.
 
 App data location
 Windows: %APPDATA%\\ShortPath (store.json and settings.json)

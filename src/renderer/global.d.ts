@@ -53,6 +53,7 @@ interface CsvPreviewResult {
   errors?: string[];
   needsMapping?: boolean;
   availableColumns?: string[];
+  suggestedMapping?: ColumnMapping;
 }
 
 interface CsvCommitResult {
@@ -88,7 +89,7 @@ declare global {
       exportCsv: () => Promise<{ success: boolean }>;
       exportMine: () => Promise<{ success: boolean }>;
       exportSelected: (ids: string[]) => Promise<{ success: boolean }>;
-      exportStreamDeckProfile: () => Promise<{ success: boolean; capped?: boolean }>;
+      exportStreamDeckProfile: (cols?: number, rows?: number) => Promise<{ success: boolean; capped?: boolean }>;
 
       previewCsvImport: () => Promise<CsvPreviewResult>;
       commitCsvImport: (resolutions?: Record<number, string>) => Promise<CsvCommitResult>;
@@ -130,7 +131,6 @@ declare global {
       setFontSize: (size: number) => Promise<void>;
       setTheme: (theme: "dark" | "light") => Promise<void>;
       saveSourceMode: (mode: "local" | "sync", name?: string) => Promise<void>;
-      disconnectSync: () => Promise<void>;
       renameVertical: (id: string, newLabel: string) => Promise<void>;
       addVertical: (label: string) => Promise<Vertical>;
       clearLocalEntries: () => Promise<void>;
@@ -139,10 +139,14 @@ declare global {
       removeSubFolder: (verticalId: string, subFolderId: string) => Promise<void>;
       deleteVertical: (verticalId: string) => Promise<void>;
 
-      configureSync: () => Promise<{ success: boolean; syncPath?: string; errors?: string[] }>;
-      refreshSynced: () => Promise<{ success: boolean; errors?: string[] }>;
+      configureSync: () => Promise<{ success: boolean; source?: { id: string; path: string; label: string }; errors?: string[] }>;
+      refreshSynced: (sourceId?: string) => Promise<{ success: boolean; errors?: string[] }>;
       clearSynced: () => Promise<void>;
-      getSyncStatus: () => Promise<{ syncPath: string | null; syncedCount: number; lastRefreshed: string | null }>;
+      disconnectSync: (sourceId: string) => Promise<void>;
+      renameSyncSource: (sourceId: string, newLabel: string) => Promise<{ success: boolean }>;
+      getSyncStatus: () => Promise<{
+        sources: Array<{ id: string; path: string; label: string; syncedCount: number; lastRefreshed: string | null }>;
+      }>;
 
       onFocusSearch: (callback: () => void) => () => void;
       onHotkeyFailed: (callback: (accelerator: string) => void) => () => void;

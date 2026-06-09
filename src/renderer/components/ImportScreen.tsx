@@ -74,7 +74,8 @@ export default function ImportScreen({ onComplete, onCancel, existingEntries, ve
     }
     if (result.needsMapping) {
       const cols = result.availableColumns ?? [];
-      setMapping({ title: null, vertical: null, type: null, body: null, url: null, tags: null, subfolder: null });
+      // Pre-populate from suggested mapping when available; otherwise blank slate.
+      setMapping(result.suggestedMapping ?? { title: null, vertical: null, type: null, body: null, url: null, tags: null, subfolder: null });
       setState({ status: "needsMapping", availableColumns: cols });
       return;
     }

@@ -27,7 +27,7 @@ contextBridge.exposeInMainWorld("shortpath", {
   exportCsv: () => ipcRenderer.invoke("export-csv"),
   exportMine: () => ipcRenderer.invoke("export-mine"),
   exportSelected: (ids: string[]) => ipcRenderer.invoke("export-selected", ids),
-  exportStreamDeckProfile: () => ipcRenderer.invoke("export-streamdeck-profile"),
+  exportStreamDeckProfile: (cols?: number, rows?: number) => ipcRenderer.invoke("export-streamdeck-profile", cols, rows),
 
   previewCsvImport: () => ipcRenderer.invoke("preview-csv-import"),
   commitCsvImport: (resolutions?: Record<number, string>) => ipcRenderer.invoke("commit-csv-import", resolutions ?? {}),
@@ -56,7 +56,8 @@ contextBridge.exposeInMainWorld("shortpath", {
   removeSubFolder: (verticalId: string, subFolderId: string) => ipcRenderer.invoke("remove-subfolder", verticalId, subFolderId),
   deleteVertical: (verticalId: string) => ipcRenderer.invoke("delete-vertical", verticalId),
   saveSourceMode: (mode: "local" | "sync", name?: string) => ipcRenderer.invoke("save-source-mode", mode, name),
-  disconnectSync: () => ipcRenderer.invoke("disconnect-sync"),
+  disconnectSync: (sourceId: string) => ipcRenderer.invoke("disconnect-sync", sourceId),
+  renameSyncSource: (sourceId: string, newLabel: string) => ipcRenderer.invoke("rename-sync-source", sourceId, newLabel),
 
   setAccent: (color: string) => ipcRenderer.invoke("set-accent", color),
   setOpacity: (value: number) => ipcRenderer.invoke("set-opacity", value),
@@ -97,7 +98,7 @@ contextBridge.exposeInMainWorld("shortpath", {
   },
 
   configureSync: () => ipcRenderer.invoke("configure-sync"),
-  refreshSynced: () => ipcRenderer.invoke("refresh-synced"),
+  refreshSynced: (sourceId?: string) => ipcRenderer.invoke("refresh-synced", sourceId),
   clearSynced: () => ipcRenderer.invoke("clear-synced"),
   getSyncStatus: () => ipcRenderer.invoke("get-sync-status"),
 

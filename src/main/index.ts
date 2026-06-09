@@ -23,11 +23,11 @@ import chokidar from "chokidar";
 const pdfParse = require("pdf-parse") as (buf: Buffer, opts?: Record<string, unknown>) => Promise<{ text: string; numpages: number }>;
 
 import { autoUpdater } from "electron-updater";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, replaceEntriesFromSource, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseCsvPreviewWithMapping, importCsvWithMapping, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
-import { loadSettings, saveSettings, type AppSettings } from "./settings";
+import { loadSettings, saveSettings, type AppSettings, type SyncSourceConfig } from "./settings";
 import type { StoreData } from "../store/schema";
 import type { Entry, Note, ColumnMapping, CapturePayload } from "../shared/types";
 
@@ -74,10 +74,10 @@ let pendingColumnMapping: ColumnMapping | null = null;
 // Debounce timer for saving window bounds after move/resize.
 let saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Sync state
-let syncWatcher: chokidar.FSWatcher | null = null;
-let syncDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-let lastRefreshed: string | null = null;
+// Sync state — multiple sources supported via syncWatchers map
+const syncWatchers = new Map<string, chokidar.FSWatcher>();
+const syncDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const syncLastRefreshed: Record<string, string> = {};
 
 function getBottomLeftPosition() {
   const display = screen.getPrimaryDisplay();
@@ -259,13 +259,13 @@ async function handleExportFromTray() {
   }
 }
 
-function loadSyncedFile(filePath: string): { ok: boolean; errors: string[] } {
+function loadSyncedFile(sourceId: string, filePath: string): { ok: boolean; errors: string[] } {
   try {
     const csvString = fs.readFileSync(filePath, "utf-8");
     const { entries: syncedEntries, errors } = parseSyncedCsv(csvString);
-    store = replaceSyncedEntries(store, syncedEntries);
+    store = replaceEntriesFromSource(store, sourceId, syncedEntries);
     saveStore(userDataPath, store);
-    lastRefreshed = new Date().toISOString();
+    syncLastRefreshed[sourceId] = new Date().toISOString();
     pushStoreUpdate();
     win?.webContents.send("sync-refreshed");
     return { ok: true, errors };
@@ -275,23 +275,31 @@ function loadSyncedFile(filePath: string): { ok: boolean; errors: string[] } {
   }
 }
 
-function startSyncWatcher(filePath: string) {
-  stopSyncWatcher();
-  syncWatcher = chokidar.watch(filePath, {
+function startSyncWatcher(sourceId: string, filePath: string) {
+  stopSyncWatcher(sourceId);
+  const watcher = chokidar.watch(filePath, {
     persistent: false,
     awaitWriteFinish: { stabilityThreshold: 300, pollInterval: 100 },
     ignoreInitial: true,
   });
-  syncWatcher.on("change", () => {
-    if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
-    syncDebounceTimer = setTimeout(() => loadSyncedFile(filePath), 200);
+  watcher.on("change", () => {
+    const existing = syncDebounceTimers.get(sourceId);
+    if (existing) clearTimeout(existing);
+    syncDebounceTimers.set(sourceId, setTimeout(() => loadSyncedFile(sourceId, filePath), 200));
   });
-  syncWatcher.on("error", (err) => console.error("Sync watcher error:", err));
+  watcher.on("error", (err) => console.error("Sync watcher error:", err));
+  syncWatchers.set(sourceId, watcher);
 }
 
-function stopSyncWatcher() {
-  if (syncDebounceTimer) { clearTimeout(syncDebounceTimer); syncDebounceTimer = null; }
-  if (syncWatcher) { void syncWatcher.close(); syncWatcher = null; }
+function stopSyncWatcher(sourceId: string) {
+  const timer = syncDebounceTimers.get(sourceId);
+  if (timer) { clearTimeout(timer); syncDebounceTimers.delete(sourceId); }
+  const watcher = syncWatchers.get(sourceId);
+  if (watcher) { void watcher.close(); syncWatchers.delete(sourceId); }
+}
+
+function stopAllSyncWatchers() {
+  for (const id of syncWatchers.keys()) stopSyncWatcher(id);
 }
 
 // ── Capture server helpers ────────────────────────────────────────────────────
@@ -668,8 +676,8 @@ function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle("export-streamdeck-profile", async () => {
-    const MAX_BUTTONS = 32;
+  ipcMain.handle("export-streamdeck-profile", async (_e, cols: number = 5, rows: number = 3) => {
+    const MAX_BUTTONS = cols * rows;
     const entries = store.entries.slice(0, MAX_BUTTONS);
     const capped = store.entries.length > MAX_BUTTONS;
 
@@ -684,7 +692,6 @@ function registerIpcHandlers() {
     };
 
     const actions: Record<string, unknown> = {};
-    const cols = 5;
     entries.forEach((e, idx) => {
       const col = idx % cols;
       const row = Math.floor(idx / cols);
@@ -853,13 +860,13 @@ function registerIpcHandlers() {
     saveSettings(userDataPath, settings);
   });
 
-  ipcMain.handle("disconnect-sync", () => {
-    stopSyncWatcher();
-    store = replaceSyncedEntries(store, []);
+  ipcMain.handle("disconnect-sync", (_e, sourceId: string) => {
+    stopSyncWatcher(sourceId);
+    store = replaceEntriesFromSource(store, sourceId, []);
     saveStore(userDataPath, store);
-    settings = { ...settings, syncPath: undefined };
+    settings = { ...settings, syncSources: (settings.syncSources ?? []).filter((s) => s.id !== sourceId) };
     saveSettings(userDataPath, settings);
-    lastRefreshed = null;
+    delete syncLastRefreshed[sourceId];
     pushStoreUpdate();
     win?.webContents.send("sync-refreshed");
   });
@@ -883,40 +890,71 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle("configure-sync", async () => {
-    const { filePaths } = await dialog.showOpenDialog({
-      title: "Select shared sync file",
+    const { filePaths } = await dialog.showOpenDialog(win!, {
+      title: "Select shared sync CSV",
       filters: [{ name: "CSV", extensions: ["csv"] }],
       properties: ["openFile"],
     });
     if (!filePaths[0]) return { success: false };
 
     const filePath = filePaths[0];
-    settings = { ...settings, syncPath: filePath };
+    const id = randomUUID();
+    const label = path.basename(filePath, path.extname(filePath));
+    const newSource: SyncSourceConfig = { id, path: filePath, label };
+    settings = { ...settings, syncSources: [...(settings.syncSources ?? []), newSource] };
     saveSettings(userDataPath, settings);
 
-    const result = loadSyncedFile(filePath);
-    startSyncWatcher(filePath);
-    return { success: true, syncPath: filePath, errors: result.errors };
+    const result = loadSyncedFile(id, filePath);
+    startSyncWatcher(id, filePath);
+    return { success: true, source: newSource, errors: result.errors };
   });
 
-  ipcMain.handle("refresh-synced", () => {
-    if (!settings.syncPath) return { success: false, errors: ["No sync file configured."] };
-    const result = loadSyncedFile(settings.syncPath);
-    return { success: result.ok, errors: result.errors };
+  ipcMain.handle("refresh-synced", (_e, sourceId?: string) => {
+    const sources = settings.syncSources ?? [];
+    if (sourceId) {
+      const source = sources.find((s) => s.id === sourceId);
+      if (!source) return { success: false, errors: ["Source not found."] };
+      const result = loadSyncedFile(source.id, source.path);
+      return { success: result.ok, errors: result.errors };
+    }
+    // Refresh all sources
+    const errors: string[] = [];
+    for (const source of sources) {
+      const result = loadSyncedFile(source.id, source.path);
+      errors.push(...result.errors);
+    }
+    return { success: true, errors };
   });
 
   ipcMain.handle("clear-synced", () => {
     store = replaceSyncedEntries(store, []);
     saveStore(userDataPath, store);
-    lastRefreshed = null;
     pushStoreUpdate();
   });
 
-  ipcMain.handle("get-sync-status", () => ({
-    syncPath: settings.syncPath ?? null,
-    syncedCount: store.entries.filter((e) => e.source === "synced").length,
-    lastRefreshed,
-  }));
+  ipcMain.handle("get-sync-status", () => {
+    const sources = settings.syncSources ?? [];
+    return {
+      sources: sources.map((s) => ({
+        id: s.id,
+        path: s.path,
+        label: s.label,
+        syncedCount: store.entries.filter((e) => e.source === "synced" && e.syncSource === s.id).length,
+        lastRefreshed: syncLastRefreshed[s.id] ?? null,
+      })),
+    };
+  });
+
+  ipcMain.handle("rename-sync-source", (_e, sourceId: string, newLabel: string) => {
+    settings = {
+      ...settings,
+      syncSources: (settings.syncSources ?? []).map((s) =>
+        s.id === sourceId ? { ...s, label: newLabel } : s
+      ),
+    };
+    saveSettings(userDataPath, settings);
+    return { success: true };
+  });
 
   ipcMain.handle("ping", () => "pong");
 
@@ -1083,10 +1121,24 @@ app.whenReady().then(() => {
   registerHotkey(settings.hotkey);
   startCaptureServer();
 
-  // Resume file-watch sync if a path was previously configured.
-  if (settings.syncPath && fs.existsSync(settings.syncPath)) {
-    loadSyncedFile(settings.syncPath);
-    startSyncWatcher(settings.syncPath);
+  // Migrate legacy single-source sync to syncSources array.
+  if (settings.syncPath && !(settings.syncSources ?? []).length) {
+    const legacyPath = settings.syncPath;
+    const id = randomUUID();
+    const label = path.basename(legacyPath, path.extname(legacyPath));
+    const migrated: SyncSourceConfig = { id, path: legacyPath, label };
+    settings = { ...settings, syncSources: [migrated], syncPath: undefined };
+    saveSettings(userDataPath, settings);
+    // Re-tag existing synced entries with this sourceId
+    store = { ...store, entries: store.entries.map((e) => e.source === "synced" ? { ...e, syncSource: id } : e) };
+    saveStore(userDataPath, store);
+  }
+  // Resume file-watch sync for all configured sources.
+  for (const source of settings.syncSources ?? []) {
+    if (fs.existsSync(source.path)) {
+      loadSyncedFile(source.id, source.path);
+      startSyncWatcher(source.id, source.path);
+    }
   }
 
   // Auto-check for updates after renderer has had time to load (packaged builds only).
@@ -1113,7 +1165,7 @@ function registerHotkey(accelerator: string): boolean {
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
-  stopSyncWatcher();
+  stopAllSyncWatchers();
   if (captureServer) { captureServer.close(); captureServer = null; }
 });
 

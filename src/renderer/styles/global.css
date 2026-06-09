@@ -271,7 +271,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 14px 7px 30px;
+  padding: 7px 14px;
   transition: background 0.1s;
   border-top: 1px solid var(--color-border-subtle);
 }
@@ -326,11 +326,21 @@ body {
   display: flex;
   gap: 4px;
   opacity: 0;
-  transition: opacity 0.1s;
+  transition: opacity 0.12s;
   flex-shrink: 0;
 }
 
-.result-item:hover .result-actions {
+.result-item:hover .result-actions,
+.result-item.focused .result-actions {
+  opacity: 1;
+}
+
+/* When pinned or starred, show actions at low opacity so state is visible without hover */
+.result-item.has-active-state .result-actions {
+  opacity: 0.35;
+}
+
+.result-item.has-active-state:hover .result-actions {
   opacity: 1;
 }
 
@@ -357,6 +367,26 @@ body {
 .copy-btn.copied {
   color: var(--color-success);
   border-color: var(--color-success);
+}
+
+.action-btn.pinned {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.action-btn.starred {
+  color: #fbbf24;
+  border-color: #fbbf24;
+}
+
+/* Sync source number badge — low profile, inline with title */
+.result-source-num {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  margin-left: 5px;
+  flex-shrink: 0;
+  user-select: none;
 }
 
 /* Empty / status states */
@@ -1507,6 +1537,13 @@ body {
   min-width: 0;
 }
 
+.tool-card-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
 .tool-card-title {
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -1514,6 +1551,14 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.tool-card-source-num {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+  user-select: none;
 }
 
 .tool-card-url {
@@ -1556,6 +1601,16 @@ body {
 .tool-action-btn:disabled {
   opacity: 0.25;
   cursor: default;
+}
+
+.tool-action-btn.pinned {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.tool-action-btn.starred {
+  color: #fbbf24;
+  border-color: #fbbf24;
 }
 
 /* Help panel */
@@ -2000,6 +2055,70 @@ body {
 
 .app-path-btn:hover {
   opacity: 0.75;
+}
+
+.app-path-group {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+}
+
+.source-picker-wrap {
+  position: relative;
+}
+
+.app-source-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  padding: 0 2px;
+  transition: opacity 0.1s;
+  -webkit-app-region: no-drag;
+  white-space: nowrap;
+}
+
+.app-source-btn:hover {
+  opacity: 0.75;
+}
+
+.source-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  z-index: 200;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.source-option {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 7px 12px;
+  text-align: left;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.source-option:hover {
+  background: var(--color-surface-hover);
+}
+
+.source-option.active {
+  color: var(--color-accent);
+  font-weight: 600;
 }
 
 /* In-overlay edit strip */
@@ -3450,4 +3569,347 @@ body[data-density="compact"] .result-tags {
 .settings-sync-status-ok {
   color: var(--color-accent);
   font-size: var(--font-size-xs);
+}
+
+/* ===== URL import preview ===== */
+.url-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.url-preview-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.url-preview-textarea {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+  padding: 8px 10px;
+  font-size: var(--font-size-xs);
+  font-family: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  line-height: 1.55;
+  box-sizing: border-box;
+}
+
+.url-preview-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.url-preview-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ===== Stream Deck export dialog ===== */
+.stream-deck-dialog {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  background: var(--color-surface);
+}
+
+.stream-deck-dialog-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 6px;
+}
+
+.stream-deck-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.stream-deck-preset-btn {
+  padding: 4px 10px;
+  font-size: var(--font-size-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.stream-deck-preset-btn:hover {
+  border-color: var(--color-accent);
+}
+
+.stream-deck-preset-btn.active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+}
+
+.stream-deck-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.stream-deck-custom-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.stream-deck-input {
+  width: 52px;
+  padding: 4px 6px;
+  font-size: var(--font-size-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.stream-deck-button-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.stream-deck-dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── Settings page nav ───────────────────────────────────────────────────── */
+
+.settings-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.settings-nav-item:hover {
+  background: var(--color-surface-hover);
+}
+
+.settings-nav-label {
+  flex: 1;
+}
+
+.settings-nav-badge {
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.settings-nav-chevron {
+  font-size: 16px;
+  color: var(--color-text-muted);
+  line-height: 1;
+}
+
+/* ── Sync setup box ──────────────────────────────────────────────────────── */
+
+.sync-setup-box {
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.sync-setup-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 6px;
+}
+
+.sync-setup-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.sync-setup-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sync-setup-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.sync-setup-step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.sync-setup-step strong {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  margin-bottom: 2px;
+}
+
+.sync-setup-step-note {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ── Sync source cards ───────────────────────────────────────────────────── */
+
+.sync-sources-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.sync-sources-list {
+  margin-bottom: 4px;
+}
+
+.sync-source-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--color-surface);
+}
+
+.sync-source-path {
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sync-source-num {
+  font-size: var(--font-size-2xs);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+  border-radius: 3px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.sync-source-path-hint {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sync-source-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.sync-source-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── Easter egg ──────────────────────────────────────────────────────────── */
+
+.easter-egg-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1a1a2e;
+  position: relative;
+  justify-content: center;
+  align-items: center;
+}
+
+.easter-egg-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.1s;
+}
+
+.easter-egg-close:hover {
+  color: rgba(255,255,255,0.8);
+}
+
+.easter-egg-content {
+  text-align: center;
+  padding: 32px;
+}
+
+.easter-egg-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #7fff7f;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
 }

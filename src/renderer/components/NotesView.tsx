@@ -175,7 +175,12 @@ export default function NotesView({ onBack, initialEntry }: Props) {
               </span>
               <button
                 className="btn-primary notes-action-btn"
-                onClick={() => editingNote && void saveNote(editingNote)}
+                onClick={async () => {
+                  if (editingNote) {
+                    await saveNote(editingNote);
+                    handleBackToList();
+                  }
+                }}
                 disabled={saveStatus === "saving"}
               >
                 Save

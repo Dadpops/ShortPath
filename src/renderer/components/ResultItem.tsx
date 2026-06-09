@@ -34,6 +34,7 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
   const { entry } = result;
 
   const isOpenable = !!entry.link && (entry.type === "link" || entry.type === "tool");
+  const hasActiveState = isPinned || isFavorite;
 
   function handleCopy(e: React.MouseEvent) {
     e.stopPropagation();
@@ -69,29 +70,11 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
 
   return (
     <li
-      className={`result-item${isFocused ? " focused" : ""}`}
+      className={`result-item${isFocused ? " focused" : ""}${hasActiveState ? " has-active-state" : ""}`}
       data-focused={isFocused ? "true" : undefined}
       onClick={() => onOpen(entry)}
       style={{ cursor: "pointer" }}
     >
-      {onTogglePin !== undefined && (
-        <button
-          className={`pin-toggle${isPinned ? " pinned" : ""}`}
-          onClick={handleTogglePin}
-          title={isPinned ? "Unpin" : "Pin to top"}
-        >
-          {isPinned ? "📌" : "📍"}
-        </button>
-      )}
-      {onToggleFavorite !== undefined && (
-        <button
-          className={`star-toggle${isFavorite ? " starred" : ""}`}
-          onClick={handleToggleFavorite}
-          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-        >
-          {isFavorite ? "★" : "☆"}
-        </button>
-      )}
       <div className="result-content">
         <div style={{ display: "flex", alignItems: "baseline", gap: 0, minWidth: 0 }}>
           <span className="result-title">{entry.title}</span>
@@ -99,10 +82,27 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
             <span className="copy-count-badge">{entry.copyCount}×</span>
           )}
         </div>
-        {entry.source === "synced" && <span className="result-source-badge">synced</span>}
         {entry.tags && <span className="result-tags">{entry.tags}</span>}
       </div>
       <div className="result-actions">
+        {onTogglePin !== undefined && (
+          <button
+            className={`action-btn pin-btn${isPinned ? " pinned" : ""}`}
+            onClick={handleTogglePin}
+            title={isPinned ? "Unpin" : "Pin to top"}
+          >
+            {isPinned ? "📌" : "📍"}
+          </button>
+        )}
+        {onToggleFavorite !== undefined && (
+          <button
+            className={`action-btn star-btn${isFavorite ? " starred" : ""}`}
+            onClick={handleToggleFavorite}
+            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            {isFavorite ? "★" : "☆"}
+          </button>
+        )}
         {isOpenable && (
           <button className="action-btn open-btn" onClick={handleOpenLink} title="Open link">
             ↗

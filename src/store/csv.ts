@@ -90,6 +90,7 @@ export interface CsvPreviewResult {
   errors: string[];
   needsMapping?: boolean;
   availableColumns?: string[];
+  suggestedMapping?: ColumnMapping;
 }
 
 // Template content bundled inline so it's accessible in packaged builds.
@@ -163,61 +164,32 @@ function applyColumnMapping(rows: Record<string, string>[], mapping: ColumnMappi
 }
 
 export function parseCsvPreview(csvString: string): CsvPreviewResult {
-  // Check raw headers first — if required columns are missing, signal that mapping is needed.
   const { headers: rawHeaders, parseErrors: rawErrors } = parseRowsRaw(csvString);
-  const normalizedHeaders = rawHeaders.map((h) => h.toLowerCase().trim());
-  const missingRequired = REQUIRED_COLUMNS.filter((col) => !normalizedHeaders.includes(col));
-  if (missingRequired.length > 0) {
-    return {
-      totalRows: 0,
-      previewRows: [],
-      skippedCount: 0,
-      errors: rawErrors,
-      needsMapping: true,
-      availableColumns: rawHeaders,
-    };
+
+  // Build a suggested mapping from raw header names — case-insensitive matching.
+  function findCol(...names: string[]): string | null {
+    return rawHeaders.find((h) => names.includes(h.toLowerCase().trim())) ?? null;
   }
+  const suggestedMapping: ColumnMapping = {
+    title:     findCol("title"),
+    vertical:  findCol("vertical", "category"),
+    type:      findCol("type"),
+    body:      findCol("body", "content", "text", "response", "body text"),
+    url:       findCol("url", "link", "href"),
+    tags:      findCol("tags", "tag", "keywords"),
+    subfolder: findCol("subfolder", "sub-folder", "sub_folder", "folder"),
+  };
 
-  const { data, parseErrors } = parseRows(csvString);
-  const errors: string[] = [...parseErrors];
-  let skippedCount = 0;
-  const previewRows: CsvPreviewRow[] = [];
-
-  for (let i = 0; i < data.length; i++) {
-    const row = data[i];
-    const rowNum = i + 2;
-
-    const missing = REQUIRED_COLUMNS.filter((col) => !row[col]?.trim());
-    if (missing.length) {
-      errors.push(`Row ${rowNum}: missing required column(s): ${missing.join(", ")}`);
-      skippedCount++;
-      continue;
-    }
-
-    const type = row.type!.trim();
-    if (!VALID_TYPES.includes(type as Entry["type"])) {
-      errors.push(`Row ${rowNum}: invalid type "${type}" — must be one of: ${VALID_TYPES.join(", ")}`);
-      skippedCount++;
-      continue;
-    }
-
-    previewRows.push({
-      rowIndex: i,
-      title: row.title!.trim(),
-      vertical: row.vertical!.trim(),
-      type: row.type!.trim(),
-      subfolder: row.subfolder?.trim() ?? "",
-      hasBody: !!row.body?.trim(),
-      hasUrl: !!row.url?.trim(),
-      tags: row.tags?.trim() ?? "",
-    });
-  }
-
+  // Always show the column mapping step so users can verify and adjust assignments.
+  // Actual row parsing is done by parseCsvPreviewWithMapping once mapping is confirmed.
   return {
-    totalRows: data.length,
-    previewRows,
-    skippedCount,
-    errors,
+    totalRows: 0,
+    previewRows: [],
+    skippedCount: 0,
+    errors: rawErrors,
+    needsMapping: true,
+    availableColumns: rawHeaders,
+    suggestedMapping,
   };
 }
 

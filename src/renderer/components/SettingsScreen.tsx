@@ -67,6 +67,9 @@ export default function SettingsScreen({
   const [density, setDensity] = useState<"compact" | "comfortable">("comfortable");
   const [exportingAll, setExportingAll] = useState(false);
   const [streamDeckToast, setStreamDeckToast] = useState("");
+  const [streamDeckDialogOpen, setStreamDeckDialogOpen] = useState(false);
+  const [streamDeckCols, setStreamDeckCols] = useState(5);
+  const [streamDeckRows, setStreamDeckRows] = useState(3);
 
   // Vertical management
   const [editingVerticalId, setEditingVerticalId] = useState<string | null>(null);
@@ -99,23 +102,17 @@ export default function SettingsScreen({
   type UpdateCheckState = "idle" | "checking" | "up-to-date" | { version: string; url: string };
   const [updateCheck, setUpdateCheck] = useState<UpdateCheckState>("idle");
 
+  // Page navigation — null shows the main settings menu
+  const [activePage, setActivePage] = useState<SectionKey | null>(null);
+
   // Sync management
-  type SyncStatus = { syncPath: string | null; syncedCount: number; lastRefreshed: string | null } | null;
+  type SyncSource = { id: string; path: string; label: string; syncedCount: number; lastRefreshed: string | null };
+  type SyncStatus = { sources: SyncSource[] } | null;
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(null);
-  const [syncRefreshing, setSyncRefreshing] = useState(false);
+  const [syncRefreshingId, setSyncRefreshingId] = useState<string | null>(null);
   const [syncConfiguring, setSyncConfiguring] = useState(false);
-
-  const [expanded, setExpanded] = useState<Set<SectionKey>>(
-    new Set(["appearance", "behavior", "organization", "data", "sync"])
-  );
-
-  function toggleSection(key: SectionKey) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
-  }
+  const [renamingSourceId, setRenamingSourceId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   useEffect(() => {
     window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d }) => {
@@ -371,14 +368,13 @@ export default function SettingsScreen({
     setTabOrderDragOverIdx(null);
   }
 
-  function SectionHeader({ title, sectionKey }: { title: string; sectionKey: SectionKey }) {
-    return (
-      <button className="settings-section-header" onClick={() => toggleSection(sectionKey)}>
-        <span className="settings-section-title">{title}</span>
-        <span className={`settings-chevron${expanded.has(sectionKey) ? " expanded" : ""}`}>›</span>
-      </button>
-    );
-  }
+  const sectionTitles: Record<SectionKey, string> = {
+    appearance: "Appearance",
+    behavior: "Behavior",
+    organization: "Organization",
+    sync: "Sync",
+    data: "Data",
+  };
 
   async function handleConfigureSync() {
     setSyncConfiguring(true);
@@ -390,16 +386,16 @@ export default function SettingsScreen({
     setSyncConfiguring(false);
   }
 
-  async function handleRefreshSync() {
-    setSyncRefreshing(true);
-    await window.shortpath.refreshSynced();
+  async function handleRefreshSync(sourceId: string) {
+    setSyncRefreshingId(sourceId);
+    await window.shortpath.refreshSynced(sourceId);
     const status = await window.shortpath.getSyncStatus();
     setSyncStatus(status);
-    setSyncRefreshing(false);
+    setSyncRefreshingId(null);
   }
 
-  async function handleDisconnectSync() {
-    await window.shortpath.disconnectSync();
+  async function handleDisconnectSync(sourceId: string) {
+    await window.shortpath.disconnectSync(sourceId);
     const status = await window.shortpath.getSyncStatus();
     setSyncStatus(status);
   }
@@ -414,21 +410,39 @@ export default function SettingsScreen({
     {
       label: "Export Stream Deck Profile",
       topicId: "stream-deck-export",
-      onClick: async () => {
-        const result = await window.shortpath.exportStreamDeckProfile();
-        if (result.capped) {
-          setStreamDeckToast("First 32 entries exported. Stream Deck supports up to 32 buttons per page.");
-          setTimeout(() => setStreamDeckToast(""), 5000);
-        }
-      },
+      onClick: () => setStreamDeckDialogOpen(true),
     },
   ];
+
+  // Settings main menu
+  if (!activePage) {
+    const syncSources = syncStatus?.sources ?? [];
+    return (
+      <div className="settings-shell">
+        <div className="form-header">
+          <button className="form-back-btn" onClick={onClose}>← Back</button>
+          <span className="form-title">Settings</span>
+        </div>
+        <div className="settings-nav-list">
+          {(["appearance", "behavior", "organization", "sync", "data"] as SectionKey[]).map((key) => (
+            <button key={key} className="settings-nav-item" onClick={() => setActivePage(key)}>
+              <span className="settings-nav-label">{sectionTitles[key]}</span>
+              {key === "sync" && syncSources.length > 0 && (
+                <span className="settings-nav-badge">{syncSources.length} source{syncSources.length !== 1 ? "s" : ""}</span>
+              )}
+              <span className="settings-nav-chevron">›</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="settings-shell">
       <div className="form-header">
-        <button className="form-back-btn" onClick={onClose}>← Back</button>
-        <span className="form-title">Settings</span>
+        <button className="form-back-btn" onClick={() => setActivePage(null)}>← Settings</button>
+        <span className="form-title">{sectionTitles[activePage]}</span>
       </div>
 
       <div className="settings-body">
@@ -437,9 +451,7 @@ export default function SettingsScreen({
         )}
 
         {/* ── Appearance ────────────────────────────────────────── */}
-        <section className="settings-section">
-          <SectionHeader title="Appearance" sectionKey="appearance" />
-          {expanded.has("appearance") && (
+        {activePage === "appearance" && (
             <div className="settings-section-body">
               <div className="settings-row">
                 <div className="settings-row-label">Text size</div>
@@ -527,12 +539,9 @@ export default function SettingsScreen({
               </div>
             </div>
           )}
-        </section>
 
         {/* ── Behavior ──────────────────────────────────────────── */}
-        <section className="settings-section">
-          <SectionHeader title="Behavior" sectionKey="behavior" />
-          {expanded.has("behavior") && (
+        {activePage === "behavior" && (
             <div className="settings-section-body">
               <div className="settings-row">
                 <div className="settings-row-label">Hide window after copying</div>
@@ -624,12 +633,9 @@ export default function SettingsScreen({
               </div>
             </div>
           )}
-        </section>
 
         {/* ── Organization ──────────────────────────────────────── */}
-        <section className="settings-section">
-          <SectionHeader title="Organization" sectionKey="organization" />
-          {expanded.has("organization") && (
+        {activePage === "organization" && (
             <div className="settings-section-body">
               <div className="settings-group-label">Tab order</div>
               <div className="tab-order-list">
@@ -834,59 +840,154 @@ export default function SettingsScreen({
               )}
             </div>
           )}
-        </section>
 
         {/* ── Sync ──────────────────────────────────────────────── */}
-        <section className="settings-section">
-          <SectionHeader title="Sync" sectionKey="sync" />
-          {expanded.has("sync") && (
+        {activePage === "sync" && (
             <div className="settings-section-body">
+              <div className="sync-setup-box">
+                <div className="sync-setup-title">How sync works</div>
+                <p className="sync-setup-text">
+                  ShortPath watches a CSV file on your machine. When the file changes, entries update automatically. The easiest way to share entries with your team is to put the CSV inside a cloud-synced folder.
+                </p>
+                <div className="sync-setup-steps">
+                  <div className="sync-setup-step">
+                    <span className="sync-setup-step-num">1</span>
+                    <div>
+                      <strong>Install desktop sync</strong>
+                      <p className="sync-setup-step-note">
+                        Download Google Drive for Desktop, Dropbox, or OneDrive. Sign in and let it sync a local folder on your machine.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="sync-setup-step">
+                    <span className="sync-setup-step-num">2</span>
+                    <div>
+                      <strong>Put your CSV in that folder</strong>
+                      <p className="sync-setup-step-note">
+                        Create or upload a ShortPath CSV into your synced folder. In Google Drive: open drive.google.com, upload the file, then find it in your local Google Drive folder.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="sync-setup-step">
+                    <span className="sync-setup-step-num">3</span>
+                    <div>
+                      <strong>Connect ShortPath to the file</strong>
+                      <p className="sync-setup-step-note">
+                        Click "Add sync source" below and select the CSV. ShortPath will watch it for changes.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="sync-setup-step">
+                    <span className="sync-setup-step-num">4</span>
+                    <div>
+                      <strong>Keep the CSV updated</strong>
+                      <p className="sync-setup-step-note">
+                        Teammates edit the file in Google Sheets or Excel, save it as CSV, and ShortPath picks up the changes automatically when the file syncs to your machine.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {syncStatus === null ? (
                 <p className="settings-stub-note">Loading…</p>
-              ) : syncStatus.syncPath ? (
-                <>
-                  <div className="settings-row" style={{ flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
-                    <div className="settings-row-label">Sync file</div>
-                    <div className="settings-sync-path">{syncStatus.syncPath}</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="settings-row-label">Synced entries</div>
-                    <span className="settings-sync-status-ok">{syncStatus.syncedCount}</span>
-                  </div>
-                  {syncStatus.lastRefreshed && (
-                    <div className="settings-row">
-                      <div className="settings-row-label">Last refreshed</div>
-                      <span className="settings-sync-status-label">{new Date(syncStatus.lastRefreshed).toLocaleTimeString()}</span>
-                    </div>
-                  )}
-                  <div className="settings-sync-row-actions">
-                    <button className="btn-secondary settings-action-btn" onClick={() => void handleRefreshSync()} disabled={syncRefreshing}>
-                      {syncRefreshing ? "Refreshing…" : "Refresh now"}
-                    </button>
-                    <button className="btn-secondary settings-action-btn" onClick={() => void handleConfigureSync()} disabled={syncConfiguring}>
-                      {syncConfiguring ? "Choosing…" : "Change file"}
-                    </button>
-                    <button className="settings-danger-btn settings-action-btn btn-secondary" onClick={() => void handleDisconnectSync()}>
-                      Disconnect sync
-                    </button>
-                  </div>
-                </>
               ) : (
                 <>
-                  <p className="settings-row-note">Not connected. Point ShortPath at a shared CSV on a cloud-synced drive (Dropbox, Google Drive, OneDrive) to pull in team entries automatically.</p>
-                  <button className="btn-secondary settings-action-btn" onClick={() => void handleConfigureSync()} disabled={syncConfiguring}>
-                    {syncConfiguring ? "Choosing…" : "Configure sync file"}
+                  {(syncStatus.sources ?? []).length > 0 && (
+                    <div className="sync-sources-list">
+                      <div className="sync-sources-label">Connected sources</div>
+                      {syncStatus.sources.map((src) => (
+                        <div key={src.id} className="sync-source-card">
+                          <div className="sync-source-path" title={src.path}>
+                            {renamingSourceId === src.id ? (
+                              <>
+                                <input
+                                  className="form-input settings-vertical-input"
+                                  value={renameValue}
+                                  onChange={(e) => setRenameValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      void window.shortpath.renameSyncSource(src.id, renameValue.trim() || src.path).then(() => {
+                                        setSyncStatus((prev) => prev ? {
+                                          ...prev,
+                                          sources: prev.sources.map((s) => s.id === src.id ? { ...s, label: renameValue.trim() } : s),
+                                        } : prev);
+                                        setRenamingSourceId(null);
+                                      });
+                                    }
+                                    if (e.key === "Escape") setRenamingSourceId(null);
+                                  }}
+                                  autoFocus
+                                />
+                                <button
+                                  className="btn-primary settings-action-btn"
+                                  onClick={() => {
+                                    void window.shortpath.renameSyncSource(src.id, renameValue.trim() || src.path).then(() => {
+                                      setSyncStatus((prev) => prev ? {
+                                        ...prev,
+                                        sources: prev.sources.map((s) => s.id === src.id ? { ...s, label: renameValue.trim() } : s),
+                                      } : prev);
+                                      setRenamingSourceId(null);
+                                    });
+                                  }}
+                                >Save</button>
+                                <button className="btn-secondary settings-action-btn" onClick={() => setRenamingSourceId(null)}>Cancel</button>
+                              </>
+                            ) : (
+                              <>
+                                <strong>{src.label || src.path.split(/[/\\]/).pop()}</strong>
+                                {src.label && <span className="sync-source-path-hint" title={src.path}>{src.path.split(/[/\\]/).pop()}</span>}
+                              </>
+                            )}
+                          </div>
+                          <div className="sync-source-meta">
+                            <span>{src.syncedCount} entries</span>
+                            {src.lastRefreshed && (
+                              <span>Last refreshed {new Date(src.lastRefreshed).toLocaleTimeString()}</span>
+                            )}
+                          </div>
+                          <div className="sync-source-actions">
+                            {renamingSourceId !== src.id && (
+                              <button
+                                className="btn-secondary settings-action-btn"
+                                onClick={() => { setRenamingSourceId(src.id); setRenameValue(src.label || ""); }}
+                              >
+                                Rename
+                              </button>
+                            )}
+                            <button
+                              className="btn-secondary settings-action-btn"
+                              onClick={() => void handleRefreshSync(src.id)}
+                              disabled={syncRefreshingId === src.id}
+                            >
+                              {syncRefreshingId === src.id ? "Refreshing…" : "Refresh"}
+                            </button>
+                            <button
+                              className="settings-danger-btn settings-action-btn btn-secondary"
+                              onClick={() => void handleDisconnectSync(src.id)}
+                            >
+                              Disconnect
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    className="btn-secondary settings-action-btn"
+                    onClick={() => void handleConfigureSync()}
+                    disabled={syncConfiguring}
+                    style={{ marginTop: 8 }}
+                  >
+                    {syncConfiguring ? "Choosing file…" : "+ Add sync source"}
                   </button>
                 </>
               )}
             </div>
           )}
-        </section>
 
         {/* ── Data ──────────────────────────────────────────────── */}
-        <section className="settings-section">
-          <SectionHeader title="Data" sectionKey="data" />
-          {expanded.has("data") && (
+        {activePage === "data" && (
             <div className="settings-section-body">
               <div className="settings-data-grid">
                 {dataActions.map((action) => (
@@ -909,6 +1010,70 @@ export default function SettingsScreen({
                   <div className="settings-info-popup-title">{activeInfoTopic.title}</div>
                   <button className="settings-info-popup-close" onClick={() => setActiveInfoId(null)} aria-label="Close">✕</button>
                   <div className="settings-info-popup-body">{activeInfoTopic.content}</div>
+                </div>
+              )}
+
+              {streamDeckDialogOpen && (
+                <div className="stream-deck-dialog">
+                  <div className="stream-deck-dialog-title">Stream Deck device layout</div>
+                  <p className="settings-row-note">Choose your device model or set a custom layout.</p>
+                  <div className="stream-deck-preset-row">
+                    {[
+                      { label: "Mini (3×2)", cols: 3, rows: 2 },
+                      { label: "Standard (5×3)", cols: 5, rows: 3 },
+                      { label: "XL (8×4)", cols: 8, rows: 4 },
+                      { label: "Neo (4×2)", cols: 4, rows: 2 },
+                    ].map((p) => (
+                      <button
+                        key={p.label}
+                        className={`stream-deck-preset-btn${streamDeckCols === p.cols && streamDeckRows === p.rows ? " active" : ""}`}
+                        onClick={() => { setStreamDeckCols(p.cols); setStreamDeckRows(p.rows); }}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="stream-deck-custom-row">
+                    <label className="stream-deck-custom-label">
+                      Columns
+                      <input
+                        type="number"
+                        className="stream-deck-input"
+                        min={1} max={15}
+                        value={streamDeckCols}
+                        onChange={(e) => setStreamDeckCols(Math.max(1, Math.min(15, Number(e.target.value))))}
+                      />
+                    </label>
+                    <label className="stream-deck-custom-label">
+                      Rows
+                      <input
+                        type="number"
+                        className="stream-deck-input"
+                        min={1} max={10}
+                        value={streamDeckRows}
+                        onChange={(e) => setStreamDeckRows(Math.max(1, Math.min(10, Number(e.target.value))))}
+                      />
+                    </label>
+                    <span className="stream-deck-button-count">{streamDeckCols * streamDeckRows} buttons</span>
+                  </div>
+                  <div className="stream-deck-dialog-actions">
+                    <button className="btn-secondary settings-action-btn" onClick={() => setStreamDeckDialogOpen(false)}>
+                      Cancel
+                    </button>
+                    <button
+                      className="btn-primary settings-action-btn"
+                      onClick={async () => {
+                        setStreamDeckDialogOpen(false);
+                        const result = await window.shortpath.exportStreamDeckProfile(streamDeckCols, streamDeckRows);
+                        if (result.capped) {
+                          setStreamDeckToast(`Exported first ${streamDeckCols * streamDeckRows} entries (layout limit).`);
+                          setTimeout(() => setStreamDeckToast(""), 5000);
+                        }
+                      }}
+                    >
+                      Export
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -935,7 +1100,6 @@ export default function SettingsScreen({
               </div>
             </div>
           )}
-        </section>
 
       </div>
     </div>

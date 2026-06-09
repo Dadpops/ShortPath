@@ -298,6 +298,7 @@ export function renameVertical(store: StoreData, id: string, newLabel: string): 
 }
 
 // Replace all synced entries atomically. Local entries are never touched.
+// Legacy single-source path: clears ALL synced entries and replaces.
 export function replaceSyncedEntries(store: StoreData, newSyncedEntries: Entry[]): StoreData {
   const localEntries = store.entries.filter((e) => e.source === "local");
 
@@ -317,4 +318,29 @@ export function replaceSyncedEntries(store: StoreData, newSyncedEntries: Entry[]
   const pinned = store.pinned.filter((id) => liveIds.has(id));
 
   return { ...store, entries: [...localEntries, ...newSyncedEntries], verticals, recents, favorites, pinned };
+}
+
+// Replace entries from one specific sync source. Entries from other sources are preserved.
+// Removes legacy synced entries (no syncSource) the first time this is called.
+export function replaceEntriesFromSource(store: StoreData, sourceId: string, newSyncedEntries: Entry[]): StoreData {
+  // Keep local entries and synced entries from other identified sources.
+  const kept = store.entries.filter(
+    (e) => e.source === "local" || (e.source === "synced" && !!e.syncSource && e.syncSource !== sourceId)
+  );
+  const tagged: Entry[] = newSyncedEntries.map((e) => ({ ...e, syncSource: sourceId }));
+
+  // Ensure verticals exist for all incoming entries.
+  let verticals = [...store.verticals];
+  for (const vid of new Set(tagged.map((e) => e.vertical))) {
+    if (!verticals.find((v) => v.id === vid)) {
+      verticals = [...verticals, { id: vid, label: vid, builtIn: false }];
+    }
+  }
+
+  const liveIds = new Set([...kept, ...tagged].map((e) => e.id));
+  const recents = store.recents.filter((id) => liveIds.has(id));
+  const favorites = store.favorites.filter((id) => liveIds.has(id));
+  const pinned = store.pinned.filter((id) => liveIds.has(id));
+
+  return { ...store, entries: [...kept, ...tagged], verticals, recents, favorites, pinned };
 }
