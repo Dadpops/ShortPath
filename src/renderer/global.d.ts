@@ -6,9 +6,8 @@ interface LoadEntriesResult {
   recents: string[];
   favorites: string[];
   pinned: string[];
+  recentCopies: Array<{ id: string; copiedAt: string }>;
   fontSize: number;
-  sourceMode: "local" | "sync" | null;
-  sourceName: string | null;
   theme: "dark" | "light";
   accentColor: string | null;
   opacity: number;
@@ -17,6 +16,8 @@ interface LoadEntriesResult {
   verticalOrder: string[];
   autoHideOnCopy: boolean;
   alwaysOnTop: boolean;
+  pinCap: number;
+  lastStreamDeckExport: string | null;
 }
 
 interface CreateEntryResult {
@@ -114,6 +115,8 @@ declare global {
         verticalOrder: string[];
         autoHideOnCopy: boolean;
         alwaysOnTop: boolean;
+        pinCap: number;
+        lastStreamDeckExport: string | null;
       }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
@@ -131,6 +134,8 @@ declare global {
       setFontSize: (size: number) => Promise<void>;
       setTheme: (theme: "dark" | "light") => Promise<void>;
       saveSourceMode: (mode: "local" | "sync", name?: string) => Promise<void>;
+      clearSampleData: () => Promise<void>;
+      setPinCap: (cap: number) => Promise<void>;
       renameVertical: (id: string, newLabel: string) => Promise<void>;
       addVertical: (label: string) => Promise<Vertical>;
       clearLocalEntries: () => Promise<void>;

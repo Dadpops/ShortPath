@@ -70,6 +70,8 @@ export default function SettingsScreen({
   const [streamDeckDialogOpen, setStreamDeckDialogOpen] = useState(false);
   const [streamDeckCols, setStreamDeckCols] = useState(5);
   const [streamDeckRows, setStreamDeckRows] = useState(3);
+  const [lastStreamDeckExport, setLastStreamDeckExport] = useState<string | null>(null);
+  const [pinCap, setPinCapLocal] = useState(8);
 
   // Vertical management
   const [editingVerticalId, setEditingVerticalId] = useState<string | null>(null);
@@ -115,7 +117,7 @@ export default function SettingsScreen({
   const [renameValue, setRenameValue] = useState("");
 
   useEffect(() => {
-    window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d }) => {
+    window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d, pinCap: pc, lastStreamDeckExport: lsd }) => {
       setCurrentHotkey(hotkey);
       setFontSize(fs);
       setTheme(t);
@@ -123,6 +125,8 @@ export default function SettingsScreen({
       setOpacity(op);
       setWindowSize(ws);
       setDensity(d);
+      setPinCapLocal(pc ?? 8);
+      setLastStreamDeckExport(lsd ?? null);
     });
     window.shortpath.getSyncStatus().then(setSyncStatus);
   }, []);
@@ -408,7 +412,9 @@ export default function SettingsScreen({
     { label: exportingAll ? "Saving…" : "Export all", topicId: "exporting-csv", onClick: handleExportAll, disabled: exportingAll },
     { label: "Export selected", topicId: "exporting-csv", onClick: () => onNavigate("export-select") },
     {
-      label: "Export Stream Deck Profile",
+      label: lastStreamDeckExport
+        ? `Re-export Stream Deck${" (" + new Date(lastStreamDeckExport).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + ")"}`
+        : "Export Stream Deck Profile",
       topicId: "stream-deck-export",
       onClick: () => setStreamDeckDialogOpen(true),
     },
@@ -600,6 +606,24 @@ export default function SettingsScreen({
                   </button>
                 </>
               )}
+
+              <div className="settings-row">
+                <div className="settings-row-label">Pin limit</div>
+                <div className="font-size-control">
+                  {([4, 8, 12] as const).map((val) => (
+                    <button
+                      key={val}
+                      className={`font-size-btn${pinCap === val ? " active" : ""}`}
+                      onClick={() => {
+                        setPinCapLocal(val);
+                        void window.shortpath.setPinCap(val);
+                      }}
+                    >
+                      {val}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div className="settings-row">
                 <div className="settings-row-label">Position and size are saved automatically.</div>
@@ -1065,6 +1089,9 @@ export default function SettingsScreen({
                       onClick={async () => {
                         setStreamDeckDialogOpen(false);
                         const result = await window.shortpath.exportStreamDeckProfile(streamDeckCols, streamDeckRows);
+                        if (result.success) {
+                          setLastStreamDeckExport(new Date().toISOString());
+                        }
                         if (result.capped) {
                           setStreamDeckToast(`Exported first ${streamDeckCols * streamDeckRows} entries (layout limit).`);
                           setTimeout(() => setStreamDeckToast(""), 5000);

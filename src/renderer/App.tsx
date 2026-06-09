@@ -18,7 +18,7 @@ import ExportSelectScreen from "./components/ExportSelectScreen";
 
 type AppStatus = "loading" | "ready" | "error";
 type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "favorites" | "notes" | "export-select";
-type SortMode = "relevance" | "most-used" | "recently-added" | "a-to-z";
+type SortMode = "relevance" | "most-used" | "recently-used" | "recently-added" | "a-to-z";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -67,7 +67,10 @@ export default function App() {
   const [autoHideOnCopy, setAutoHideOnCopy] = useState(false);
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("relevance");
-  const [sessionCopies, setSessionCopies] = useState<string[]>([]);
+  const [recentCopies, setRecentCopies] = useState<Array<{ id: string; copiedAt: string }>>([]);
+  const [pinCap, setPinCap] = useState(8);
+  const [queryHistory, setQueryHistory] = useState<string[]>([]);
+  const [queryHistoryIdx, setQueryHistoryIdx] = useState(-1);
   const [activeVerticalFilter, setActiveVerticalFilter] = useState<string | null>(null);
   const [verticalOrder, setVerticalOrder] = useState<string[]>([]);
   const [pinLimitMsg, setPinLimitMsg] = useState(false);
@@ -83,12 +86,14 @@ export default function App() {
   useEffect(() => {
     window.shortpath
       .loadEntries()
-      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, fontSize: fs, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc, alwaysOnTop: aot }) => {
+      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, recentCopies: rc, fontSize: fs, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc, alwaysOnTop: aot, pinCap: pc }) => {
         setEntries(e);
         setVerticals(v);
         setRecents(r);
         setFavorites(new Set(favs));
         setPinned(new Set(pins));
+        setRecentCopies(rc ?? []);
+        setPinCap(pc ?? 8);
         setExpandedGroups(new Set(v.map((vert) => vert.id)));
         setVerticalOrder(vo ?? []);
         setAutoHideOnCopy(ahoc ?? false);
@@ -235,20 +240,20 @@ export default function App() {
 
     let items: { entry: Entry; matches: SearchResult["matches"] }[];
 
+    function applySortToItems(arr: typeof items, mode: SortMode) {
+      const effectiveMode = mode === "relevance" ? "most-used" : mode;
+      if (effectiveMode === "most-used") arr.sort((a, b) => (b.entry.copyCount ?? 0) - (a.entry.copyCount ?? 0));
+      else if (effectiveMode === "recently-used") arr.sort((a, b) => (b.entry.lastCopiedAt ?? "").localeCompare(a.entry.lastCopiedAt ?? ""));
+      else if (effectiveMode === "recently-added") arr.sort((a, b) => b.entry.createdAt.localeCompare(a.entry.createdAt));
+      else if (effectiveMode === "a-to-z") arr.sort((a, b) => a.entry.title.localeCompare(b.entry.title));
+    }
+
     if (!isSearching) {
-      let sorted = [...entries];
-      const effectiveSort = sortMode === "relevance" ? "most-used" : sortMode;
-      if (effectiveSort === "most-used") {
-        sorted.sort((a, b) => (b.copyCount ?? 0) - (a.copyCount ?? 0));
-      } else if (effectiveSort === "recently-added") {
-        sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-      } else if (effectiveSort === "a-to-z") {
-        sorted.sort((a, b) => a.title.localeCompare(b.title));
-      }
-      items = sorted.map((entry) => ({ entry, matches: [] }));
+      items = entries.map((entry) => ({ entry, matches: [] as SearchResult["matches"] }));
+      applySortToItems(items, sortMode);
     } else if (fuse) {
       const fuseResults: FuseResult<Entry>[] = fuse.search(trimmed);
-      let resultItems = fuseResults.map((r) => ({
+      const resultItems = fuseResults.map((r) => ({
         entry: r.item,
         matches:
           r.matches?.map((m) => ({
@@ -256,13 +261,7 @@ export default function App() {
             indices: [...m.indices] as [number, number][],
           })) ?? [],
       }));
-      if (sortMode === "most-used") {
-        resultItems.sort((a, b) => (b.entry.copyCount ?? 0) - (a.entry.copyCount ?? 0));
-      } else if (sortMode === "recently-added") {
-        resultItems.sort((a, b) => b.entry.createdAt.localeCompare(a.entry.createdAt));
-      } else if (sortMode === "a-to-z") {
-        resultItems.sort((a, b) => a.entry.title.localeCompare(b.entry.title));
-      }
+      if (sortMode !== "relevance") applySortToItems(resultItems, sortMode);
       items = resultItems;
     } else {
       return [];
@@ -376,10 +375,13 @@ export default function App() {
     [pinned, entries]
   );
 
-  const sessionCopiedEntries = useMemo(
-    () => sessionCopies.map((id) => entries.find((e) => e.id === id)).filter(Boolean) as Entry[],
-    [sessionCopies, entries]
-  );
+  const recentCopiedEntries = useMemo(() => {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    return recentCopies
+      .filter((r) => r.copiedAt > cutoff)
+      .map((r) => entries.find((e) => e.id === r.id))
+      .filter(Boolean) as Entry[];
+  }, [recentCopies, entries]);
 
   const flatResults = useMemo((): Entry[] => {
     const searching = debouncedQuery.trim().length >= 2;
@@ -412,12 +414,13 @@ export default function App() {
   }
 
   function handleCopy(entryId: string) {
+    const now = new Date().toISOString();
     setRecents((prev) => [entryId, ...prev.filter((id) => id !== entryId)].slice(0, 10));
-    setSessionCopies((prev) => [entryId, ...prev.filter((id) => id !== entryId)].slice(0, 5));
-    const entry = entries.find((e) => e.id === entryId);
-    if (entry?.source === "local") {
-      void window.shortpath.incrementCopyCount(entryId);
-    }
+    setRecentCopies((prev) => {
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      return [{ id: entryId, copiedAt: now }, ...prev.filter((r) => r.id !== entryId && r.copiedAt > cutoff)].slice(0, 20);
+    });
+    void window.shortpath.incrementCopyCount(entryId);
     if (autoHideOnCopy) {
       setTimeout(() => void window.shortpath.hideWindow(), 300);
     }
@@ -433,7 +436,13 @@ export default function App() {
   }
 
   function navigateUp() {
-    if (flatResults.length === 0) return;
+    if (flatResults.length === 0) {
+      handleSearchArrowUp();
+      return;
+    }
+    if (!focusedEntryId) {
+      if (handleSearchArrowUp()) return;
+    }
     setFocusedEntryId((prev) => {
       const idx = prev ? flatResults.findIndex((e) => e.id === prev) : flatResults.length;
       const next = idx > 0 ? idx - 1 : flatResults.length - 1;
@@ -521,10 +530,23 @@ export default function App() {
       setEasterEgg(true);
       return;
     }
+    const trimmed = query.trim();
+    if (trimmed && trimmed.length >= 2) {
+      setQueryHistory((prev) => [trimmed, ...prev.filter((q) => q !== trimmed)].slice(0, 10));
+      setQueryHistoryIdx(-1);
+    }
     if (focusedEntryId) {
       const entry = flatResults.find((e) => e.id === focusedEntryId);
       if (entry) setOverlayEntry(entry);
     }
+  }
+
+  function handleSearchArrowUp() {
+    if (queryHistory.length === 0) return false;
+    const nextIdx = Math.min(queryHistoryIdx + 1, queryHistory.length - 1);
+    setQueryHistoryIdx(nextIdx);
+    setQuery(queryHistory[nextIdx]);
+    return true;
   }
 
   function handleEscape() {
@@ -562,6 +584,14 @@ export default function App() {
       if (e.key === "Tab" && !inInput && mode === "browse") {
         e.preventDefault();
         cycleVerticalTab(e.shiftKey ? -1 : 1);
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === "n" && mode === "browse") {
+        e.preventDefault();
+        setEditingEntry(null);
+        setQuickAddPrefill(undefined);
+        setMode("add");
       }
     }
     window.addEventListener("keydown", onWindowKeyDown);
@@ -771,6 +801,7 @@ export default function App() {
   }
 
   const hasClipboard = !!clipboardText && !clipboardDismissed;
+  const hasSampleData = entries.some((e) => e.source === "sample");
 
   if (easterEgg) {
     return (
@@ -819,15 +850,6 @@ export default function App() {
           {isSearching && totalHits > 0 && (
             <span className="app-hit-summary">{totalHits} result{totalHits !== 1 ? "s" : ""}</span>
           )}
-          {hasClipboard && (
-            <button
-              className="header-icon-btn clipboard-indicator"
-              onClick={handleClipboardIconClick}
-              title="Save clipboard as entry"
-            >
-              ⎘
-            </button>
-          )}
           <button
             className={`header-icon-btn pin-window-btn${alwaysOnTop ? " active" : ""}`}
             onClick={() => {
@@ -846,6 +868,19 @@ export default function App() {
           <button className="header-icon-btn" onClick={() => void window.shortpath.minimizeWindow()} title="Minimize">−</button>
         </div>
       </header>
+
+      {hasSampleData && (
+        <div className="sample-data-banner">
+          <span>Sample data loaded — replace with your own entries</span>
+          <button
+            className="sample-data-clear"
+            onClick={() => void window.shortpath.clearSampleData()}
+            title="Remove all sample entries"
+          >
+            Clear sample data
+          </button>
+        </div>
+      )}
 
       {hotkeyError && (
         <div className="hotkey-error-banner">
@@ -940,6 +975,7 @@ export default function App() {
         >
           <option value="relevance">Relevance</option>
           <option value="most-used">Most used</option>
+          <option value="recently-used">Recently used</option>
           <option value="recently-added">Recently added</option>
           <option value="a-to-z">A to Z</option>
         </select>
@@ -969,11 +1005,21 @@ export default function App() {
 
         {isSearching && groups.length === 0 && (
           <div className="empty-state">
-            <p>No matches for "{debouncedQuery}" — try a different keyword.</p>
+            <p>No matches for "{debouncedQuery}"</p>
+            <button
+              className="empty-state-action"
+              onClick={() => {
+                setQuickAddPrefill(debouncedQuery);
+                setEditingEntry(null);
+                setMode("add");
+              }}
+            >
+              + Save "{debouncedQuery.length > 30 ? debouncedQuery.slice(0, 30) + "…" : debouncedQuery}" as new entry
+            </button>
           </div>
         )}
 
-        {!isSearching && entries.length === 0 && (
+        {!isSearching && entries.filter(e => e.source !== "sample").length === 0 && !hasSampleData && (
           <div className="empty-state">
             <p>No entries yet. Press <strong>+</strong> to add one or open <strong>⚙ Settings</strong> to import a CSV.</p>
           </div>
@@ -989,7 +1035,7 @@ export default function App() {
             {pinnedExpanded && (
               <>
                 {pinLimitMsg && (
-                  <div className="pin-limit-msg">Unpin an entry to pin this one (max 8).</div>
+                  <div className="pin-limit-msg">Unpin an entry to pin this one (max {pinCap}).</div>
                 )}
                 <ul className="result-list">
                   {pinnedEntries.map((entry) => (
@@ -1012,14 +1058,14 @@ export default function App() {
           </div>
         )}
 
-        {/* Recent copies section — only when not searching */}
-        {!isSearching && sessionCopiedEntries.length > 0 && (
+        {/* Recent copies section — persisted 24-hour rolling window */}
+        {!isSearching && recentCopiedEntries.length > 0 && (
           <div className="recent-section">
             <div className="section-header-row">
               <span className="section-header-label">Recent</span>
             </div>
             <ul className="result-list">
-              {sessionCopiedEntries.map((entry) => (
+              {recentCopiedEntries.map((entry) => (
                 <ResultItem
                   key={entry.id}
                   result={{ entry, matches: [] }}
@@ -1078,10 +1124,24 @@ export default function App() {
         })}
       </main>
 
+      {hasClipboard && (
+        <div className="clipboard-strip">
+          <span className="clipboard-strip-text">
+            ⎘ "{clipboardText!.length > 48 ? clipboardText!.slice(0, 48) + "…" : clipboardText}"
+          </span>
+          <button className="clipboard-strip-save" onClick={handleClipboardIconClick} title="Save as new entry">
+            Save
+          </button>
+          <button className="clipboard-strip-dismiss" onClick={() => setClipboardDismissed(true)} aria-label="Dismiss">
+            ✕
+          </button>
+        </div>
+      )}
+
       <button
         className="fab-add"
         onClick={() => { setEditingEntry(null); setQuickAddPrefill(undefined); setMode("add"); }}
-        title="Add entry"
+        title="Add entry (Ctrl+N)"
       >
         +
       </button>
