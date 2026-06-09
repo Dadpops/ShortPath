@@ -87,3 +87,9 @@ npm run dist:mac       # DMG for Mac
 ## Project conventions
 
 See [CLAUDE.md](CLAUDE.md) for coding conventions, commit style, and session workflow.
+
+---
+
+## License
+
+ShortPath is open source under the [MIT License](LICENSE).
