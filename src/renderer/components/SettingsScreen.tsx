@@ -405,6 +405,7 @@ export default function SettingsScreen({
                   <input type="range" min={11} max={16} step={1} value={fontSize}
                     onChange={(e) => handleFontSize(Number(e.target.value))} className="font-size-slider" />
                   <span className="font-size-label-lg">A</span>
+                  <span className="font-size-current">{fontSize}px</span>
                 </div>
               </div>
               <div className="settings-row">

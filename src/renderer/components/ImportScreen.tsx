@@ -100,6 +100,7 @@ export default function ImportScreen({ onComplete, onCancel }: Props) {
                   <tr><td>type</td><td>Yes</td><td>reply, doc, sop, link, tool</td></tr>
                   <tr><td>body</td><td>*</td><td>Full text content</td></tr>
                   <tr><td>url</td><td>*</td><td>Link or resource URL</td></tr>
+                  <tr><td>subfolder</td><td>No</td><td>Folder name within the vertical</td></tr>
                   <tr><td>tags</td><td>No</td><td>pipe|separated|tags</td></tr>
                 </tbody>
               </table>

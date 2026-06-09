@@ -109,6 +109,11 @@ export default function App() {
       setRecents(r);
       setFavorites(new Set(favs));
       setPinned(new Set(pins));
+      setExpandedGroups((prev) => {
+        const next = new Set(prev);
+        v.forEach((vert) => next.add(vert.id));
+        return next;
+      });
     });
     return unsubscribe;
   }, []);
