@@ -207,3 +207,45 @@ Goal: installable builds for Windows and Mac.
 - [ ] Auto-update scaffold (electron-updater) — out of scope for v0.1.0; manual reinstall model documented in docs/RELEASING.md
 - [x] Build and release scripts in package.json (dist:win, dist:mac)
 - [ ] First tagged release (v0.1.0) on GitHub
+
+---
+
+## Phase 10 — Customization and Polish
+
+Goal: deep personalization, richer keyboard navigation, usage tracking, and a reorganized Settings screen.
+
+### Accent color and window personality
+
+- [ ] Accent color picker: 6 preset swatches (Ocean, Violet, Rose, Amber, Teal, Slate) in Settings; active swatch shows 2px ring; sets --color-accent on :root; persists to settings store
+- [ ] Window opacity slider: range 70–100, default 100; label shows current % value; calls win.setOpacity via IPC; persists and restores on launch; note below slider
+- [ ] Window size presets: Small / Medium / Large buttons; resizes BrowserWindow via IPC to preset dims; persists and restores on launch; active button uses --color-accent fill
+
+### Layout and density
+
+- [ ] Compact / Comfortable density toggle: data-density="compact" on body; CSS block reduces row padding, body font size, and vertical gap; persists and restores on launch
+- [ ] Custom vertical tab ordering: draggable rows in Settings using HTML Drag and Drop API; each row has drag handle, vertical name, entry count; persisted to settings store; main window applies order on launch; falls back to default order if no custom order set
+
+### UX upgrades
+
+- [ ] Pinned entries: pin toggle on result row and expanded overlay; pushpin icon; persists in entry store; pinned entries appear in a "Pinned" section at top when search is empty; during active search, pins appear normally; max 8 pinned — show inline message if user tries to pin a 9th
+- [ ] Keyboard navigation: Arrow Down/Up wraps through result rows; Enter on focused row opens overlay; Enter while overlay open copies body; Escape cascades (overlay → clear search → hide); Tab cycles vertical filter tabs; focused row uses left-border accent + subtle background tint; search input auto-focused on window show; Arrow Down from search moves to first result row
+- [ ] Copy then auto-hide: Settings toggle (off by default); hides window 300ms after successful copy; uses existing hide IPC; persists preference
+- [ ] Customizable global hotkey: moved to Behavior settings group; existing capture UI retained; reset-to-default link
+
+### Usage tracking and sort
+
+- [ ] Entry usage counter: increment copyCount on local entries only on each copy; display as muted badge (e.g. "12×") on result row if copyCount > 0; badge uses muted text, not accent
+- [ ] Sort control: compact control above results; options: Relevance (default when query active) / Most used / Recently added / A to Z; when no query and sort is Relevance, fall back to Most used; sort choice is session-only (reset to Relevance on next launch)
+- [ ] Recent copies list: "Recent" section at top of result list when search is empty, below pinned entries; shows last 5 copied entries in reverse chronological order; in-memory only, resets on app restart; hidden if no copies this session
+
+### Settings screen polish
+
+- [ ] Reorganize Settings into labeled groups: Appearance (accent color, opacity, window size, density, text size, theme), Behavior (copy then auto-hide, summon hotkey, window reset), Organization (tab order, verticals management)
+- [ ] Group labels: small all-caps muted label above a thin divider line; no cards, no boxes; minimal feel
+
+### Session wrap
+
+- [ ] Update CURRENT_SESSION.md for Phase 10 completion
+- [ ] Create dated session file in docs/sessions/
+- [ ] Append to docs/SESSION_LOG.md
+- [ ] Commit and push
