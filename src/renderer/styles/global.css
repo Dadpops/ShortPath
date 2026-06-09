@@ -131,6 +131,22 @@ body {
   flex-shrink: 0;
 }
 
+.search-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+}
+
+.search-icon-btn:hover {
+  color: var(--color-text);
+}
+
 .search-input {
   flex: 1;
   background: transparent;
@@ -1052,6 +1068,48 @@ body {
 
 .result-item.focused .result-actions {
   opacity: 1;
+}
+
+/* Update available banner */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.update-banner-text {
+  flex: 1;
+  color: var(--color-text);
+}
+
+.update-banner-link {
+  background: transparent;
+  border: none;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-size: 11px;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.update-banner-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+}
+
+.update-banner-dismiss:hover {
+  color: var(--color-text);
 }
 
 /* Hotkey error banner */
@@ -2258,8 +2316,7 @@ body {
   transform: rotate(90deg);
 }
 
-.subfolder-icon {
-  font-size: 11px;
+.folder-icon {
   flex-shrink: 0;
 }
 
@@ -2278,6 +2335,14 @@ body {
 
 .subfolder-result-list {
   padding-left: 8px;
+}
+
+.subfolder-empty-hint {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  padding: 4px 8px 6px 22px;
+  margin: 0;
+  font-style: italic;
 }
 
 /* Vertical block in Settings (vertical row + subfolder panel) */
@@ -2310,8 +2375,14 @@ body {
   padding: 3px 0;
 }
 
-.settings-subfolder-icon {
-  font-size: 11px;
+.subfolder-tree-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: var(--color-text-faint);
   flex-shrink: 0;
 }
 
@@ -2461,6 +2532,39 @@ body[data-density="compact"] .result-tags {
 .vtab.active {
   color: var(--color-accent);
   border-bottom-color: var(--color-accent);
+}
+
+/* Vertical filter dropdown (> 5 verticals) */
+.vertical-filter-select-wrap {
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.vertical-filter-select {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 8px;
+  cursor: pointer;
+  outline: none;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s, color 0.15s;
+  appearance: auto;
+}
+
+.vertical-filter-select:focus,
+.vertical-filter-select:hover {
+  border-color: var(--color-accent);
+}
+
+.vertical-filter-select.has-filter {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 /* ===== Phase 10: Sort control ===== */
