@@ -579,6 +579,101 @@ HTML: writes the formatted HTML to the clipboard, plus a plain-text fallback. Pa
 Existing entries created before this feature are treated as plain text. Their body content will render as-is in the editor with no formatting applied.`,
   },
   {
+    id: "import-from-url",
+    title: "Importing from a URL",
+    tags: ["url", "import", "web", "page", "fetch", "readability", "sections"],
+    content: `Any add-entry or edit-entry form can pull content from a web page.
+
+How to use it
+1. Open the add form (+ button in the header) or the edit form for an existing entry.
+2. Click "Import from URL" above the body field.
+3. Paste the page URL into the input that appears and click Fetch.
+4. ShortPath downloads the page and extracts the readable content, splitting it at heading boundaries into sections.
+5. Each section shows the heading name. Click any section row to paste its text into the body field.
+6. To use all sections at once, click "Use all" — the body is populated with every section joined together.
+
+After applying a section the URL import panel stays open so you can refine your choice. Click the X button or click "Import from URL" again to dismiss it.
+
+Captured URL
+If an entry was sent from the browser extension, a read-only "Captured from" field shows the source URL. You can still use "Import from URL" to fetch content from a different URL if needed.
+
+Error handling
+If the page cannot be fetched (network error, access denied, or parsing failure), an error message appears below the URL input. Check that the URL is public and reachable.`,
+  },
+  {
+    id: "import-markdown",
+    title: "Importing Markdown files",
+    tags: ["markdown", "md", "import", "drag", "sections", "headings", "file"],
+    content: `You can drag a Markdown (.md) file onto the Import screen to create multiple entries from a single file.
+
+How to import
+1. Open Settings and click the Import tab, or go to Settings > Import CSV.
+2. Drag a .md file onto the drop zone.
+3. ShortPath parses the file and splits it at ## and ### headings, treating each section as a potential entry.
+4. A preview screen shows all detected sections with checkboxes. Each section shows its heading as the title and the body text below.
+5. Select a vertical (required) and optionally a sub-folder from the dropdowns at the top.
+6. Use "All" / "None" to toggle all checkboxes at once.
+7. Click Import. ShortPath creates one entry per checked section, with type "doc" and the chosen vertical.
+
+Heading detection
+Top-level headings (# Title) are not treated as section boundaries — they become the lead-in text of the first section. Sections split at ## and ### headings only. If the file has no ## or ### headings, the entire file is one section.
+
+After import, click "Import another file" to continue or use the header to navigate away.`,
+  },
+  {
+    id: "import-pdf",
+    title: "Importing PDF files",
+    tags: ["pdf", "import", "drag", "sections", "file", "text extraction"],
+    content: `You can drag a PDF (.pdf) file onto the Import screen to create entries from extracted text.
+
+How to import
+1. Open Settings and click the Import tab, or go to Settings > Import CSV.
+2. Drag a .pdf file onto the drop zone.
+3. ShortPath extracts the text and splits it into sections based on detected headings and paragraph breaks.
+4. A preview screen shows all detected sections with checkboxes.
+5. Select a vertical (required) and optionally a sub-folder.
+6. Use "All" / "None" to toggle all checkboxes, then click Import.
+
+ShortPath creates one entry per checked section with type "doc".
+
+Limitations
+Text extraction is best-effort. Section detection is automatic and may not match the visual structure of the PDF exactly. Scanned PDFs (images of text) are not supported — no text will be extracted. If the sections look wrong, import them and edit the entries manually after.`,
+  },
+  {
+    id: "browser-extension",
+    title: "Browser extension",
+    tags: ["extension", "browser", "chrome", "firefox", "capture", "context menu", "queue", "send to shortpath"],
+    content: `The ShortPath browser extension lets you save selected text or the current page to ShortPath with a right-click.
+
+What it does
+- Adds a "Save to ShortPath" item to the browser right-click menu.
+- If you have text selected, that text becomes the entry body.
+- If no text is selected, the page title and URL are captured.
+- When ShortPath is running, the capture is sent immediately and the app opens with the entry pre-filled in the add form.
+- When ShortPath is not running, the capture is queued in browser storage and imported automatically the next time ShortPath is open and the extension connects.
+
+Toolbar popup
+Click the ShortPath icon in the browser toolbar to see the connection status.
+- Green dot: ShortPath is running. A "Save current page" button captures the active tab. If items are queued, an "Import now" button appears.
+- Red dot: ShortPath is not running. The queued item count is shown. Items will be imported automatically when ShortPath next opens.
+
+Queue behavior
+Queued captures are stored in browser local storage. They are sent when the extension starts up and ShortPath is already running, or when you click "Import now" in the popup. Items remain in the queue until they are successfully imported.
+
+Installing in Chrome
+1. Build the extension: node build.js chrome (from the packages/browser-extension directory).
+2. Open chrome://extensions and enable Developer mode.
+3. Click Load unpacked and select dist/chrome/.
+
+Installing in Firefox
+1. Build: node build.js firefox.
+2. Open about:debugging > This Firefox > Load Temporary Add-on.
+3. Select dist/firefox/manifest.json.
+
+Troubleshooting
+If the extension shows "not running" when ShortPath is open, check that nothing else is using port 57433 and try reloading the extension.`,
+  },
+  {
     id: "troubleshooting",
     title: "Troubleshooting",
     tags: ["troubleshooting", "hotkey conflict", "not opening", "missing entries", "sync", "problem"],
