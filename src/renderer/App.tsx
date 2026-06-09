@@ -80,6 +80,7 @@ export default function App() {
   const [capturePayload, setCapturePayload] = useState<CapturePayload | null>(null);
   const [syncSources, setSyncSources] = useState<Array<{ id: string; path: string; label: string }>>([]);
   const [easterEgg, setEasterEgg] = useState(false);
+  const [collapsedSources, setCollapsedSources] = useState<Set<string>>(new Set());
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -289,11 +290,6 @@ export default function App() {
 
     const getSrcKey = (entry: Entry) =>
       entry.source === "local" ? "local" : (entry.syncSource ?? "unknown");
-    const getSrcDisplayLabel = (key: string) => {
-      if (key === "local") return "Local";
-      const s = syncSources.find(x => x.id === key);
-      return s ? getSourceLabel(s) : "Sync";
-    };
     const getGroupKey = (entry: Entry) =>
       isAllMode ? `${getSrcKey(entry)}::${entry.vertical}` : entry.vertical;
 
@@ -344,7 +340,7 @@ export default function App() {
           if (!groupItems || groupItems.length === 0) continue;
           result.push({
             verticalId: compositeKey,
-            label: `${getSrcDisplayLabel(srcKey)} / ${v.label}`,
+            label: v.label,
             hitCount: groupItems.length,
             results: groupItems.map(i => ({ entry: i.entry, matches: i.matches })),
           });
@@ -359,7 +355,7 @@ export default function App() {
         if (sourceOrder.includes(srcKey) && orderedVerticals.find(v => v.id === vid)) continue;
         result.push({
           verticalId: key,
-          label: `${getSrcDisplayLabel(srcKey)} / ${verticalMap.get(vid)?.label ?? vid}`,
+          label: verticalMap.get(vid)?.label ?? vid,
           hitCount: groupItems.length,
           results: groupItems.map(i => ({ entry: i.entry, matches: i.matches })),
         });
@@ -415,6 +411,14 @@ export default function App() {
       return next;
     });
   }, []);
+
+  function toggleSource(srcKey: string) {
+    setCollapsedSources((prev) => {
+      const next = new Set(prev);
+      next.has(srcKey) ? next.delete(srcKey) : next.add(srcKey);
+      return next;
+    });
+  }
 
   function handleEditEntry(entry: Entry) {
     setEditingEntry(entry);
@@ -1115,39 +1119,102 @@ export default function App() {
           </div>
         )}
 
-        {groups.map((group) => {
-          const actualVId = group.verticalId.includes("::") ? group.verticalId.split("::")[1] : group.verticalId;
-          return actualVId === "support-tools" ? (
-            <SupportToolsGroup
-              key={group.verticalId}
-              group={group}
-              onToggle={() => toggleGroup(group.verticalId)}
-              onEdit={handleEditEntry}
-              onCopy={handleCopy}
-              onReorder={handleReorderEntry}
-              isSearching={isSearching}
-              favorites={favorites}
-              onToggleFavorite={handleToggleFavorite}
-              pinned={pinned}
-              onTogglePin={(id) => void handleTogglePin(id)}
-            />
-          ) : (
-            <VerticalGroupComponent
-              key={group.verticalId}
-              group={group}
-              subFolders={verticals.find((v) => v.id === actualVId)?.subFolders}
-              onToggle={() => toggleGroup(group.verticalId)}
-              onEdit={handleEditEntry}
-              onCopy={handleCopy}
-              onOpen={handleOpenOverlay}
-              focusedEntryId={focusedEntryId}
-              favorites={favorites}
-              onToggleFavorite={handleToggleFavorite}
-              pinned={pinned}
-              onTogglePin={(id) => void handleTogglePin(id)}
-            />
-          );
-        })}
+        {activeSource === "all" ? (
+          (() => {
+            const bySource = new Map<string, typeof groups>();
+            for (const g of groups) {
+              const sep = g.verticalId.indexOf("::");
+              const srcKey = sep !== -1 ? g.verticalId.slice(0, sep) : "local";
+              if (!bySource.has(srcKey)) bySource.set(srcKey, []);
+              bySource.get(srcKey)!.push(g);
+            }
+            return Array.from(bySource.entries()).map(([srcKey, srcGroups]) => {
+              const srcObj = syncSources.find(s => s.id === srcKey);
+              const srcLabel = srcKey === "local" ? "Local" : (srcObj ? getSourceLabel(srcObj) : "Sync");
+              const isExpanded = !collapsedSources.has(srcKey);
+              const srcHitCount = srcGroups.reduce((s, g) => s + g.hitCount, 0);
+              return (
+                <div key={srcKey} className="source-section">
+                  <button className="source-section-header" onClick={() => toggleSource(srcKey)}>
+                    <span className={`group-chevron${isExpanded ? " expanded" : ""}`}>›</span>
+                    <span className="group-label">{srcLabel} ({srcHitCount})</span>
+                  </button>
+                  {isExpanded && (
+                    <div className="source-section-body">
+                      {srcGroups.map((group) => {
+                        const actualVId = group.verticalId.includes("::") ? group.verticalId.split("::")[1] : group.verticalId;
+                        return actualVId === "support-tools" ? (
+                          <SupportToolsGroup
+                            key={group.verticalId}
+                            group={group}
+                            onToggle={() => toggleGroup(group.verticalId)}
+                            onEdit={handleEditEntry}
+                            onCopy={handleCopy}
+                            onReorder={handleReorderEntry}
+                            isSearching={isSearching}
+                            favorites={favorites}
+                            onToggleFavorite={handleToggleFavorite}
+                            pinned={pinned}
+                            onTogglePin={(id) => void handleTogglePin(id)}
+                          />
+                        ) : (
+                          <VerticalGroupComponent
+                            key={group.verticalId}
+                            group={group}
+                            subFolders={verticals.find((v) => v.id === actualVId)?.subFolders}
+                            onToggle={() => toggleGroup(group.verticalId)}
+                            onEdit={handleEditEntry}
+                            onCopy={handleCopy}
+                            onOpen={handleOpenOverlay}
+                            focusedEntryId={focusedEntryId}
+                            favorites={favorites}
+                            onToggleFavorite={handleToggleFavorite}
+                            pinned={pinned}
+                            onTogglePin={(id) => void handleTogglePin(id)}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()
+        ) : (
+          groups.map((group) => {
+            const actualVId = group.verticalId.includes("::") ? group.verticalId.split("::")[1] : group.verticalId;
+            return actualVId === "support-tools" ? (
+              <SupportToolsGroup
+                key={group.verticalId}
+                group={group}
+                onToggle={() => toggleGroup(group.verticalId)}
+                onEdit={handleEditEntry}
+                onCopy={handleCopy}
+                onReorder={handleReorderEntry}
+                isSearching={isSearching}
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+                pinned={pinned}
+                onTogglePin={(id) => void handleTogglePin(id)}
+              />
+            ) : (
+              <VerticalGroupComponent
+                key={group.verticalId}
+                group={group}
+                subFolders={verticals.find((v) => v.id === actualVId)?.subFolders}
+                onToggle={() => toggleGroup(group.verticalId)}
+                onEdit={handleEditEntry}
+                onCopy={handleCopy}
+                onOpen={handleOpenOverlay}
+                focusedEntryId={focusedEntryId}
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+                pinned={pinned}
+                onTogglePin={(id) => void handleTogglePin(id)}
+              />
+            );
+          })
+        )}
       </main>
 
       <button

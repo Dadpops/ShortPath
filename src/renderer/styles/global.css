@@ -4112,3 +4112,42 @@ body[data-density="compact"] .result-tags {
   font-family: var(--font-mono);
   letter-spacing: 0.02em;
 }
+
+/* ===== All-mode source sections ===== */
+.source-section {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.source-section-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 9px 14px;
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  color: var(--color-text);
+  text-align: left;
+  font-size: calc(var(--font-size-base) - 1px);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: color 0.1s, background 0.1s;
+}
+
+.source-section-header:hover {
+  background: var(--color-surface-hover);
+}
+
+.source-section-body .vertical-group {
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.source-section-body .vertical-group:last-child {
+  border-bottom: none;
+}
+
+.source-section-body .group-header {
+  padding-left: 28px;
+}
