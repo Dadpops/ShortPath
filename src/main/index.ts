@@ -18,10 +18,10 @@ import { autoUpdater } from "electron-updater";
 import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
 import { applySeed } from "../store/seed";
-import { importCsv, exportCsv, parseCsvPreview, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
+import { importCsv, exportCsv, parseCsvPreview, parseCsvPreviewWithMapping, importCsvWithMapping, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import type { StoreData } from "../store/schema";
-import type { Entry, Note } from "../shared/types";
+import type { Entry, Note, ColumnMapping } from "../shared/types";
 
 const WINDOW_WIDTH = 480;
 const WINDOW_HEIGHT = 640;
@@ -57,6 +57,8 @@ let settings: AppSettings;
 
 // Holds the last CSV string opened via preview-csv-import, waiting for commit-csv-import.
 let pendingCsvImport: string | null = null;
+// When the user provides a column mapping, it is stored here and used by commit-csv-import.
+let pendingColumnMapping: ColumnMapping | null = null;
 
 // Debounce timer for saving window bounds after move/resize.
 let saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
@@ -338,6 +340,7 @@ function registerIpcHandlers() {
     try {
       const csvString = fs.readFileSync(filePaths[0], "utf-8");
       pendingCsvImport = csvString;
+      pendingColumnMapping = null;
       const preview = parseCsvPreview(csvString);
       return { success: true, ...preview };
     } catch (err) {
@@ -350,10 +353,13 @@ function registerIpcHandlers() {
     if (!pendingCsvImport) return { success: false, errors: ["No pending import. Open a file first."] };
 
     try {
-      const result = importCsv(store, pendingCsvImport, "local");
+      const result = pendingColumnMapping
+        ? importCsvWithMapping(store, pendingCsvImport, pendingColumnMapping, "local")
+        : importCsv(store, pendingCsvImport, "local");
       store = result.store;
       saveStore(userDataPath, store);
       pendingCsvImport = null;
+      pendingColumnMapping = null;
       pushStoreUpdate();
       return {
         success: true,
@@ -362,6 +368,32 @@ function registerIpcHandlers() {
         skipped: result.skipped,
         errors: result.errors,
       };
+    } catch (err) {
+      return { success: false, errors: [String(err)] };
+    }
+  });
+
+  // Stage a CSV file by path (used by drag-and-drop in the import screen).
+  ipcMain.handle("stage-csv-file", (_e, filePath: string) => {
+    try {
+      const csvString = fs.readFileSync(filePath, "utf-8");
+      pendingCsvImport = csvString;
+      pendingColumnMapping = null;
+      const preview = parseCsvPreview(csvString);
+      return { success: true, ...preview };
+    } catch (err) {
+      pendingCsvImport = null;
+      return { success: false, errors: [String(err)] };
+    }
+  });
+
+  // Re-parse the staged CSV using the user-supplied column mapping.
+  ipcMain.handle("preview-csv-with-mapping", (_e, mapping: ColumnMapping) => {
+    if (!pendingCsvImport) return { success: false, errors: ["No staged file."] };
+    try {
+      pendingColumnMapping = mapping;
+      const preview = parseCsvPreviewWithMapping(pendingCsvImport, mapping);
+      return { success: true, ...preview };
     } catch (err) {
       return { success: false, errors: [String(err)] };
     }

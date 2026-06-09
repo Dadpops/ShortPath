@@ -1,4 +1,4 @@
-import type { Entry, Vertical, SubFolder, Note } from "@shared/types";
+import type { Entry, Vertical, SubFolder, Note, ColumnMapping } from "@shared/types";
 
 interface LoadEntriesResult {
   entries: Entry[];
@@ -49,6 +49,8 @@ interface CsvPreviewResult {
   previewRows?: CsvPreviewRow[];
   skippedCount?: number;
   errors?: string[];
+  needsMapping?: boolean;
+  availableColumns?: string[];
 }
 
 interface CsvCommitResult {
@@ -86,6 +88,8 @@ declare global {
 
       previewCsvImport: () => Promise<CsvPreviewResult>;
       commitCsvImport: () => Promise<CsvCommitResult>;
+      stageCsvFile: (filePath: string) => Promise<CsvPreviewResult>;
+      previewCsvWithMapping: (mapping: ColumnMapping) => Promise<CsvPreviewResult>;
       downloadTemplateCsv: () => Promise<{ success: boolean }>;
 
       readClipboard: () => Promise<string>;

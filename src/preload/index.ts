@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { Entry } from "../shared/types";
+import type { Entry, ColumnMapping } from "../shared/types";
 
 contextBridge.exposeInMainWorld("shortpath", {
   platform: process.platform,
@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld("shortpath", {
 
   previewCsvImport: () => ipcRenderer.invoke("preview-csv-import"),
   commitCsvImport: () => ipcRenderer.invoke("commit-csv-import"),
+  stageCsvFile: (filePath: string) => ipcRenderer.invoke("stage-csv-file", filePath),
+  previewCsvWithMapping: (mapping: ColumnMapping) => ipcRenderer.invoke("preview-csv-with-mapping", mapping),
   downloadTemplateCsv: () => ipcRenderer.invoke("download-template-csv"),
 
   readClipboard: () => ipcRenderer.invoke("read-clipboard"),

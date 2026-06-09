@@ -1,6 +1,6 @@
 import Papa from "papaparse";
 import { randomUUID } from "crypto";
-import type { Entry, Vertical, SubFolder } from "../shared/types";
+import type { Entry, Vertical, SubFolder, ColumnMapping } from "../shared/types";
 import type { StoreData } from "./schema";
 
 const REQUIRED_COLUMNS = ["title", "vertical", "type"] as const;
@@ -87,6 +87,8 @@ export interface CsvPreviewResult {
   previewRows: CsvPreviewRow[];
   skippedCount: number;
   errors: string[];
+  needsMapping?: boolean;
+  availableColumns?: string[];
 }
 
 // Template content bundled inline so it's accessible in packaged builds.
@@ -117,16 +119,64 @@ New ticket escalation SOP,Internal SOPs,sop,,"1. Confirm the issue cannot be res
 Statuspage - live incident feed,Support Tools,tool,,,https://status.example.com,status|incidents|uptime
 `;
 
+// Parse with lowercase-normalized headers so "Title" and "title" both work.
 function parseRows(csvString: string): { data: CsvRow[]; parseErrors: string[] } {
   const { data, errors } = Papa.parse<CsvRow>(csvString, {
     header: true,
     skipEmptyLines: true,
+    transformHeader: (h: string) => h.toLowerCase().trim(),
   });
   const parseErrors = errors.map((e: Papa.ParseError) => `Parse error row ${e.row}: ${e.message}`);
   return { data, parseErrors };
 }
 
+// Parse with original header names preserved — used to detect column mapping needs.
+function parseRowsRaw(csvString: string): { data: Record<string, string>[]; parseErrors: string[]; headers: string[] } {
+  const { data, errors, meta } = Papa.parse<Record<string, string>>(csvString, {
+    header: true,
+    skipEmptyLines: true,
+  });
+  const parseErrors = errors.map((e: Papa.ParseError) => `Parse error row ${e.row}: ${e.message}`);
+  return { data, parseErrors, headers: meta.fields ?? [] };
+}
+
+// Returns raw column headers from a CSV string without parsing the full file.
+export function parseCsvHeaders(csvString: string): string[] {
+  const { headers } = parseRowsRaw(csvString);
+  return headers;
+}
+
+// Apply a ColumnMapping to raw row data, producing normalized CsvRow objects.
+function applyColumnMapping(rows: Record<string, string>[], mapping: ColumnMapping): CsvRow[] {
+  return rows.map((row) => {
+    const mapped: CsvRow = {};
+    if (mapping.title)     mapped.title     = row[mapping.title]?.trim()     ?? "";
+    if (mapping.vertical)  mapped.vertical  = row[mapping.vertical]?.trim()  ?? "";
+    mapped.type = mapping.type ? (row[mapping.type]?.trim() ?? "reply") : "reply";
+    if (mapping.body)      mapped.body      = row[mapping.body]?.trim()      ?? "";
+    if (mapping.url)       mapped.url       = row[mapping.url]?.trim()       ?? "";
+    if (mapping.tags)      mapped.tags      = row[mapping.tags]?.trim()      ?? "";
+    if (mapping.subfolder) mapped.subfolder = row[mapping.subfolder]?.trim() ?? "";
+    return mapped;
+  });
+}
+
 export function parseCsvPreview(csvString: string): CsvPreviewResult {
+  // Check raw headers first — if required columns are missing, signal that mapping is needed.
+  const { headers: rawHeaders, parseErrors: rawErrors } = parseRowsRaw(csvString);
+  const normalizedHeaders = rawHeaders.map((h) => h.toLowerCase().trim());
+  const missingRequired = REQUIRED_COLUMNS.filter((col) => !normalizedHeaders.includes(col));
+  if (missingRequired.length > 0) {
+    return {
+      totalRows: 0,
+      previewRows: [],
+      skippedCount: 0,
+      errors: rawErrors,
+      needsMapping: true,
+      availableColumns: rawHeaders,
+    };
+  }
+
   const { data, parseErrors } = parseRows(csvString);
   const errors: string[] = [...parseErrors];
   let skippedCount = 0;
@@ -169,6 +219,121 @@ export function parseCsvPreview(csvString: string): CsvPreviewResult {
     skippedCount,
     errors,
   };
+}
+
+export function parseCsvPreviewWithMapping(csvString: string, mapping: ColumnMapping): CsvPreviewResult {
+  const { data: rawData, parseErrors } = parseRowsRaw(csvString);
+  const data = applyColumnMapping(rawData, mapping);
+  const errors: string[] = [...parseErrors];
+  let skippedCount = 0;
+  const previewRows: CsvPreviewRow[] = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const rowNum = i + 2;
+
+    const missing = REQUIRED_COLUMNS.filter((col) => !row[col]?.trim());
+    if (missing.length) {
+      errors.push(`Row ${rowNum}: missing required field(s): ${missing.join(", ")}`);
+      skippedCount++;
+      continue;
+    }
+
+    const type = row.type!.trim() as Entry["type"];
+    if (!VALID_TYPES.includes(type)) {
+      errors.push(`Row ${rowNum}: invalid type "${row.type}" — must be one of: ${VALID_TYPES.join(", ")}`);
+      skippedCount++;
+      continue;
+    }
+
+    if (previewRows.length < 5) {
+      previewRows.push({
+        title: row.title!.trim(),
+        vertical: row.vertical!.trim(),
+        type: row.type!.trim(),
+        subfolder: row.subfolder?.trim() ?? "",
+        hasBody: !!row.body?.trim(),
+        hasUrl: !!row.url?.trim(),
+        tags: row.tags?.trim() ?? "",
+      });
+    }
+  }
+
+  return { totalRows: rawData.length, previewRows, skippedCount, errors };
+}
+
+export function importCsvWithMapping(
+  store: StoreData,
+  csvString: string,
+  mapping: ColumnMapping,
+  source: "local" | "synced" = "local"
+): ImportResult {
+  const { data: rawData, parseErrors } = parseRowsRaw(csvString);
+  const data = applyColumnMapping(rawData, mapping);
+  const errors: string[] = [...parseErrors];
+  let { entries, verticals } = store;
+  let imported = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const rowNum = i + 2;
+
+    const missing = REQUIRED_COLUMNS.filter((col) => !row[col]?.trim());
+    if (missing.length) {
+      errors.push(`Row ${rowNum}: missing required field(s): ${missing.join(", ")}`);
+      skipped++;
+      continue;
+    }
+
+    const type = row.type!.trim() as Entry["type"];
+    if (!VALID_TYPES.includes(type)) {
+      errors.push(`Row ${rowNum}: invalid type "${row.type}" — must be one of: ${VALID_TYPES.join(", ")}`);
+      skipped++;
+      continue;
+    }
+
+    const vertical = row.vertical!.trim();
+    const title = row.title!.trim();
+
+    if (!verticals.find((v) => v.id === vertical)) {
+      verticals = [...verticals, { id: vertical, label: vertical, builtIn: false }];
+    }
+
+    let subFolderId: string | undefined;
+    const sfLabel = row.subfolder?.trim();
+    if (sfLabel) {
+      const vertIdx = verticals.findIndex((v) => v.id === vertical);
+      if (vertIdx !== -1) {
+        const sfResult = ensureSubFolder(verticals[vertIdx], sfLabel);
+        verticals = verticals.map((v, i) => (i === vertIdx ? sfResult.vertical : v));
+        subFolderId = sfResult.subFolder.id;
+      }
+    }
+
+    const now = new Date().toISOString();
+    const existing = entries.find((e) => e.vertical === vertical && e.title === title);
+
+    if (existing) {
+      entries = entries.map((e) =>
+        e.id === existing.id
+          ? { ...e, body: row.body?.trim() || null, link: row.url?.trim() || null, tags: row.tags?.trim() || "", type, subFolderId, updatedAt: now }
+          : e
+      );
+      updated++;
+    } else {
+      entries = [...entries, {
+        id: randomUUID(), vertical, title,
+        body: row.body?.trim() || null, link: row.url?.trim() || null,
+        tags: row.tags?.trim() || "", type, source, subFolderId,
+        createdAt: now, updatedAt: now,
+      }];
+      imported++;
+    }
+  }
+
+  return { store: { ...store, entries, verticals }, imported, updated, skipped, errors };
 }
 
 // source defaults to "local" for user imports; use "synced" for the shared-file sync path (Phase 4).

@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import type { ColumnMapping } from "@shared/types";
 
 type ImportState =
   | { status: "idle" }
   | { status: "loading" }
+  | { status: "needsMapping"; availableColumns: string[] }
   | { status: "previewing"; totalRows: number; previewRows: PreviewRow[]; skippedCount: number; errors: string[] }
   | { status: "committing" }
   | { status: "done"; imported: number; updated: number; skipped: number; errors: string[] }
@@ -17,6 +19,16 @@ interface PreviewRow {
   tags: string;
 }
 
+const FIELDS: { key: keyof ColumnMapping; label: string; required: boolean; note?: string }[] = [
+  { key: "title",     label: "Title",      required: true },
+  { key: "vertical",  label: "Vertical",   required: true },
+  { key: "type",      label: "Type",       required: false, note: 'Defaults to "reply" if not mapped' },
+  { key: "body",      label: "Body",       required: false },
+  { key: "url",       label: "URL",        required: false },
+  { key: "tags",      label: "Tags",       required: false },
+  { key: "subfolder", label: "Sub-folder", required: false },
+];
+
 interface Props {
   onComplete: () => void;
   onCancel: () => void;
@@ -24,14 +36,78 @@ interface Props {
 
 export default function ImportScreen({ onComplete, onCancel }: Props) {
   const [state, setState] = useState<ImportState>({ status: "idle" });
+  const [mapping, setMapping] = useState<ColumnMapping>({
+    title: null, vertical: null, type: null,
+    body: null, url: null, tags: null, subfolder: null,
+  });
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  async function stageResult(result: Awaited<ReturnType<typeof window.shortpath.previewCsvImport>>) {
+    if (!result.success) {
+      const msg = result.errors?.[0] ?? "Failed to open file.";
+      setState({ status: "error", message: msg });
+      return;
+    }
+    if (result.needsMapping) {
+      const cols = result.availableColumns ?? [];
+      setMapping({ title: null, vertical: null, type: null, body: null, url: null, tags: null, subfolder: null });
+      setState({ status: "needsMapping", availableColumns: cols });
+      return;
+    }
+    setState({
+      status: "previewing",
+      totalRows: result.totalRows ?? 0,
+      previewRows: result.previewRows ?? [],
+      skippedCount: result.skippedCount ?? 0,
+      errors: result.errors ?? [],
+    });
+  }
 
   async function handleChooseFile() {
     setState({ status: "loading" });
     try {
       const result = await window.shortpath.previewCsvImport();
+      await stageResult(result);
+    } catch {
+      setState({ status: "error", message: "Failed to open file." });
+    }
+  }
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const filePath = (file as File & { path: string }).path;
+    if (!filePath?.toLowerCase().endsWith(".csv")) {
+      setState({ status: "error", message: "Please drop a CSV file (.csv)." });
+      return;
+    }
+    setState({ status: "loading" });
+    try {
+      const result = await window.shortpath.stageCsvFile(filePath);
+      await stageResult(result);
+    } catch {
+      setState({ status: "error", message: "Failed to read file." });
+    }
+  }, []);
+
+  async function handleApplyMapping() {
+    setState({ status: "loading" });
+    try {
+      const result = await window.shortpath.previewCsvWithMapping(mapping);
       if (!result.success) {
-        const msg = result.errors?.[0] ?? "Failed to open file.";
-        setState({ status: "error", message: msg });
+        setState({ status: "error", message: result.errors?.[0] ?? "Mapping failed." });
         return;
       }
       setState({
@@ -42,7 +118,7 @@ export default function ImportScreen({ onComplete, onCancel }: Props) {
         errors: result.errors ?? [],
       });
     } catch {
-      setState({ status: "error", message: "Failed to open file." });
+      setState({ status: "error", message: "Failed to apply mapping." });
     }
   }
 
@@ -66,17 +142,14 @@ export default function ImportScreen({ onComplete, onCancel }: Props) {
     }
   }
 
-  async function handleDownloadTemplate() {
-    await window.shortpath.downloadTemplateCsv();
-  }
-
   const isBusy = state.status === "loading" || state.status === "committing";
+  const canApplyMapping = mapping.title !== null && mapping.vertical !== null;
 
   return (
     <div className="entry-form-shell">
       <div className="form-header">
         <button className="form-back-btn" onClick={onCancel} disabled={isBusy}>
-          Back
+          ← Back
         </button>
         <span className="form-title">Import CSV</span>
       </div>
@@ -84,8 +157,22 @@ export default function ImportScreen({ onComplete, onCancel }: Props) {
       <div className="form-body import-body">
         {state.status === "idle" && (
           <div className="import-idle">
+            <div
+              className={`import-dropzone${isDragOver ? " drag-over" : ""}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <span className="import-dropzone-icon">⬆</span>
+              <span className="import-dropzone-text">Drop a CSV file here</span>
+              <span className="import-dropzone-or">or</span>
+              <button className="btn-primary import-choose-btn" onClick={handleChooseFile}>
+                Choose file...
+              </button>
+            </div>
+
             <div className="import-format-ref">
-              <p className="import-format-title">Expected format</p>
+              <p className="import-format-title">Expected columns</p>
               <table className="import-format-table">
                 <thead>
                   <tr>
@@ -104,15 +191,13 @@ export default function ImportScreen({ onComplete, onCancel }: Props) {
                   <tr><td>tags</td><td>No</td><td>pipe|separated|tags</td></tr>
                 </tbody>
               </table>
-              <p className="import-format-note">* body or url required; both allowed</p>
+              <p className="import-format-note">* body or url required; both allowed. Column names are not case-sensitive.</p>
+              <p className="import-format-note">If your column names differ, ShortPath will ask you to map them after you choose a file.</p>
             </div>
 
             <div className="import-actions">
-              <button className="btn-secondary import-template-btn" onClick={handleDownloadTemplate}>
+              <button className="btn-secondary import-template-btn" onClick={() => void window.shortpath.downloadTemplateCsv()}>
                 Download template
-              </button>
-              <button className="btn-primary" onClick={handleChooseFile}>
-                Choose CSV file...
               </button>
             </div>
           </div>
@@ -120,6 +205,54 @@ export default function ImportScreen({ onComplete, onCancel }: Props) {
 
         {state.status === "loading" && (
           <div className="import-status-msg">Reading file...</div>
+        )}
+
+        {state.status === "needsMapping" && (
+          <div className="import-mapping">
+            <p className="import-mapping-title">Map your columns</p>
+            <p className="import-mapping-desc">
+              Your CSV uses different column names. Assign each ShortPath field to a column in your file.
+            </p>
+            <table className="column-mapper-table">
+              <thead>
+                <tr>
+                  <th>ShortPath field</th>
+                  <th>Your column</th>
+                </tr>
+              </thead>
+              <tbody>
+                {FIELDS.map(({ key, label, required, note }) => (
+                  <tr key={key}>
+                    <td>
+                      <span className="mapper-field-label">{label}</span>
+                      {required && <span className="required"> *</span>}
+                      {note && <span className="mapper-field-note">{note}</span>}
+                    </td>
+                    <td>
+                      <select
+                        className="form-select mapper-select"
+                        value={mapping[key] ?? ""}
+                        onChange={(e) => setMapping((prev) => ({ ...prev, [key]: e.target.value || null }))}
+                      >
+                        <option value="">— Not included —</option>
+                        {state.availableColumns.map((col) => (
+                          <option key={col} value={col}>{col}</option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="form-footer">
+              <button className="btn-secondary" onClick={() => setState({ status: "idle" })}>
+                Cancel
+              </button>
+              <button className="btn-primary" onClick={handleApplyMapping} disabled={!canApplyMapping}>
+                Preview with this mapping
+              </button>
+            </div>
+          </div>
         )}
 
         {state.status === "previewing" && (

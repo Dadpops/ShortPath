@@ -20,7 +20,7 @@ Press the hotkey (default: Ctrl+Shift+Space) from anywhere on your desktop. The 
 Everything is stored on your machine. Nothing is sent to a server. No login required.
 
 First launch
-When you open ShortPath for the first time, it asks whether you are using it solo (Local) or with a team via a shared CSV (File Share Sync). You can change this later from Settings. See the "Local vs File Share Sync" help topic for details.
+When you open ShortPath for the first time, a setup wizard walks you through three steps: choose Local or File Share Sync, optionally import a CSV, and see the quick-start tips. You can change any of these settings later from Settings.
 
 First steps
 1. Press the hotkey now: Ctrl+Shift+Space (Cmd+Shift+Space on Mac).
@@ -210,25 +210,37 @@ Click Remove next to the sub-folder name and confirm. Any entries assigned to th
   {
     id: "importing-csv",
     title: "Importing a CSV",
-    tags: ["import", "csv", "template", "upload", "bulk", "file"],
+    tags: ["import", "csv", "template", "upload", "bulk", "file", "subfolder", "folder", "column mapping", "drag"],
     content: `Go to Settings > Import CSV to add entries in bulk from a spreadsheet.
+
+How to import
+Drag a CSV file onto the drop zone, or click "Choose file..." to open a file picker. ShortPath shows a preview before committing.
 
 File format
 Required columns: title, vertical, type
-Optional columns: body, url, tags, id, createdAt, updatedAt
+Optional columns: body, url, subfolder, tags
 
 Type must be one of: reply, doc, sop, link, tool
 Tags use pipe separators: billing|refund|payment
 The url column maps to the link field internally.
+Column names are not case-sensitive: "Title" and "title" both work.
+
+Sub-folders
+Include a subfolder column in your CSV to place entries in a specific folder within a vertical. Use the folder's exact name (e.g. "Billing"). If the folder doesn't exist yet, ShortPath creates it automatically on import.
+
+To use existing folders: create them first in Settings > Organization, then use their exact names in the CSV's subfolder column.
+
+Column mapping
+If your CSV uses different column names (e.g. "Category" instead of "vertical", "Response" instead of "body"), ShortPath will detect the mismatch and show a column mapping screen. Use the dropdowns to assign each ShortPath field to the matching column in your file. Title and Vertical are required; all other fields are optional.
 
 Download a template
-Use Settings > Download template to get an example file showing the exact column format and four sample rows.
+Use Settings > Download template to get an example file showing the exact column format.
 
 Import preview
 Before committing, ShortPath shows a preview of the first 5 rows and flags any rows with errors. Review the preview, then click Import to confirm.
 
 Update behavior
-If a row's title + vertical matches an existing entry, that entry is updated. Otherwise a new entry is created. The source field is preserved — re-importing a local entry does not make it synced.`,
+If a row's title + vertical matches an existing entry, that entry is updated. Otherwise a new entry is created. Source is preserved on update — re-importing a local entry does not change it to synced.`,
   },
   {
     id: "exporting-csv",

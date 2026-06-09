@@ -63,6 +63,18 @@ export interface Note {
   updatedAt: string;
 }
 
+// Maps ShortPath field names to the user's CSV column names for non-standard imports.
+// A null value means the field is absent in the CSV; type defaults to "reply" when null.
+export interface ColumnMapping {
+  title: string | null;
+  vertical: string | null;
+  type: string | null;
+  body: string | null;
+  url: string | null;
+  tags: string | null;
+  subfolder: string | null;
+}
+
 // IPC channel names
 export const IPC = {
   PING: "ping",
@@ -108,4 +120,6 @@ export const IPC = {
   CHECK_FOR_UPDATES: "check-for-updates",
   UPDATE_AVAILABLE: "update-available",
   DELETE_VERTICAL: "delete-vertical",
+  STAGE_CSV_FILE: "stage-csv-file",
+  PREVIEW_CSV_WITH_MAPPING: "preview-csv-with-mapping",
 } as const;
