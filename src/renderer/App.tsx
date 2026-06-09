@@ -69,6 +69,7 @@ export default function App() {
   const [verticalOrder, setVerticalOrder] = useState<string[]>([]);
   const [pinLimitMsg, setPinLimitMsg] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null);
+  const [updateDownloaded, setUpdateDownloaded] = useState(false);
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -140,11 +141,15 @@ export default function App() {
     const unsubUpdate = window.shortpath.onUpdateAvailable((info) => {
       setUpdateInfo(info);
     });
+    const unsubDownloaded = window.shortpath.onUpdateDownloaded(() => {
+      setUpdateDownloaded(true);
+    });
     return () => {
       unsubFocus();
       unsubHotkey();
       unsubSettings();
       unsubUpdate();
+      unsubDownloaded();
     };
   }, []);
 
@@ -670,7 +675,11 @@ export default function App() {
       {updateInfo && (
         <div className="update-banner">
           <span className="update-banner-text">Version {updateInfo.version} is available.</span>
-          <button className="update-banner-link" onClick={() => void window.shortpath.openExternal(updateInfo.url)}>Download</button>
+          {updateDownloaded ? (
+            <button className="update-banner-link" onClick={() => void window.shortpath.installUpdate()}>Restart &amp; Install</button>
+          ) : (
+            <button className="update-banner-link" onClick={() => void window.shortpath.downloadUpdate()}>Download</button>
+          )}
           <button className="update-banner-dismiss" onClick={() => setUpdateInfo(null)} aria-label="Dismiss">✕</button>
         </div>
       )}

@@ -144,7 +144,10 @@ declare global {
       ) => () => void;
 
       checkForUpdates: () => Promise<{ version: string; url: string } | null>;
+      downloadUpdate: () => Promise<void>;
+      installUpdate: () => Promise<void>;
       onUpdateAvailable: (callback: (update: { version: string; url: string }) => void) => () => void;
+      onUpdateDownloaded: (callback: () => void) => () => void;
 
       loadNotes: () => Promise<Note[]>;
       createNote: (fields: { title?: string; body: string; entryId?: string; entryTitle?: string }) => Promise<Note>;

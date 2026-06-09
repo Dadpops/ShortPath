@@ -13,7 +13,8 @@ import {
 } from "electron";
 import path from "path";
 import fs from "fs";
-import https from "https";
+import chokidar from "chokidar";
+import { autoUpdater } from "electron-updater";
 import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
 import { applySeed } from "../store/seed";
@@ -25,6 +26,19 @@ import type { Entry, Note } from "../shared/types";
 const WINDOW_WIDTH = 480;
 const WINDOW_HEIGHT = 640;
 const MARGIN = 12;
+
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.on("update-available", (info) => {
+  if (win && !win.isDestroyed()) {
+    const url = `https://github.com/Dadpops/ShortPath/releases/tag/v${info.version}`;
+    win.webContents.send("update-available", { version: info.version, url });
+  }
+});
+autoUpdater.on("update-downloaded", () => {
+  if (win && !win.isDestroyed()) win.webContents.send("update-downloaded");
+});
+autoUpdater.on("error", (err) => console.error("Updater:", err.message));
 
 const SIZE_PRESETS = {
   small:  { width: 380, height: 520 },
@@ -48,7 +62,7 @@ let pendingCsvImport: string | null = null;
 let saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Sync state
-let syncWatcher: fs.FSWatcher | null = null;
+let syncWatcher: chokidar.FSWatcher | null = null;
 let syncDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 let lastRefreshed: string | null = null;
 
@@ -241,21 +255,21 @@ function loadSyncedFile(filePath: string): { ok: boolean; errors: string[] } {
 
 function startSyncWatcher(filePath: string) {
   stopSyncWatcher();
-  try {
-    syncWatcher = fs.watch(filePath, () => {
-      // editors write multiple events per save; debounce to one load
-      if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
-      syncDebounceTimer = setTimeout(() => loadSyncedFile(filePath), 500);
-    });
-    syncWatcher.on("error", (err) => console.error("Sync watcher error:", err));
-  } catch (err) {
-    console.error("Failed to start sync watcher:", err);
-  }
+  syncWatcher = chokidar.watch(filePath, {
+    persistent: false,
+    awaitWriteFinish: { stabilityThreshold: 300, pollInterval: 100 },
+    ignoreInitial: true,
+  });
+  syncWatcher.on("change", () => {
+    if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = setTimeout(() => loadSyncedFile(filePath), 200);
+  });
+  syncWatcher.on("error", (err) => console.error("Sync watcher error:", err));
 }
 
 function stopSyncWatcher() {
   if (syncDebounceTimer) { clearTimeout(syncDebounceTimer); syncDebounceTimer = null; }
-  if (syncWatcher) { syncWatcher.close(); syncWatcher = null; }
+  if (syncWatcher) { void syncWatcher.close(); syncWatcher = null; }
 }
 
 function registerIpcHandlers() {
@@ -657,47 +671,21 @@ function registerIpcHandlers() {
     saveNotes(userDataPath, notesData);
   });
 
-  ipcMain.handle("check-for-updates", () => checkForUpdates());
-}
-
-interface GitHubRelease {
-  tag_name: string;
-  html_url: string;
-}
-
-function isNewerVersion(latest: string, current: string): boolean {
-  const parse = (v: string) => v.split(".").map(Number);
-  const [lMaj = 0, lMin = 0, lPatch = 0] = parse(latest);
-  const [cMaj = 0, cMin = 0, cPatch = 0] = parse(current);
-  if (lMaj !== cMaj) return lMaj > cMaj;
-  if (lMin !== cMin) return lMin > cMin;
-  return lPatch > cPatch;
-}
-
-function checkForUpdates(): Promise<{ version: string; url: string } | null> {
-  return new Promise((resolve) => {
-    const req = https.get(
-      "https://api.github.com/repos/Dadpops/ShortPath/releases/latest",
-      { headers: { "User-Agent": "ShortPath-App", Accept: "application/vnd.github.v3+json" } },
-      (res) => {
-        if (res.statusCode !== 200) { res.resume(); resolve(null); return; }
-        let body = "";
-        res.on("data", (chunk: Buffer) => { body += chunk.toString(); });
-        res.on("end", () => {
-          try {
-            const data = JSON.parse(body) as GitHubRelease;
-            const latest = data.tag_name.replace(/^v/, "");
-            const current = app.getVersion();
-            resolve(isNewerVersion(latest, current) ? { version: latest, url: data.html_url } : null);
-          } catch {
-            resolve(null);
-          }
-        });
-      }
-    );
-    req.on("error", () => resolve(null));
-    req.setTimeout(10000, () => { req.destroy(); resolve(null); });
+  ipcMain.handle("check-for-updates", async () => {
+    if (!app.isPackaged) return null;
+    try {
+      const result = await autoUpdater.checkForUpdates();
+      if (!result?.updateInfo) return null;
+      const { version } = result.updateInfo;
+      if (version === app.getVersion()) return null;
+      return { version, url: `https://github.com/Dadpops/ShortPath/releases/tag/v${version}` };
+    } catch {
+      return null;
+    }
   });
+
+  ipcMain.handle("download-update", () => { autoUpdater.downloadUpdate().catch(console.error); });
+  ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(); });
 }
 
 app.whenReady().then(() => {
@@ -722,14 +710,10 @@ app.whenReady().then(() => {
     startSyncWatcher(settings.syncPath);
   }
 
-  // Auto-check for updates after renderer has had time to load.
-  setTimeout(() => {
-    checkForUpdates().then((update) => {
-      if (update && win && !win.isDestroyed()) {
-        win.webContents.send("update-available", update);
-      }
-    });
-  }, 5000);
+  // Auto-check for updates after renderer has had time to load (packaged builds only).
+  if (app.isPackaged) {
+    setTimeout(() => { autoUpdater.checkForUpdates().catch(console.error); }, 5000);
+  }
 });
 
 let currentHotkey: string | null = null;

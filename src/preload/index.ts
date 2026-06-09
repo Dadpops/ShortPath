@@ -102,11 +102,18 @@ contextBridge.exposeInMainWorld("shortpath", {
   },
 
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+  downloadUpdate: () => ipcRenderer.invoke("download-update"),
+  installUpdate: () => ipcRenderer.invoke("install-update"),
 
   onUpdateAvailable: (callback: (update: { version: string; url: string }) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, update: { version: string; url: string }) => callback(update);
     ipcRenderer.on("update-available", handler);
     return () => ipcRenderer.removeListener("update-available", handler);
+  },
+
+  onUpdateDownloaded: (callback: () => void) => {
+    ipcRenderer.on("update-downloaded", callback);
+    return () => ipcRenderer.removeListener("update-downloaded", callback);
   },
 
   loadNotes: () => ipcRenderer.invoke("notes:load"),

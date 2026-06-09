@@ -47,6 +47,11 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
 
+publish:
+  provider: github
+  owner: Dadpops
+  repo: ShortPath
+
 # Tray app — keep it running in background
 extraMetadata:
   main: dist/main/index.js
