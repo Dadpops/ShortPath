@@ -10,12 +10,20 @@ import {
   dialog,
   clipboard,
   shell,
+  Notification,
 } from "electron";
 import { randomUUID } from "crypto";
 import JSZip from "jszip";
 import path from "path";
 import fs from "fs";
+import http from "http";
+import https from "https";
 import chokidar from "chokidar";
+import { Readability } from "@mozilla/readability";
+import { JSDOM } from "jsdom";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require("pdf-parse") as (buf: Buffer, opts?: Record<string, unknown>) => Promise<{ text: string; numpages: number }>;
+import { marked } from "marked";
 import { autoUpdater } from "electron-updater";
 import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
@@ -23,7 +31,7 @@ import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseCsvPreviewWithMapping, importCsvWithMapping, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import type { StoreData } from "../store/schema";
-import type { Entry, Note, ColumnMapping } from "../shared/types";
+import type { Entry, Note, ColumnMapping, CapturePayload } from "../shared/types";
 
 const WINDOW_WIDTH = 480;
 const WINDOW_HEIGHT = 640;
@@ -56,6 +64,9 @@ let store: StoreData;
 let notesData: { notes: Note[] };
 let userDataPath: string;
 let settings: AppSettings;
+
+// Local HTTP capture server for the browser extension.
+let captureServer: http.Server | null = null;
 
 // Holds the last CSV string opened via preview-csv-import, waiting for commit-csv-import.
 let pendingCsvImport: string | null = null;
@@ -165,6 +176,15 @@ function createTray() {
     { type: "separator" },
     { label: "Import CSV", click: handleImportFromTray },
     { label: "Export CSV", click: handleExportFromTray },
+    {
+      label: "Import queued browser captures",
+      click: () => {
+        new Notification({
+          title: "ShortPath Browser Extension",
+          body: "Queued captures are imported automatically when the extension detects ShortPath is running. Open the extension popup to check queue status.",
+        }).show();
+      },
+    },
     { type: "separator" },
     {
       label: "Settings",
@@ -274,6 +294,203 @@ function startSyncWatcher(filePath: string) {
 function stopSyncWatcher() {
   if (syncDebounceTimer) { clearTimeout(syncDebounceTimer); syncDebounceTimer = null; }
   if (syncWatcher) { void syncWatcher.close(); syncWatcher = null; }
+}
+
+// ── Capture server helpers ────────────────────────────────────────────────────
+
+function startCaptureServer() {
+  captureServer = http.createServer((req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    if (req.method === "GET" && req.url === "/ping") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ status: "ok", version: app.getVersion() }));
+      return;
+    }
+
+    if (req.method === "POST" && req.url === "/capture") {
+      let body = "";
+      req.on("data", (chunk) => { body += chunk.toString(); });
+      req.on("end", () => {
+        try {
+          const payload = JSON.parse(body) as CapturePayload;
+          if (!payload.title || typeof payload.title !== "string" || !payload.url || typeof payload.url !== "string") {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: false, error: "Invalid payload" }));
+            return;
+          }
+          if (win && !win.isDestroyed()) {
+            win.show();
+            win.focus();
+            win.webContents.send("capture-entry", payload);
+          }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true }));
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: false, error: "Invalid payload" }));
+        }
+      });
+      return;
+    }
+
+    res.writeHead(404);
+    res.end();
+  });
+
+  captureServer.on("error", (err) => console.error("Capture server error:", err.message));
+  captureServer.listen(57433, "127.0.0.1");
+}
+
+// ── URL fetch + Readability ───────────────────────────────────────────────────
+
+function fetchHtml(url: string): Promise<{ ok: true; html: string; finalUrl: string } | { ok: false; error: string }> {
+  return new Promise((resolve) => {
+    const client = url.startsWith("https://") ? https : http;
+    const req = client.get(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      timeout: 10000,
+    }, (res) => {
+      if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        const redirectUrl = res.headers.location.startsWith("http")
+          ? res.headers.location
+          : new URL(res.headers.location, url).href;
+        fetchHtml(redirectUrl).then(resolve);
+        res.resume();
+        return;
+      }
+      if (!res.statusCode || res.statusCode >= 400) {
+        resolve({ ok: false, error: `HTTP ${res.statusCode ?? "error"}` });
+        res.resume();
+        return;
+      }
+      const chunks: Buffer[] = [];
+      res.on("data", (chunk: Buffer) => chunks.push(chunk));
+      res.on("end", () => resolve({ ok: true, html: Buffer.concat(chunks).toString("utf-8"), finalUrl: url }));
+    });
+    req.on("error", (err) => resolve({ ok: false, error: err.message }));
+    req.on("timeout", () => { req.destroy(); resolve({ ok: false, error: "Request timeout" }); });
+  });
+}
+
+interface UrlSection { heading: string; body: string }
+
+function splitByHeadings(doc: Document, fallbackTitle: string): UrlSection[] {
+  const sections: UrlSection[] = [];
+  let currentHeading = fallbackTitle;
+  const bodyParts: string[] = [];
+
+  for (const node of Array.from(doc.body.childNodes)) {
+    const el = node as HTMLElement;
+    const tag = el.tagName?.toUpperCase();
+    if (tag === "H2" || tag === "H3") {
+      const text = bodyParts.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+      if (text) sections.push({ heading: currentHeading, body: text });
+      currentHeading = el.textContent?.trim() ?? "";
+      bodyParts.length = 0;
+    } else {
+      const t = el.textContent?.trim();
+      if (t) bodyParts.push(t);
+    }
+  }
+  const finalText = bodyParts.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  if (finalText) sections.push({ heading: currentHeading, body: finalText });
+  return sections.length > 0 ? sections : [{ heading: fallbackTitle, body: doc.body.textContent?.trim() ?? "" }];
+}
+
+// ── Markdown import helpers ───────────────────────────────────────────────────
+
+interface ImportSection { title: string; body: string; selected: boolean }
+
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1")
+    .replace(/!\[.*?\]\(.+?\)/g, "")
+    .replace(/^[-*+]\s+/gm, "")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/^>\s+/gm, "")
+    .replace(/^\s*[-*_]{3,}\s*$/gm, "")
+    .replace(/^#{1,6}\s+/gm, "")
+    .trim();
+}
+
+function splitMarkdownSections(text: string): ImportSection[] {
+  const lines = text.split("\n");
+  const sections: ImportSection[] = [];
+  let currentTitle = "";
+  const bodyLines: string[] = [];
+
+  function flush() {
+    const body = stripMarkdown(bodyLines.join("\n"));
+    if (currentTitle && body) sections.push({ title: currentTitle, body, selected: true });
+    bodyLines.length = 0;
+  }
+
+  for (const line of lines) {
+    const h3 = /^###\s+(.+)$/.exec(line);
+    const h2 = !h3 && /^##(?!#)\s+(.+)$/.exec(line);
+    if (h2 || h3) {
+      flush();
+      currentTitle = ((h2 ?? h3)![1]).trim();
+    } else {
+      bodyLines.push(line);
+    }
+  }
+  flush();
+  return sections;
+}
+
+// ── PDF text splitter ─────────────────────────────────────────────────────────
+
+function splitPdfText(text: string): ImportSection[] {
+  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const sections: ImportSection[] = [];
+  let currentTitle = "Content";
+  const bodyParts: string[] = [];
+
+  function flush() {
+    const body = bodyParts.filter(Boolean).join("\n\n").trim();
+    if (body) sections.push({ title: currentTitle, body, selected: true });
+    bodyParts.length = 0;
+  }
+
+  for (const para of paragraphs) {
+    const firstLine = para.split("\n")[0].trim();
+    const lines = para.split("\n");
+    const isHeading =
+      (firstLine.length > 3 && firstLine.length < 80 && firstLine === firstLine.toUpperCase() && /[A-Z]/.test(firstLine)) ||
+      (lines.length === 1 && firstLine.length < 60 && !firstLine.endsWith(".") && firstLine.length > 3);
+
+    if (isHeading && bodyParts.length > 0) {
+      flush();
+      currentTitle = firstLine;
+      const rest = lines.slice(1).join("\n").trim();
+      if (rest) bodyParts.push(rest);
+    } else if (isHeading) {
+      currentTitle = firstLine;
+      const rest = lines.slice(1).join("\n").trim();
+      if (rest) bodyParts.push(rest);
+    } else {
+      bodyParts.push(para);
+    }
+  }
+  flush();
+  return sections.length > 0 ? sections : [{ title: "Content", body: text.trim(), selected: true }];
 }
 
 function registerIpcHandlers() {
@@ -809,6 +1026,74 @@ function registerIpcHandlers() {
 
   ipcMain.handle("download-update", () => { autoUpdater.downloadUpdate().catch(console.error); });
   ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(); });
+
+  ipcMain.handle("fetch-url-content", async (_e, url: string) => {
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      return { error: "URL must start with http:// or https://" };
+    }
+    try {
+      const result = await fetchHtml(url);
+      if (!result.ok) return { error: result.error };
+      const dom = new JSDOM(result.html, { url: result.finalUrl });
+      const reader = new Readability(dom.window.document);
+      const article = reader.parse();
+      if (!article) return { error: "Could not extract readable content from this page." };
+      const contentDom = new JSDOM(article.content);
+      const sections = splitByHeadings(contentDom.window.document, article.title);
+      return { title: article.title, sections };
+    } catch (err) {
+      return { error: String(err) };
+    }
+  });
+
+  ipcMain.handle("preview-md-import", async (_e, filePath: string) => {
+    try {
+      const text = fs.readFileSync(filePath, "utf-8");
+      const sections = splitMarkdownSections(text);
+      return { sections };
+    } catch (err) {
+      return { error: String(err) };
+    }
+  });
+
+  ipcMain.handle("commit-md-import", (_e, entries: Array<Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">>) => {
+    try {
+      for (const fields of entries) {
+        const result = addEntry(store, fields);
+        store = result.store;
+      }
+      saveStore(userDataPath, store);
+      pushStoreUpdate();
+      return { success: true, imported: entries.length };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
+  });
+
+  ipcMain.handle("preview-pdf-import", async (_e, filePath: string) => {
+    try {
+      const buffer = fs.readFileSync(filePath);
+      const data = await pdfParse(buffer, { max: 0 });
+      const sections = splitPdfText(data.text);
+      return { sections };
+    } catch (err) {
+      return { error: String(err) };
+    }
+  });
+
+  ipcMain.handle("commit-pdf-import", (_e, entries: Array<Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">>) => {
+    try {
+      for (const fields of entries) {
+        const result = addEntry(store, fields);
+        store = result.store;
+      }
+      saveStore(userDataPath, store);
+      pushStoreUpdate();
+      return { success: true, imported: entries.length };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
+  });
 }
 
 app.whenReady().then(() => {
@@ -826,6 +1111,7 @@ app.whenReady().then(() => {
   createTray();
   createWindow();
   registerHotkey(settings.hotkey);
+  startCaptureServer();
 
   // Resume file-watch sync if a path was previously configured.
   if (settings.syncPath && fs.existsSync(settings.syncPath)) {
@@ -858,6 +1144,7 @@ function registerHotkey(accelerator: string): boolean {
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   stopSyncWatcher();
+  if (captureServer) { captureServer.close(); captureServer = null; }
 });
 
 // Keep the app running when all windows are closed (tray app behavior).

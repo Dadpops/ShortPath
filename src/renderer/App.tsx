@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Fuse, { type FuseResult } from "fuse.js";
-import type { Entry, Vertical, VerticalGroup, SearchResult } from "@shared/types";
+import type { Entry, Vertical, VerticalGroup, SearchResult, CapturePayload } from "@shared/types";
 import SearchBar from "./components/SearchBar";
 import VerticalGroupComponent from "./components/VerticalGroup";
 import SupportToolsGroup from "./components/SupportToolsGroup";
@@ -72,6 +72,7 @@ export default function App() {
   const [pinLimitMsg, setPinLimitMsg] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null);
   const [updateDownloaded, setUpdateDownloaded] = useState(false);
+  const [capturePayload, setCapturePayload] = useState<CapturePayload | null>(null);
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -152,12 +153,19 @@ export default function App() {
     const unsubDownloaded = window.shortpath.onUpdateDownloaded(() => {
       setUpdateDownloaded(true);
     });
+    const unsubCapture = window.shortpath.onCaptureEntry((payload) => {
+      setCapturePayload(payload);
+      setEditingEntry(null);
+      setQuickAddPrefill(undefined);
+      setMode("add");
+    });
     return () => {
       unsubFocus();
       unsubHotkey();
       unsubSettings();
       unsubUpdate();
       unsubDownloaded();
+      unsubCapture();
     };
   }, []);
 
@@ -480,6 +488,7 @@ export default function App() {
     setMode("browse");
     setEditingEntry(null);
     setQuickAddPrefill(undefined);
+    setCapturePayload(null);
   }
 
   function handleFormDelete() {
@@ -490,12 +499,14 @@ export default function App() {
     setMode("browse");
     setEditingEntry(null);
     setQuickAddPrefill(undefined);
+    setCapturePayload(null);
   }
 
   function handleFormCancel() {
     setMode("browse");
     setEditingEntry(null);
     setQuickAddPrefill(undefined);
+    setCapturePayload(null);
   }
 
   function handleImportComplete() {
@@ -541,6 +552,7 @@ export default function App() {
           quickAdd={mode === "add" && !editingEntry}
           prefillBody={quickAddPrefill}
           defaultVerticalId={mode === "add" && !editingEntry ? (activeVerticalFilter ?? undefined) : undefined}
+          capturePayload={capturePayload ?? undefined}
         />
       </div>
     );
@@ -549,7 +561,7 @@ export default function App() {
   if (mode === "import") {
     return (
       <div className={shellClass}>
-        <ImportScreen onComplete={handleImportComplete} onCancel={() => setMode("browse")} existingEntries={entries} />
+        <ImportScreen onComplete={handleImportComplete} onCancel={() => setMode("browse")} existingEntries={entries} verticals={verticals} />
       </div>
     );
   }

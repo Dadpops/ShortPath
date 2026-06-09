@@ -34,6 +34,15 @@ export interface Entry {
   updatedAt: string;
   copyCount?: number;    // Phase 10: copies made this entry; only tracked for source === "local"
   copyMode?: "plain" | "html"; // Phase 13: how to write to clipboard; default "plain"
+  sourceUrl?: string;    // Phase 14: original URL when captured from browser extension
+}
+
+// Payload sent by the browser extension to the capture server.
+export interface CapturePayload {
+  title: string;
+  body: string;
+  url: string;
+  source: "browser-extension";
 }
 
 export interface SearchResult {

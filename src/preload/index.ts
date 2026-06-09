@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { Entry, ColumnMapping } from "../shared/types";
+import type { Entry, ColumnMapping, CapturePayload } from "../shared/types";
 
 contextBridge.exposeInMainWorld("shortpath", {
   platform: process.platform,
@@ -125,4 +125,23 @@ contextBridge.exposeInMainWorld("shortpath", {
   createNote: (fields: { title?: string; body: string; entryId?: string; entryTitle?: string }) => ipcRenderer.invoke("notes:create", fields),
   updateNote: (id: string, updates: { title?: string; body: string }) => ipcRenderer.invoke("notes:update", id, updates),
   deleteNote: (id: string) => ipcRenderer.invoke("notes:delete", id),
+
+  fetchUrlContent: (url: string) =>
+    ipcRenderer.invoke("fetch-url-content", url),
+
+  previewMdImport: (filePath: string) =>
+    ipcRenderer.invoke("preview-md-import", filePath),
+  commitMdImport: (entries: Array<Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">>) =>
+    ipcRenderer.invoke("commit-md-import", entries),
+
+  previewPdfImport: (filePath: string) =>
+    ipcRenderer.invoke("preview-pdf-import", filePath),
+  commitPdfImport: (entries: Array<Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">>) =>
+    ipcRenderer.invoke("commit-pdf-import", entries),
+
+  onCaptureEntry: (callback: (payload: CapturePayload) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, payload: CapturePayload) => callback(payload);
+    ipcRenderer.on("capture-entry", handler);
+    return () => ipcRenderer.removeListener("capture-entry", handler);
+  },
 });

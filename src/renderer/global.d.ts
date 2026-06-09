@@ -1,4 +1,4 @@
-import type { Entry, Vertical, SubFolder, Note, ColumnMapping } from "@shared/types";
+import type { Entry, Vertical, SubFolder, Note, ColumnMapping, CapturePayload } from "@shared/types";
 
 interface LoadEntriesResult {
   entries: Entry[];
@@ -163,6 +163,26 @@ declare global {
       createNote: (fields: { title?: string; body: string; entryId?: string; entryTitle?: string }) => Promise<Note>;
       updateNote: (id: string, updates: { title?: string; body: string }) => Promise<Note>;
       deleteNote: (id: string) => Promise<void>;
+
+      fetchUrlContent: (url: string) => Promise<
+        { title: string; sections: Array<{ heading: string; body: string }> } | { error: string }
+      >;
+
+      previewMdImport: (filePath: string) => Promise<
+        { sections: Array<{ title: string; body: string; selected: boolean }> } | { error: string }
+      >;
+      commitMdImport: (entries: Array<Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">>) => Promise<
+        { success: boolean; imported?: number; error?: string }
+      >;
+
+      previewPdfImport: (filePath: string) => Promise<
+        { sections: Array<{ title: string; body: string; selected: boolean }> } | { error: string }
+      >;
+      commitPdfImport: (entries: Array<Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">>) => Promise<
+        { success: boolean; imported?: number; error?: string }
+      >;
+
+      onCaptureEntry: (callback: (payload: CapturePayload) => void) => () => void;
     };
   }
 }

@@ -88,6 +88,14 @@ docs/              Architecture, data model, roadmap, session logs
 .github/workflows/ CI (lint + typecheck on push/PR)
 ```
 
+## Port reservation
+
+ShortPath browser capture port: **57433** — the local HTTP server in `src/main/index.ts` listens on this port. The browser extension posts captured pages here via POST /capture. GET /ping returns status and version. Do not change this port without updating the extension manifests.
+
+## PDF import note
+
+PDF text extraction is best-effort. Scanned PDFs (image-only) will return empty sections. Do not attempt OCR.
+
 ## Design tokens (defined in global.css)
 
 All colors and fonts live in CSS custom properties on `:root`. Touch those variables, not hardcoded values, when styling.
