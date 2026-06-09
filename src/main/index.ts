@@ -19,9 +19,6 @@ import fs from "fs";
 import http from "http";
 import https from "https";
 import chokidar from "chokidar";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse") as (buf: Buffer, opts?: Record<string, unknown>) => Promise<{ text: string; numpages: number }>;
-
 import { autoUpdater } from "electron-updater";
 import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, replaceEntriesFromSource, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, clearSampleData, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
@@ -1097,6 +1094,7 @@ function registerIpcHandlers() {
   ipcMain.handle("preview-pdf-import", async (_e, filePath: string) => {
     try {
       const buffer = fs.readFileSync(filePath);
+      const { default: pdfParse } = await import("pdf-parse");
       const data = await pdfParse(buffer, { max: 0 });
       const sections = splitPdfText(data.text);
       return { sections };
