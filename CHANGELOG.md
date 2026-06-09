@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [0.2.1] - 2026-06-09
+
+### Fixed
+
+- Sub-folders in a vertical now appear while browsing even when the vertical contains no entries. Previously a vertical was hidden entirely if it had zero entries, which also hid any sub-folders created inside it.
+
+---
+
 ## [0.2.0] - 2026-06-09
 
 ### Added
