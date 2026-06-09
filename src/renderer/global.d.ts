@@ -124,9 +124,10 @@ declare global {
       renameVertical: (id: string, newLabel: string) => Promise<void>;
       addVertical: (label: string) => Promise<Vertical>;
       clearLocalEntries: () => Promise<void>;
-      addSubFolder: (verticalId: string, label: string) => Promise<SubFolder>;
+      addSubFolder: (verticalId: string, label: string, parentSubFolderId?: string) => Promise<SubFolder>;
       renameSubFolder: (verticalId: string, subFolderId: string, newLabel: string) => Promise<void>;
       removeSubFolder: (verticalId: string, subFolderId: string) => Promise<void>;
+      deleteVertical: (verticalId: string) => Promise<void>;
 
       configureSync: () => Promise<{ success: boolean; syncPath?: string; errors?: string[] }>;
       refreshSynced: () => Promise<{ success: boolean; errors?: string[] }>;
@@ -141,6 +142,9 @@ declare global {
       onStoreUpdated: (
         callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[]; favorites: string[]; pinned: string[] }) => void
       ) => () => void;
+
+      checkForUpdates: () => Promise<{ version: string; url: string } | null>;
+      onUpdateAvailable: (callback: (update: { version: string; url: string }) => void) => () => void;
 
       loadNotes: () => Promise<Note[]>;
       createNote: (fields: { title?: string; body: string; entryId?: string; entryTitle?: string }) => Promise<Note>;

@@ -47,9 +47,10 @@ contextBridge.exposeInMainWorld("shortpath", {
   renameVertical: (id: string, newLabel: string) => ipcRenderer.invoke("rename-vertical", id, newLabel),
   addVertical: (label: string) => ipcRenderer.invoke("add-vertical", label),
   clearLocalEntries: () => ipcRenderer.invoke("clear-local-entries"),
-  addSubFolder: (verticalId: string, label: string) => ipcRenderer.invoke("add-subfolder", verticalId, label),
+  addSubFolder: (verticalId: string, label: string, parentSubFolderId?: string) => ipcRenderer.invoke("add-subfolder", verticalId, label, parentSubFolderId),
   renameSubFolder: (verticalId: string, subFolderId: string, newLabel: string) => ipcRenderer.invoke("rename-subfolder", verticalId, subFolderId, newLabel),
   removeSubFolder: (verticalId: string, subFolderId: string) => ipcRenderer.invoke("remove-subfolder", verticalId, subFolderId),
+  deleteVertical: (verticalId: string) => ipcRenderer.invoke("delete-vertical", verticalId),
   saveSourceMode: (mode: "local" | "sync", name?: string) => ipcRenderer.invoke("save-source-mode", mode, name),
   disconnectSync: () => ipcRenderer.invoke("disconnect-sync"),
 
@@ -98,6 +99,14 @@ contextBridge.exposeInMainWorld("shortpath", {
   onSyncRefreshed: (callback: () => void) => {
     ipcRenderer.on("sync-refreshed", callback);
     return () => ipcRenderer.removeListener("sync-refreshed", callback);
+  },
+
+  checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+
+  onUpdateAvailable: (callback: (update: { version: string; url: string }) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, update: { version: string; url: string }) => callback(update);
+    ipcRenderer.on("update-available", handler);
+    return () => ipcRenderer.removeListener("update-available", handler);
   },
 
   loadNotes: () => ipcRenderer.invoke("notes:load"),

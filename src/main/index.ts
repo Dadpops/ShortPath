@@ -13,7 +13,8 @@ import {
 } from "electron";
 import path from "path";
 import fs from "fs";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder } from "../store/index";
+import https from "https";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
@@ -216,7 +217,7 @@ async function handleExportFromTray() {
   if (!filePath) return;
 
   try {
-    fs.writeFileSync(filePath, exportCsv(store.entries), "utf-8");
+    fs.writeFileSync(filePath, exportCsv(store.entries, store.verticals), "utf-8");
   } catch (err) {
     console.error("CSV export failed:", err);
   }
@@ -388,7 +389,7 @@ function registerIpcHandlers() {
     if (!filePath) return { success: false };
 
     try {
-      fs.writeFileSync(filePath, exportCsv(store.entries), "utf-8");
+      fs.writeFileSync(filePath, exportCsv(store.entries, store.verticals), "utf-8");
       return { success: true };
     } catch (err) {
       return { success: false, errors: [String(err)] };
@@ -404,7 +405,7 @@ function registerIpcHandlers() {
 
     try {
       const localEntries = store.entries.filter((e) => e.source === "local");
-      fs.writeFileSync(filePath, exportCsv(localEntries), "utf-8");
+      fs.writeFileSync(filePath, exportCsv(localEntries, store.verticals), "utf-8");
       return { success: true };
     } catch (err) {
       return { success: false, errors: [String(err)] };
@@ -607,12 +608,22 @@ function registerIpcHandlers() {
     pushStoreUpdate();
   });
 
-  ipcMain.handle("add-subfolder", (_e, verticalId: string, label: string) => {
-    const result = addSubFolder(store, verticalId, label);
+  ipcMain.handle("add-subfolder", (_e, verticalId: string, label: string, parentSubFolderId?: string) => {
+    const result = addSubFolder(store, verticalId, label, parentSubFolderId);
     store = result.store;
     saveStore(userDataPath, store);
     pushStoreUpdate();
     return result.subFolder;
+  });
+
+  ipcMain.handle("delete-vertical", (_e, verticalId: string) => {
+    store = deleteVertical(store, verticalId);
+    saveStore(userDataPath, store);
+    if (settings.verticalOrder?.includes(verticalId)) {
+      settings.verticalOrder = settings.verticalOrder.filter((id) => id !== verticalId);
+      saveSettings(userDataPath, settings);
+    }
+    pushStoreUpdate();
   });
 
   ipcMain.handle("rename-subfolder", (_e, verticalId: string, subFolderId: string, newLabel: string) => {
@@ -645,6 +656,48 @@ function registerIpcHandlers() {
     notesData = storeDeleteNote(notesData, id);
     saveNotes(userDataPath, notesData);
   });
+
+  ipcMain.handle("check-for-updates", () => checkForUpdates());
+}
+
+interface GitHubRelease {
+  tag_name: string;
+  html_url: string;
+}
+
+function isNewerVersion(latest: string, current: string): boolean {
+  const parse = (v: string) => v.split(".").map(Number);
+  const [lMaj = 0, lMin = 0, lPatch = 0] = parse(latest);
+  const [cMaj = 0, cMin = 0, cPatch = 0] = parse(current);
+  if (lMaj !== cMaj) return lMaj > cMaj;
+  if (lMin !== cMin) return lMin > cMin;
+  return lPatch > cPatch;
+}
+
+function checkForUpdates(): Promise<{ version: string; url: string } | null> {
+  return new Promise((resolve) => {
+    const req = https.get(
+      "https://api.github.com/repos/Dadpops/ShortPath/releases/latest",
+      { headers: { "User-Agent": "ShortPath-App", Accept: "application/vnd.github.v3+json" } },
+      (res) => {
+        if (res.statusCode !== 200) { res.resume(); resolve(null); return; }
+        let body = "";
+        res.on("data", (chunk: Buffer) => { body += chunk.toString(); });
+        res.on("end", () => {
+          try {
+            const data = JSON.parse(body) as GitHubRelease;
+            const latest = data.tag_name.replace(/^v/, "");
+            const current = app.getVersion();
+            resolve(isNewerVersion(latest, current) ? { version: latest, url: data.html_url } : null);
+          } catch {
+            resolve(null);
+          }
+        });
+      }
+    );
+    req.on("error", () => resolve(null));
+    req.setTimeout(10000, () => { req.destroy(); resolve(null); });
+  });
 }
 
 app.whenReady().then(() => {
@@ -668,6 +721,15 @@ app.whenReady().then(() => {
     loadSyncedFile(settings.syncPath);
     startSyncWatcher(settings.syncPath);
   }
+
+  // Auto-check for updates after renderer has had time to load.
+  setTimeout(() => {
+    checkForUpdates().then((update) => {
+      if (update && win && !win.isDestroyed()) {
+        win.webContents.send("update-available", update);
+      }
+    });
+  }, 5000);
 });
 
 let currentHotkey: string | null = null;
