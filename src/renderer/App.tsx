@@ -858,32 +858,45 @@ export default function App() {
           <button className="app-path-btn" onClick={handleGoHome} title="Go home">
             shortpath
           </button>
-          {syncSources.length > 0 && (
-            <div className="source-picker-wrap" ref={sourcePickerRef}>
-              <button
-                className="app-source-btn"
-                onClick={() => setSourcePickerOpen((p) => !p)}
-                title="Switch source"
-              >
-                / {getActiveSourceDisplayLabel()} ▾
-              </button>
-              {sourcePickerOpen && (
-                <div className="source-picker-dropdown">
-                  <button className={`source-option${activeSource === "local" ? " active" : ""}`} onClick={() => handleSetActiveSource("local")}>Local</button>
-                  {syncSources.map(s => (
-                    <button key={s.id} className={`source-option${activeSource === s.id ? " active" : ""}`} onClick={() => handleSetActiveSource(s.id)}>
-                      {getSourceLabel(s)}
-                    </button>
-                  ))}
-                  <button className={`source-option${activeSource === "all" ? " active" : ""}`} onClick={() => handleSetActiveSource("all")}>All</button>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="source-picker-wrap" ref={sourcePickerRef}>
+            {syncSources.length > 0 ? (
+              <>
+                <button
+                  className="app-source-btn"
+                  onClick={() => setSourcePickerOpen((p) => !p)}
+                  title="Switch source"
+                >
+                  / {getActiveSourceDisplayLabel()} ▾
+                </button>
+                {sourcePickerOpen && (
+                  <div className="source-picker-dropdown">
+                    <button className={`source-option${activeSource === "local" ? " active" : ""}`} onClick={() => handleSetActiveSource("local")}>Local</button>
+                    {syncSources.map(s => (
+                      <button key={s.id} className={`source-option${activeSource === s.id ? " active" : ""}`} onClick={() => handleSetActiveSource(s.id)}>
+                        {getSourceLabel(s)}
+                      </button>
+                    ))}
+                    <button className={`source-option${activeSource === "all" ? " active" : ""}`} onClick={() => handleSetActiveSource("all")}>All</button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <span className="app-source-label">/ Local</span>
+            )}
+          </div>
         </div>
         <div className="header-actions">
           {isSearching && totalHits > 0 && (
             <span className="app-hit-summary">{totalHits} result{totalHits !== 1 ? "s" : ""}</span>
+          )}
+          {hasClipboard && (
+            <button
+              className="header-icon-btn clipboard-indicator"
+              onClick={handleClipboardIconClick}
+              title={`Save clipboard as entry: "${clipboardText!.length > 48 ? clipboardText!.slice(0, 48) + "…" : clipboardText}"`}
+            >
+              ⎘
+            </button>
           )}
           <button className="header-icon-btn header-icon-letter" onClick={() => setMode("keyboard")} title="Keyboard shortcuts (Alt+K)">K</button>
           <button className="header-icon-btn header-icon-letter" onClick={() => setMode("notes")} title="Notes (Alt+N)">N</button>
@@ -893,20 +906,6 @@ export default function App() {
           <button className="header-icon-btn" onClick={() => void window.shortpath.minimizeWindow()} title="Minimize">−</button>
         </div>
       </header>
-
-      {hasClipboard && (
-        <div className="clipboard-strip">
-          <span className="clipboard-strip-text">
-            ⎘ "{clipboardText!.length > 48 ? clipboardText!.slice(0, 48) + "…" : clipboardText}"
-          </span>
-          <button className="clipboard-strip-save" onClick={handleClipboardIconClick} title="Save as new entry">
-            Save
-          </button>
-          <button className="clipboard-strip-dismiss" onClick={() => setClipboardDismissed(true)} aria-label="Dismiss">
-            ✕
-          </button>
-        </div>
-      )}
 
       {hasSampleData && (
         <div className="sample-data-banner">

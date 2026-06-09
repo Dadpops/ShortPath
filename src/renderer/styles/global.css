@@ -2187,6 +2187,14 @@ body {
   opacity: 0.75;
 }
 
+.app-source-label {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+
 .source-picker-dropdown {
   position: absolute;
   top: calc(100% + 4px);
