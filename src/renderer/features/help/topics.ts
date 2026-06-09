@@ -424,6 +424,96 @@ Data
 Notes are stored in notes.json in your app data folder, separate from store.json. They are local only and are never synced or exported.`,
   },
   {
+    id: "accent-and-appearance",
+    title: "Accent color and appearance",
+    tags: ["accent", "color", "theme", "opacity", "density", "window size", "customization"],
+    content: `The Appearance section in Settings lets you personalize how ShortPath looks and fits on your screen.
+
+Accent color
+Choose from six presets: Ocean (blue), Violet, Rose, Amber, Teal, and Slate. The chosen color drives highlights throughout the app — the active tab underline, copy button glow, focused row border, and input focus ring. The active swatch shows a thin ring in that color.
+
+Opacity
+Drag the slider between 70% and 100% to make the window semi-transparent. At 70% you can see content behind the window while keeping it usable. Restore to 100% for a fully opaque window. The value is saved and restored on next launch.
+
+Window size
+Choose Small (380×520), Medium (480×640, default), or Large (580×760). Clicking a size button resizes the window immediately and saves the choice. After picking a preset the window still shows that size at next launch.
+
+Density
+Comfortable (default) shows entries at their standard spacing. Compact reduces padding and font size slightly, fitting 2–3 more results on screen without scrolling. Pick the one that suits your screen size.`,
+  },
+  {
+    id: "pinned-entries",
+    title: "Pinned entries",
+    tags: ["pin", "pinned", "top", "priority", "quick access"],
+    content: `Pin up to 8 entries to keep them at the top of the main list when you open ShortPath.
+
+Pinning an entry
+Hover any result row to reveal the 📍 pin button on the left side of the row. Click it to pin the entry — the icon changes to 📌 and the button stays visible. You can also pin from the expanded overlay using the 📍 button in the header.
+
+Pinned section
+When the search bar is empty, a "Pinned" section appears at the top of the results above everything else. Pinned entries are also visible in this section in the order you pinned them.
+
+During search
+When you type a search query, pins are no longer forced to the top — results rank by relevance. The pin icon still shows on pinned rows, but relevance wins.
+
+Limit
+You can pin at most 8 entries. If you try to pin a ninth, a message appears: "Unpin an entry to pin this one (max 8)." Click the 📌 icon on any pinned entry to unpin it first.`,
+  },
+  {
+    id: "sort-and-usage",
+    title: "Sort and usage counter",
+    tags: ["sort", "usage", "copy count", "recently added", "a to z", "most used"],
+    content: `The sort control and copy counter help you surface the most useful entries.
+
+Sort control
+The sort bar sits between the search box and results. Options:
+
+Relevance — when a query is active, results rank by how well they match. When no query is active, "Relevance" falls back to Most used.
+Most used — sorts by how many times you have copied each entry (highest first).
+Recently added — newest entries first.
+A to Z — alphabetical by entry title.
+
+The sort choice resets to Relevance when you restart the app.
+
+Usage counter
+Every time you copy a local entry's body to clipboard, its copy count increments by 1. The count appears as a small muted badge (e.g. "12×") to the right of the entry title in search results. The badge only appears if the count is greater than zero. Synced entries are not tracked.`,
+  },
+  {
+    id: "recent-copies",
+    title: "Recent copies",
+    tags: ["recent", "copies", "history", "session"],
+    content: `The "Recent" section shows the last 5 entries you copied this session.
+
+It appears at the top of the results list (below any pinned entries) when the search bar is empty. If you have not copied anything yet during the current session, the section does not appear.
+
+Recent copies are stored in memory only — they reset every time you restart the app. They are not saved to disk and do not appear in exports.`,
+  },
+  {
+    id: "vertical-tabs",
+    title: "Vertical tabs and tab order",
+    tags: ["tabs", "verticals", "filter", "order", "drag", "reorder"],
+    content: `The vertical tab bar lets you scope the results list to a single category.
+
+Tab bar
+When you have more than one vertical, a compact tab bar appears between the search box and results. "All" is selected by default. Click any vertical tab to filter results to that category only. Click the same tab again (or "All") to remove the filter.
+
+Keyboard
+Press Tab while the search input is focused to cycle through the vertical tabs. Shift+Tab cycles backwards.
+
+Custom tab order
+In Settings > Organization > Tab order, your verticals are listed as draggable rows. Each row shows a drag handle (⠿), the vertical name, and its entry count. Drag rows up or down to reorder them. The order persists between sessions and is applied to both the tab bar and the grouped results list.`,
+  },
+  {
+    id: "copy-then-hide",
+    title: "Copy then auto-hide",
+    tags: ["auto-hide", "copy", "behavior", "window", "close"],
+    content: `When "Hide window after copying" is enabled in Settings > Behavior, ShortPath automatically hides its window 300ms after a successful copy.
+
+The brief delay lets you see the "Copied ✓" confirmation before the window disappears. The window does not close — it hides to the tray and can be recalled with the summon hotkey.
+
+This setting is off by default. Turn it on if you prefer a one-and-done workflow where copying a reply automatically gets ShortPath out of your way.`,
+  },
+  {
     id: "troubleshooting",
     title: "Troubleshooting",
     tags: ["troubleshooting", "hotkey conflict", "not opening", "missing entries", "sync", "problem"],
