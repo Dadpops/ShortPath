@@ -6,6 +6,44 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [0.2.0] - 2026-06-09
+
+### Added
+
+- **Nested sub-folders** — sub-folders can now contain sub-folders at any depth. The Settings sub-folder tree shows expand/collapse controls for nested nodes. The entry form dropdown shows nested folders with indentation. CSV import/export includes a `subfolder` column (labels resolve automatically on import).
+- **Delete vertical** — verticals can now be deleted from Settings > Organization. Deleting a vertical permanently removes all its entries and clears it from the custom tab order. A confirmation step shows the vertical name before proceeding.
+- **In-app update notifications** — when a newer release is available, a dismissable banner appears below the header with version info and a Download button. A "Check for updates" button in Settings > About lets you check manually. When a download completes, the button changes to "Restart & Install".
+- **Favorites on Support Tools** — tool entries in the Support Tools section now have a star toggle for parity with other result types.
+- **Accent color and window personality** — 6 preset accent swatches (Ocean, Violet, Rose, Amber, Teal, Slate); window opacity slider (70–100%); Small/Medium/Large window size presets. All persist across launches.
+- **Compact density** — a Compact/Comfortable toggle in Settings > Appearance reduces row padding and font size throughout the UI.
+- **Custom tab order** — drag handles in Settings > Organization let you reorder the vertical filter tabs. Order persists across launches.
+- **Pinned entries** — pin up to 8 entries; they appear in a "Pinned" section above all results when no search is active. Pin toggle available on result rows and the detail overlay.
+- **Sort control** — compact dropdown above results: Relevance / Most used / Recently added / A to Z. Resets to Relevance on next launch. When Relevance is selected with no active query, the list sorts by most used.
+- **Usage counter** — each copy of a local entry increments a counter shown as a muted badge on the result row.
+- **Recent copies** — an in-session "Recent" section above results shows the last 5 entries copied during the current session.
+- **Copy then auto-hide** — optional toggle in Settings > Behavior; hides the window 300 ms after a successful copy.
+- **Vertical tab overflow** — when more than 5 verticals exist, the tab row collapses to a dropdown select to avoid wrapping.
+- **Reorganized Settings** — three labeled groups: Appearance, Behavior, Organization.
+
+### Fixed
+
+- Search bar clear button is now an icon-slot button (SVG X) that shows when the input is focused or non-empty, replacing the old floating `×` text button.
+- Keyboard Tab navigation now cycles the vertical filter tabs without interfering with Settings forms or entry inputs.
+- Escape cascades correctly: closes the detail overlay first, then clears search, then hides the window.
+- Enter key while the detail overlay is open copies the entry body without closing the overlay.
+
+### Changed
+
+- **Sync watcher upgraded to chokidar** — replaces `fs.watch` for more reliable change detection on network-mounted drives and cloud sync folders. `awaitWriteFinish` prevents partial reads on slow writes. The Known Limitation from v0.1.0 is resolved.
+- **Auto-update via electron-updater** — future updates can be downloaded and installed in-app. The v0.1.0 manual-reinstall workaround is no longer needed for subsequent releases.
+
+### Known Limitations
+
+- **Code signing** — Windows builds are unsigned. SmartScreen will warn on first run. Click "More info → Run anyway" to proceed. See [docs/INSTALLING.md](docs/INSTALLING.md).
+- **macOS notarisation** — not yet configured. Gatekeeper will block unsigned builds on macOS.
+
+---
+
 ## [0.1.0] - 2026-06-08
 
 ### Added
