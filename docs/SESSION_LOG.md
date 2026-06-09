@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-09 — Phase 12: onboarding, import UX, notes save, collapse-all, export-selected](sessions/2026-06-09-phase-12.md) — 4-step SetupScreen onboarding wizard; drag-drop CSV import + manual column mapping; notes Save button with auto-save; collapse-all / expand-all toggle; Export Selected checkbox tree replaces Export Mine.
 - [2026-06-09 — v0.2.0: chokidar, electron-updater, release, screenshots](sessions/2026-06-09-v0.2.0.md) — chokidar replaces fs.watch; electron-updater replaces manual GitHub API check with in-app download/install flow; v0.2.0 tagged and released; README screenshots via Playwright driver.
 - [2026-06-09 — Phase 11: nested sub-folders, delete vertical, check for updates](sessions/2026-06-09-phase-11.md) — Nested SubFolder tree, CSV subfolder column, FolderIcon, delete vertical with confirm, GitHub update check with banner and Settings button, favorites on Support Tools, search clear icon, vertical tab overflow to select.
 - [2026-06-08 — Phase 10: customization and polish](sessions/2026-06-08-phase-10.md) — Accent color, opacity, window size, density, vertical tabs, tab order, pin entries, sort control, usage counter, recent copies, keyboard nav upgrades, auto-hide, Settings reorganization.
