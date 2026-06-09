@@ -66,6 +66,8 @@ contextBridge.exposeInMainWorld("shortpath", {
   setVerticalOrder: (order: string[]) => ipcRenderer.invoke("set-vertical-order", order),
   setAutoHideOnCopy: (value: boolean) => ipcRenderer.invoke("set-auto-hide-on-copy", value),
   setAlwaysOnTop: (value: boolean) => ipcRenderer.invoke("set-always-on-top", value),
+  clearSampleData: () => ipcRenderer.invoke("clear-sample-data"),
+  setPinCap: (cap: number) => ipcRenderer.invoke("set-pin-cap", cap),
   togglePin: (entryId: string) => ipcRenderer.invoke("toggle-pin", entryId),
   incrementCopyCount: (entryId: string) => ipcRenderer.invoke("increment-copy-count", entryId),
 

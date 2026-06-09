@@ -31,6 +31,9 @@ export interface AppSettings {
   verticalOrder?: string[];   // ordered array of vertical IDs
   autoHideOnCopy?: boolean;
   alwaysOnTop?: boolean;
+  firstLaunchNotified?: boolean; // true once the first-launch tray notification has fired
+  pinCap?: number;               // max pinned entries; default 8
+  lastStreamDeckExport?: string; // ISO 8601 timestamp of last Stream Deck profile export
 }
 
 const DEFAULT_SETTINGS: AppSettings = {

@@ -23,7 +23,7 @@ import chokidar from "chokidar";
 const pdfParse = require("pdf-parse") as (buf: Buffer, opts?: Record<string, unknown>) => Promise<{ text: string; numpages: number }>;
 
 import { autoUpdater } from "electron-updater";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, replaceEntriesFromSource, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, replaceEntriesFromSource, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, clearSampleData, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseCsvPreviewWithMapping, importCsvWithMapping, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
@@ -162,27 +162,14 @@ function buildActiveIcon(base: ReturnType<typeof nativeImage.createFromPath>) {
   return nativeImage.createFromBitmap(bitmap, { width, height });
 }
 
-function createTray() {
-  trayIconBase = nativeImage.createFromPath(
-    path.join(app.getAppPath(), "icons/png/tray-32.png")
-  );
-  trayIconActive = buildActiveIcon(trayIconBase);
-  tray = new Tray(trayIconBase);
-
-  const contextMenu = Menu.buildFromTemplate([
+function buildTrayMenu() {
+  const hotkeyLabel = settings?.hotkey ?? "CommandOrControl+Shift+Space";
+  return Menu.buildFromTemplate([
     { label: "Show ShortPath", click: toggleWindow },
+    { label: hotkeyLabel, enabled: false },
     { type: "separator" },
     { label: "Import CSV", click: handleImportFromTray },
     { label: "Export CSV", click: handleExportFromTray },
-    {
-      label: "Import queued browser captures",
-      click: () => {
-        new Notification({
-          title: "ShortPath Browser Extension",
-          body: "Queued captures are imported automatically when the extension detects ShortPath is running. Open the extension popup to check queue status.",
-        }).show();
-      },
-    },
     { type: "separator" },
     {
       label: "Settings",
@@ -195,9 +182,18 @@ function createTray() {
     { type: "separator" },
     { label: "Quit", click: () => app.quit() },
   ]);
+}
 
-  tray.setToolTip("ShortPath");
-  tray.setContextMenu(contextMenu);
+function createTray() {
+  trayIconBase = nativeImage.createFromPath(
+    path.join(app.getAppPath(), "icons/png/tray-32.png")
+  );
+  trayIconActive = buildActiveIcon(trayIconBase);
+  tray = new Tray(trayIconBase);
+
+  const hotkeyLabel = settings?.hotkey ?? "CommandOrControl+Shift+Space";
+  tray.setToolTip(`ShortPath — Press ${hotkeyLabel} to open`);
+  tray.setContextMenu(buildTrayMenu());
   tray.on("click", toggleWindow);
 }
 
@@ -475,24 +471,29 @@ function splitPdfText(text: string): ImportSection[] {
 }
 
 function registerIpcHandlers() {
-  ipcMain.handle("load-entries", () => ({
-    entries: store.entries,
-    verticals: store.verticals,
-    recents: store.recents,
-    favorites: store.favorites,
-    pinned: store.pinned,
-    fontSize: settings.fontSize ?? 13,
-    sourceMode: settings.sourceMode ?? null,
-    sourceName: settings.sourceName ?? null,
-    theme: settings.theme ?? "dark",
-    accentColor: settings.accentColor ?? null,
-    opacity: settings.opacity ?? 100,
-    windowSize: settings.windowSize ?? null,
-    density: settings.density ?? "comfortable",
-    verticalOrder: settings.verticalOrder ?? [],
-    autoHideOnCopy: settings.autoHideOnCopy ?? false,
-    alwaysOnTop: settings.alwaysOnTop ?? false,
-  }));
+  ipcMain.handle("load-entries", () => {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const recentCopies = (store.recentCopies ?? []).filter((r) => r.copiedAt > cutoff);
+    return {
+      entries: store.entries,
+      verticals: store.verticals,
+      recents: store.recents,
+      favorites: store.favorites,
+      pinned: store.pinned,
+      recentCopies,
+      fontSize: settings.fontSize ?? 13,
+      theme: settings.theme ?? "dark",
+      accentColor: settings.accentColor ?? null,
+      opacity: settings.opacity ?? 100,
+      windowSize: settings.windowSize ?? null,
+      density: settings.density ?? "comfortable",
+      verticalOrder: settings.verticalOrder ?? [],
+      autoHideOnCopy: settings.autoHideOnCopy ?? false,
+      alwaysOnTop: settings.alwaysOnTop ?? false,
+      pinCap: settings.pinCap ?? 8,
+      lastStreamDeckExport: settings.lastStreamDeckExport ?? null,
+    };
+  });
 
   ipcMain.handle(
     "create-entry",
@@ -733,6 +734,8 @@ function registerIpcHandlers() {
       zip.file(`${profileDir}Profiles/${pageUuid}/manifest.json`, JSON.stringify(pageManifest, null, 2));
       const content = await zip.generateAsync({ type: "nodebuffer" });
       fs.writeFileSync(filePath, content);
+      settings = { ...settings, lastStreamDeckExport: new Date().toISOString() };
+      saveSettings(userDataPath, settings);
       return { success: true, capped };
     } catch (err) {
       return { success: false, errors: [String(err)] };
@@ -771,6 +774,8 @@ function registerIpcHandlers() {
     verticalOrder: settings.verticalOrder ?? [],
     autoHideOnCopy: settings.autoHideOnCopy ?? false,
     alwaysOnTop: settings.alwaysOnTop ?? false,
+    pinCap: settings.pinCap ?? 8,
+    lastStreamDeckExport: settings.lastStreamDeckExport ?? null,
   }));
 
   ipcMain.handle("toggle-favorite", (_e, entryId: string) => {
@@ -832,7 +837,8 @@ function registerIpcHandlers() {
 
   ipcMain.handle("toggle-pin", (_e, entryId: string) => {
     const alreadyPinned = store.pinned.includes(entryId);
-    if (!alreadyPinned && store.pinned.length >= 8) {
+    const cap = settings.pinCap ?? 8;
+    if (!alreadyPinned && store.pinned.length >= cap) {
       return { ok: false, limitReached: true };
     }
     store = togglePin(store, entryId);
@@ -876,6 +882,10 @@ function registerIpcHandlers() {
     if (ok) {
       settings = { ...settings, hotkey: accelerator };
       saveSettings(userDataPath, settings);
+      if (tray) {
+        tray.setToolTip(`ShortPath — Press ${accelerator} to open`);
+        tray.setContextMenu(buildTrayMenu());
+      }
     }
     return { ok };
   });
@@ -971,6 +981,17 @@ function registerIpcHandlers() {
     store = clearLocalEntries(store);
     saveStore(userDataPath, store);
     pushStoreUpdate();
+  });
+
+  ipcMain.handle("clear-sample-data", () => {
+    store = clearSampleData(store);
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
+  });
+
+  ipcMain.handle("set-pin-cap", (_e, cap: number) => {
+    settings = { ...settings, pinCap: cap };
+    saveSettings(userDataPath, settings);
   });
 
   ipcMain.handle("add-subfolder", (_e, verticalId: string, label: string, parentSubFolderId?: string) => {
@@ -1120,6 +1141,18 @@ app.whenReady().then(() => {
   createWindow();
   registerHotkey(settings.hotkey);
   startCaptureServer();
+
+  // One-time first-launch notification informing the user of the global hotkey.
+  if (!settings.firstLaunchNotified) {
+    setTimeout(() => {
+      new Notification({
+        title: "ShortPath is running",
+        body: `Press ${settings.hotkey} to open ShortPath from any app.`,
+      }).show();
+      settings = { ...settings, firstLaunchNotified: true };
+      saveSettings(userDataPath, settings);
+    }, 3000);
+  }
 
   // Migrate legacy single-source sync to syncSources array.
   if (settings.syncPath && !(settings.syncSources ?? []).length) {
