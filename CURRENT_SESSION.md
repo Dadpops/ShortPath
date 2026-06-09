@@ -1,6 +1,6 @@
 # Current Session State
 
-**Status:** Phase 13 in progress — pin window, rich text editor, duplicate detection, Stream Deck export all shipped. README overhauled for open source. Phase 13 checklist mostly complete.
+**Status:** v0.3.0 released — Phase 13 complete. Pin window, Tiptap rich text editor, duplicate detection, Stream Deck export, README landing page overhaul.
 
 **Last session:** [2026-06-09 — Phase 13: pin window, Tiptap, duplicate detection, Stream Deck export](docs/sessions/2026-06-09-phase-13.md)
 
