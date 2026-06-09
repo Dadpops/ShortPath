@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Vertical } from "@shared/types";
+import type { Entry, Vertical } from "@shared/types";
 import { formatAccelerator } from "@shared/platform";
 import { HELP_TOPICS } from "../features/help/topics";
 
@@ -9,10 +9,24 @@ interface Props {
   verticals: Vertical[];
   onVerticalRenamed: (id: string, newLabel: string) => void;
   onVerticalAdded: (v: Vertical) => void;
+  entries: Entry[];
+  verticalOrder: string[];
+  onVerticalOrderChange: (order: string[]) => void;
+  autoHideOnCopy: boolean;
+  onAutoHideOnCopyChange: (val: boolean) => void;
 }
 
 type HotkeyState = "idle" | "capturing" | "saving" | "error";
-type SectionKey = "appearance" | "data" | "hotkey" | "window" | "verticals";
+type SectionKey = "appearance" | "behavior" | "organization" | "data";
+
+const ACCENT_PRESETS = [
+  { label: "Ocean",  value: "#2563eb" },
+  { label: "Violet", value: "#7c3aed" },
+  { label: "Rose",   value: "#e11d48" },
+  { label: "Amber",  value: "#d97706" },
+  { label: "Teal",   value: "#0d9488" },
+  { label: "Slate",  value: "#475569" },
+] as const;
 
 function buildAccelerator(e: KeyboardEvent): string | null {
   if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return null;
@@ -32,8 +46,10 @@ function buildAccelerator(e: KeyboardEvent): string | null {
   return parts.join("+");
 }
 
-
-export default function SettingsScreen({ onClose, onNavigate, verticals, onVerticalRenamed, onVerticalAdded }: Props) {
+export default function SettingsScreen({
+  onClose, onNavigate, verticals, onVerticalRenamed, onVerticalAdded,
+  entries, verticalOrder, onVerticalOrderChange, autoHideOnCopy, onAutoHideOnCopyChange,
+}: Props) {
   const [currentHotkey, setCurrentHotkey] = useState("Loading…");
   const [hotkeyState, setHotkeyState] = useState<HotkeyState>("idle");
   const [capturedAccelerator, setCapturedAccelerator] = useState<string | null>(null);
@@ -41,6 +57,10 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
   const [positionReset, setPositionReset] = useState(false);
   const [fontSize, setFontSize] = useState<number>(13);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [accentColor, setAccentColor] = useState<string | null>(null);
+  const [opacity, setOpacity] = useState(100);
+  const [windowSize, setWindowSize] = useState<"small" | "medium" | "large" | null>(null);
+  const [density, setDensity] = useState<"compact" | "comfortable">("comfortable");
   const [exportingAll, setExportingAll] = useState(false);
   const [exportingMine, setExportingMine] = useState(false);
 
@@ -65,8 +85,12 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
   const [confirmClear, setConfirmClear] = useState(false);
   const [clearing, setClearing] = useState(false);
 
+  // Tab order drag state
+  const [tabOrderDragIdx, setTabOrderDragIdx] = useState<number | null>(null);
+  const [tabOrderDragOverIdx, setTabOrderDragOverIdx] = useState<number | null>(null);
+
   const [expanded, setExpanded] = useState<Set<SectionKey>>(
-    new Set(["appearance", "data", "hotkey", "window", "verticals"])
+    new Set(["appearance", "behavior", "organization", "data"])
   );
 
   function toggleSection(key: SectionKey) {
@@ -78,10 +102,14 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
   }
 
   useEffect(() => {
-    window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t }) => {
+    window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d }) => {
       setCurrentHotkey(hotkey);
       setFontSize(fs);
       setTheme(t);
+      setAccentColor(ac);
+      setOpacity(op);
+      setWindowSize(ws);
+      setDensity(d);
     });
   }, []);
 
@@ -148,6 +176,42 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
     setTheme(t);
     document.documentElement.setAttribute("data-theme", t);
     void window.shortpath.setTheme(t);
+    // Reapply accent dim for new theme
+    if (accentColor) {
+      const r = parseInt(accentColor.slice(1, 3), 16);
+      const g = parseInt(accentColor.slice(3, 5), 16);
+      const b = parseInt(accentColor.slice(5, 7), 16);
+      const alpha = t === "light" ? 0.12 : 0.15;
+      document.documentElement.style.setProperty("--color-accent-dim", `rgba(${r},${g},${b},${alpha})`);
+    }
+  }
+
+  function handleSetAccent(color: string) {
+    setAccentColor(color);
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+    const alpha = isDark ? 0.15 : 0.12;
+    document.documentElement.style.setProperty("--color-accent", color);
+    document.documentElement.style.setProperty("--color-accent-dim", `rgba(${r},${g},${b},${alpha})`);
+    void window.shortpath.setAccent(color);
+  }
+
+  function handleOpacityChange(value: number) {
+    setOpacity(value);
+    void window.shortpath.setOpacity(value);
+  }
+
+  function handleWindowSize(size: "small" | "medium" | "large") {
+    setWindowSize(size);
+    void window.shortpath.setWindowSize(size);
+  }
+
+  function handleDensity(d: "compact" | "comfortable") {
+    setDensity(d);
+    document.body.setAttribute("data-density", d === "compact" ? "compact" : "");
+    void window.shortpath.setDensity(d);
   }
 
   function startEditVertical(v: Vertical) {
@@ -220,6 +284,49 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
 
   const activeInfoTopic = activeInfoId ? HELP_TOPICS.find((t) => t.id === activeInfoId) : null;
 
+  // Tab order — compute ordered verticals list for drag-and-drop
+  const orderedTabVerticals: Vertical[] = verticalOrder.length > 0
+    ? [
+        ...verticalOrder.map(id => verticals.find(v => v.id === id)).filter(Boolean) as Vertical[],
+        ...verticals.filter(v => !verticalOrder.includes(v.id)),
+      ]
+    : [...verticals];
+
+  function entryCountForVertical(verticalId: string): number {
+    return entries.filter(e => e.vertical === verticalId).length;
+  }
+
+  function handleTabOrderDragStart(e: React.DragEvent, idx: number) {
+    setTabOrderDragIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function handleTabOrderDragOver(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setTabOrderDragOverIdx(idx);
+  }
+
+  function handleTabOrderDrop(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    if (tabOrderDragIdx === null || tabOrderDragIdx === idx) {
+      setTabOrderDragIdx(null);
+      setTabOrderDragOverIdx(null);
+      return;
+    }
+    const newOrder = [...orderedTabVerticals];
+    const [moved] = newOrder.splice(tabOrderDragIdx, 1);
+    newOrder.splice(idx, 0, moved);
+    onVerticalOrderChange(newOrder.map(v => v.id));
+    setTabOrderDragIdx(null);
+    setTabOrderDragOverIdx(null);
+  }
+
+  function handleTabOrderDragEnd() {
+    setTabOrderDragIdx(null);
+    setTabOrderDragOverIdx(null);
+  }
+
   function SectionHeader({ title, sectionKey }: { title: string; sectionKey: SectionKey }) {
     return (
       <button className="settings-section-header" onClick={() => toggleSection(sectionKey)}>
@@ -247,6 +354,7 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
 
       <div className="settings-body">
 
+        {/* ── Appearance ────────────────────────────────────────── */}
         <section className="settings-section">
           <SectionHeader title="Appearance" sectionKey="appearance" />
           {expanded.has("appearance") && (
@@ -271,67 +379,156 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
                   ))}
                 </div>
               </div>
+              <div className="settings-row">
+                <div className="settings-row-label">Accent color</div>
+                <div className="accent-swatches">
+                  {ACCENT_PRESETS.map((preset) => {
+                    const isActive = accentColor === preset.value;
+                    return (
+                      <button
+                        key={preset.value}
+                        className={`accent-swatch${isActive ? " active" : ""}`}
+                        style={{
+                          backgroundColor: preset.value,
+                          outline: isActive ? `2px solid ${preset.value}` : "none",
+                          outlineOffset: isActive ? "3px" : undefined,
+                        }}
+                        title={preset.label}
+                        onClick={() => handleSetAccent(preset.value)}
+                        aria-label={preset.label}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="settings-row" style={{ flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+                <div className="settings-row" style={{ width: "100%", gap: 12 }}>
+                  <div className="settings-row-label">Opacity</div>
+                  <span style={{ fontSize: 12, color: "var(--color-text-muted)", minWidth: 30, textAlign: "right" }}>{opacity}%</span>
+                  <input
+                    type="range" min={70} max={100} step={1} value={opacity}
+                    onChange={(e) => handleOpacityChange(Number(e.target.value))}
+                    className="font-size-slider"
+                    style={{ width: 110 }}
+                  />
+                </div>
+                <p className="settings-row-note">Useful if you keep ShortPath open alongside your helpdesk.</p>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-label">Window size</div>
+                <div className="font-size-control">
+                  {(["small", "medium", "large"] as const).map((s) => (
+                    <button
+                      key={s}
+                      className={`font-size-btn${windowSize === s ? " active" : ""}`}
+                      onClick={() => handleWindowSize(s)}
+                    >
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-label">Density</div>
+                <div className="font-size-control">
+                  {(["comfortable", "compact"] as const).map((d) => (
+                    <button
+                      key={d}
+                      className={`font-size-btn${density === d ? " active" : ""}`}
+                      onClick={() => handleDensity(d)}
+                    >
+                      {d.charAt(0).toUpperCase() + d.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </section>
 
+        {/* ── Behavior ──────────────────────────────────────────── */}
         <section className="settings-section">
-          <SectionHeader title="Data" sectionKey="data" />
-          {expanded.has("data") && (
+          <SectionHeader title="Behavior" sectionKey="behavior" />
+          {expanded.has("behavior") && (
             <div className="settings-section-body">
-              <div className="settings-data-grid">
-                {dataActions.map((action) => (
-                  <div key={action.label} className="settings-data-cell">
-                    <button className="settings-data-btn" onClick={action.onClick} disabled={action.disabled}>
-                      {action.label}
-                    </button>
+              <div className="settings-row">
+                <div className="settings-row-label">Hide window after copying</div>
+                <div className="font-size-control">
+                  {([false, true] as const).map((val) => (
                     <button
-                      className={`settings-info-btn${activeInfoId === action.topicId ? " active" : ""}`}
-                      onClick={() => toggleInfo(action.topicId)}
-                      title="What does this do?"
+                      key={String(val)}
+                      className={`font-size-btn${autoHideOnCopy === val ? " active" : ""}`}
+                      onClick={() => onAutoHideOnCopyChange(val)}
                     >
-                      ⓘ
+                      {val ? "On" : "Off"}
                     </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-label">Summon hotkey</div>
+                <div className="settings-hotkey-display">
+                  {hotkeyState === "capturing"
+                    ? capturedAccelerator ? formatAccelerator(capturedAccelerator, window.shortpath.platform) : "Press shortcut…"
+                    : formatAccelerator(currentHotkey, window.shortpath.platform)}
+                </div>
+              </div>
+              {hotkeyState === "idle" && (
+                <button className="btn-secondary settings-action-btn"
+                  onClick={() => { setHotkeyState("capturing"); setCapturedAccelerator(null); }}>
+                  Change hotkey
+                </button>
+              )}
+              {hotkeyState === "capturing" && (
+                <div className="settings-capture-hint">Hold a key combination, then release. Press Esc to cancel.</div>
+              )}
+              {hotkeyState === "saving" && <div className="settings-capture-hint">Registering…</div>}
+              {hotkeyState === "error" && (
+                <>
+                  <p className="form-error">{errorMsg}</p>
+                  <button className="btn-secondary settings-action-btn"
+                    onClick={() => { setHotkeyState("capturing"); setErrorMsg(""); setCapturedAccelerator(null); }}>
+                    Try again
+                  </button>
+                </>
+              )}
+
+              <div className="settings-row">
+                <div className="settings-row-label">Position and size are saved automatically.</div>
+              </div>
+              <button className="btn-secondary settings-action-btn" onClick={handleResetPosition}>
+                {positionReset ? "Reset ✓" : "Reset to default position"}
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* ── Organization ──────────────────────────────────────── */}
+        <section className="settings-section">
+          <SectionHeader title="Organization" sectionKey="organization" />
+          {expanded.has("organization") && (
+            <div className="settings-section-body">
+              <div className="settings-group-label">Tab order</div>
+              <div className="tab-order-list">
+                {orderedTabVerticals.map((v, idx) => (
+                  <div
+                    key={v.id}
+                    className={`tab-order-row${tabOrderDragOverIdx === idx ? " drag-over" : ""}`}
+                    draggable
+                    onDragStart={(e) => handleTabOrderDragStart(e, idx)}
+                    onDragOver={(e) => handleTabOrderDragOver(e, idx)}
+                    onDrop={(e) => handleTabOrderDrop(e, idx)}
+                    onDragEnd={handleTabOrderDragEnd}
+                  >
+                    <span className="drag-handle" title="Drag to reorder">⠿</span>
+                    <span className="tab-order-name">{v.label}</span>
+                    <span className="tab-order-count">{entryCountForVertical(v.id)}</span>
                   </div>
                 ))}
               </div>
-              {activeInfoTopic && (
-                <div className="settings-info-popup">
-                  <div className="settings-info-popup-title">{activeInfoTopic.title}</div>
-                  <button className="settings-info-popup-close" onClick={() => setActiveInfoId(null)} aria-label="Close">✕</button>
-                  <div className="settings-info-popup-body">{activeInfoTopic.content}</div>
-                </div>
-              )}
 
-              <div className="settings-danger-zone">
-                {confirmClear ? (
-                  <div className="settings-danger-confirm">
-                    <p className="settings-danger-warning">
-                      ⚠ This will permanently delete all your local entries. Synced entries are not affected. This cannot be undone.
-                    </p>
-                    <div className="settings-danger-actions">
-                      <button className="btn-danger-lg" onClick={handleClearEntries} disabled={clearing}>
-                        {clearing ? "Clearing…" : "Yes, delete all entries"}
-                      </button>
-                      <button className="btn-secondary settings-action-btn" onClick={() => setConfirmClear(false)}>
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button className="btn-danger-outline" onClick={() => setConfirmClear(true)}>
-                    Clear all entries
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section className="settings-section">
-          <SectionHeader title="Verticals" sectionKey="verticals" />
-          {expanded.has("verticals") && (
-            <div className="settings-section-body">
+              <div className="settings-group-label" style={{ marginTop: 12 }}>Verticals</div>
               {verticals.map((v) => (
                 <div key={v.id} className="settings-vertical-block">
                   <div className="settings-vertical-row">
@@ -456,51 +653,56 @@ export default function SettingsScreen({ onClose, onNavigate, verticals, onVerti
           )}
         </section>
 
+        {/* ── Data ──────────────────────────────────────────────── */}
         <section className="settings-section">
-          <SectionHeader title="Global hotkey" sectionKey="hotkey" />
-          {expanded.has("hotkey") && (
+          <SectionHeader title="Data" sectionKey="data" />
+          {expanded.has("data") && (
             <div className="settings-section-body">
-              <div className="settings-row">
-                <div className="settings-row-label">Current shortcut</div>
-                <div className="settings-hotkey-display">
-                  {hotkeyState === "capturing"
-                    ? capturedAccelerator ? formatAccelerator(capturedAccelerator, window.shortpath.platform) : "Press shortcut…"
-                    : formatAccelerator(currentHotkey, window.shortpath.platform)}
+              <div className="settings-data-grid">
+                {dataActions.map((action) => (
+                  <div key={action.label} className="settings-data-cell">
+                    <button className="settings-data-btn" onClick={action.onClick} disabled={action.disabled}>
+                      {action.label}
+                    </button>
+                    <button
+                      className={`settings-info-btn${activeInfoId === action.topicId ? " active" : ""}`}
+                      onClick={() => toggleInfo(action.topicId)}
+                      title="What does this do?"
+                    >
+                      ⓘ
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {activeInfoTopic && (
+                <div className="settings-info-popup">
+                  <div className="settings-info-popup-title">{activeInfoTopic.title}</div>
+                  <button className="settings-info-popup-close" onClick={() => setActiveInfoId(null)} aria-label="Close">✕</button>
+                  <div className="settings-info-popup-body">{activeInfoTopic.content}</div>
                 </div>
-              </div>
-              {hotkeyState === "idle" && (
-                <button className="btn-secondary settings-action-btn"
-                  onClick={() => { setHotkeyState("capturing"); setCapturedAccelerator(null); }}>
-                  Change hotkey
-                </button>
               )}
-              {hotkeyState === "capturing" && (
-                <div className="settings-capture-hint">Hold a key combination, then release. Press Esc to cancel.</div>
-              )}
-              {hotkeyState === "saving" && <div className="settings-capture-hint">Registering…</div>}
-              {hotkeyState === "error" && (
-                <>
-                  <p className="form-error">{errorMsg}</p>
-                  <button className="btn-secondary settings-action-btn"
-                    onClick={() => { setHotkeyState("capturing"); setErrorMsg(""); setCapturedAccelerator(null); }}>
-                    Try again
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-        </section>
 
-        <section className="settings-section">
-          <SectionHeader title="Window" sectionKey="window" />
-          {expanded.has("window") && (
-            <div className="settings-section-body">
-              <div className="settings-row">
-                <div className="settings-row-label">Position and size are saved automatically.</div>
+              <div className="settings-danger-zone">
+                {confirmClear ? (
+                  <div className="settings-danger-confirm">
+                    <p className="settings-danger-warning">
+                      ⚠ This will permanently delete all your local entries. Synced entries are not affected. This cannot be undone.
+                    </p>
+                    <div className="settings-danger-actions">
+                      <button className="btn-danger-lg" onClick={handleClearEntries} disabled={clearing}>
+                        {clearing ? "Clearing…" : "Yes, delete all entries"}
+                      </button>
+                      <button className="btn-secondary settings-action-btn" onClick={() => setConfirmClear(false)}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button className="btn-danger-outline" onClick={() => setConfirmClear(true)}>
+                    Clear all entries
+                  </button>
+                )}
               </div>
-              <button className="btn-secondary settings-action-btn" onClick={handleResetPosition}>
-                {positionReset ? "Reset ✓" : "Reset to default position"}
-              </button>
             </div>
           )}
         </section>
