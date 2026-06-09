@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-09 — Phase 14: browser capture server, URL import, MD/PDF import, browser extension](sessions/2026-06-09-phase-14.md) — HTTP capture server on port 57433; URL import with Readability section picker in EntryForm; Markdown and PDF drag-in import screens; MV3 Chrome/Firefox extension with context menu, offline queue, and popup; 4 help topics.
 - [2026-06-09 — Phase 13: pin window, Tiptap, duplicate detection, Stream Deck export](sessions/2026-06-09-phase-13.md) — Always-on-top pin button; Tiptap rich text editor with toolbar and copy-mode toggle; duplicate detection on CSV import (per-row resolution) and manual add (inline warning); Stream Deck .sdProfile ZIP export; README overhauled for open source.
 - [2026-06-09 — Phase 12: onboarding, import UX, notes save, collapse-all, export-selected](sessions/2026-06-09-phase-12.md) — 4-step SetupScreen onboarding wizard; drag-drop CSV import + manual column mapping; notes Save button with auto-save; collapse-all / expand-all toggle; Export Selected checkbox tree replaces Export Mine.
 - [2026-06-09 — v0.2.0: chokidar, electron-updater, release, screenshots](sessions/2026-06-09-v0.2.0.md) — chokidar replaces fs.watch; electron-updater replaces manual GitHub API check with in-app download/install flow; v0.2.0 tagged and released; README screenshots via Playwright driver.

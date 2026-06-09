@@ -1,11 +1,11 @@
 # Current Session State
 
-**Status:** v0.3.0 released — Phase 13 complete. Pin window, Tiptap rich text editor, duplicate detection, Stream Deck export, README landing page overhaul.
+**Status:** Phase 14 complete. HTTP capture server, URL import, Markdown/PDF drag-in import, Chrome/Firefox browser extension with offline queue.
 
-**Last session:** [2026-06-09 — Phase 13: pin window, Tiptap, duplicate detection, Stream Deck export](docs/sessions/2026-06-09-phase-13.md)
+**Last session:** [2026-06-09 — Phase 14: browser capture server, URL import, MD/PDF import, browser extension](docs/sessions/2026-06-09-phase-14.md)
 
 **Open items:**
 - Code signing (Windows certificate, Apple Developer ID) — unlocks SmartScreen bypass and macOS Gatekeeper.
 - macOS build — no blocker other than signing; the dist:mac script is ready.
-- Consider a v0.3.0 release to tag Phase 13 work.
-- README screenshot (docs/screenshot.png) does not exist yet — regenerate with `node scripts/screenshot.mjs`.
+- Browser extension icons need proper artwork (currently placeholder blue squares).
+- Browser extension not yet submitted to Chrome Web Store or Firefox Add-ons.
