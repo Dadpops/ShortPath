@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import type { Entry, Vertical } from "@shared/types";
+import type { Entry, Vertical, SubFolder } from "@shared/types";
 
 interface Props {
   entry?: Entry;        // undefined = add mode
@@ -48,7 +48,12 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
     () => verticals.find((v) => v.id === (isNewVertical ? "" : verticalId)),
     [verticals, verticalId, isNewVertical]
   );
-  const availableSubFolders = selectedVertical?.subFolders ?? [];
+  const flatSubFolders = useMemo(() => {
+    function flatten(subs: SubFolder[] | undefined, depth: number): Array<{ id: string; label: string; depth: number }> {
+      return (subs ?? []).flatMap((sf) => [{ id: sf.id, label: sf.label, depth }, ...flatten(sf.subFolders, depth + 1)]);
+    }
+    return flatten(selectedVertical?.subFolders, 0);
+  }, [selectedVertical]);
 
   const finalVerticalId = isNewVertical ? slugify(newVerticalLabel) : verticalId;
 
@@ -165,7 +170,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
           )}
         </div>
 
-        {availableSubFolders.length > 0 && (
+        {flatSubFolders.length > 0 && (
           <div className="form-field">
             <label className="form-label">Sub-folder</label>
             <select
@@ -175,8 +180,10 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
               disabled={saving}
             >
               <option value="">— None —</option>
-              {availableSubFolders.map((sf) => (
-                <option key={sf.id} value={sf.id}>{sf.label}</option>
+              {flatSubFolders.map(({ id, label, depth }) => (
+                <option key={id} value={id}>
+                  {depth > 0 ? `${"  ".repeat(depth)}↳ ` : ""}{label}
+                </option>
               ))}
             </select>
           </div>

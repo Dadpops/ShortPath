@@ -182,20 +182,63 @@ export function clearLocalEntries(store: StoreData): StoreData {
   };
 }
 
-export function addSubFolder(store: StoreData, verticalId: string, label: string): { store: StoreData; subFolder: SubFolder } {
+// ── SubFolder tree helpers ────────────────────────────────────────────────────
+
+function getAllSubFolderIds(subFolders: SubFolder[]): string[] {
+  return subFolders.flatMap((sf) => [sf.id, ...getAllSubFolderIds(sf.subFolders ?? [])]);
+}
+
+function addToTree(subFolders: SubFolder[], parentId: string | null, newSf: SubFolder): SubFolder[] {
+  if (!parentId) return [...subFolders, newSf];
+  return subFolders.map((sf) =>
+    sf.id === parentId
+      ? { ...sf, subFolders: [...(sf.subFolders ?? []), newSf] }
+      : { ...sf, subFolders: addToTree(sf.subFolders ?? [], parentId, newSf) }
+  );
+}
+
+function renameInTree(subFolders: SubFolder[], id: string, newLabel: string): SubFolder[] {
+  return subFolders.map((sf) =>
+    sf.id === id
+      ? { ...sf, label: newLabel }
+      : { ...sf, subFolders: renameInTree(sf.subFolders ?? [], id, newLabel) }
+  );
+}
+
+function removeFromTree(subFolders: SubFolder[], id: string): SubFolder[] {
+  return subFolders
+    .filter((sf) => sf.id !== id)
+    .map((sf) => ({ ...sf, subFolders: removeFromTree(sf.subFolders ?? [], id) }));
+}
+
+function collectSubtreeIds(subFolders: SubFolder[], rootId: string): string[] {
+  for (const sf of subFolders) {
+    if (sf.id === rootId) return [rootId, ...getAllSubFolderIds(sf.subFolders ?? [])];
+    const found = collectSubtreeIds(sf.subFolders ?? [], rootId);
+    if (found.length > 0) return found;
+  }
+  return [];
+}
+
+// ── SubFolder operations ──────────────────────────────────────────────────────
+
+export function addSubFolder(
+  store: StoreData,
+  verticalId: string,
+  label: string,
+  parentSubFolderId?: string
+): { store: StoreData; subFolder: SubFolder } {
   const slug = label.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-  const vertical = store.verticals.find((v) => v.id === verticalId);
-  const existing = vertical?.subFolders ?? [];
+  const existing = getAllSubFolderIds(store.verticals.find((v) => v.id === verticalId)?.subFolders ?? []);
   const baseId = slug || "folder";
   let id = baseId;
   let suffix = 1;
-  while (existing.find((sf) => sf.id === id)) {
-    id = `${baseId}-${suffix}`;
-    suffix++;
-  }
+  while (existing.includes(id)) { id = `${baseId}-${suffix}`; suffix++; }
   const subFolder: SubFolder = { id, label };
   const verticals = store.verticals.map((v) =>
-    v.id === verticalId ? { ...v, subFolders: [...(v.subFolders ?? []), subFolder] } : v
+    v.id === verticalId
+      ? { ...v, subFolders: addToTree(v.subFolders ?? [], parentSubFolderId ?? null, subFolder) }
+      : v
   );
   return { store: { ...store, verticals }, subFolder };
 }
@@ -203,22 +246,35 @@ export function addSubFolder(store: StoreData, verticalId: string, label: string
 export function renameSubFolder(store: StoreData, verticalId: string, subFolderId: string, newLabel: string): StoreData {
   const verticals = store.verticals.map((v) =>
     v.id === verticalId
-      ? { ...v, subFolders: (v.subFolders ?? []).map((sf) => sf.id === subFolderId ? { ...sf, label: newLabel } : sf) }
+      ? { ...v, subFolders: renameInTree(v.subFolders ?? [], subFolderId, newLabel) }
       : v
   );
   return { ...store, verticals };
 }
 
 export function removeSubFolder(store: StoreData, verticalId: string, subFolderId: string): StoreData {
+  const removedIds = new Set(
+    collectSubtreeIds(store.verticals.find((v) => v.id === verticalId)?.subFolders ?? [], subFolderId)
+  );
   const verticals = store.verticals.map((v) =>
-    v.id === verticalId
-      ? { ...v, subFolders: (v.subFolders ?? []).filter((sf) => sf.id !== subFolderId) }
-      : v
+    v.id === verticalId ? { ...v, subFolders: removeFromTree(v.subFolders ?? [], subFolderId) } : v
   );
   const entries = store.entries.map((e) =>
-    e.subFolderId === subFolderId && e.vertical === verticalId ? { ...e, subFolderId: undefined } : e
+    e.subFolderId && removedIds.has(e.subFolderId) ? { ...e, subFolderId: undefined } : e
   );
   return { ...store, verticals, entries };
+}
+
+export function deleteVertical(store: StoreData, verticalId: string): StoreData {
+  const removedIds = new Set(store.entries.filter((e) => e.vertical === verticalId).map((e) => e.id));
+  return {
+    ...store,
+    verticals: store.verticals.filter((v) => v.id !== verticalId),
+    entries: store.entries.filter((e) => e.vertical !== verticalId),
+    recents: store.recents.filter((id) => !removedIds.has(id)),
+    favorites: store.favorites.filter((id) => !removedIds.has(id)),
+    pinned: store.pinned.filter((id) => !removedIds.has(id)),
+  };
 }
 
 export function addVertical(store: StoreData, label: string): { store: StoreData; vertical: Vertical } {

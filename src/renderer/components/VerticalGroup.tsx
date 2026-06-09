@@ -1,6 +1,7 @@
 import { useState } from "react";
-import type { Entry, VerticalGroup, SubFolder } from "@shared/types";
+import type { Entry, VerticalGroup, SubFolder, SearchResult } from "@shared/types";
 import ResultItem from "./ResultItem";
+import FolderIcon from "./FolderIcon";
 
 interface Props {
   group: VerticalGroup;
@@ -16,11 +17,23 @@ interface Props {
   onTogglePin?: (id: string) => void;
 }
 
-export default function VerticalGroupComponent({ group, subFolders, onToggle, onEdit, onCopy, onOpen, focusedEntryId, favorites, onToggleFavorite, pinned, onTogglePin }: Props) {
+function getAllIds(subFolders: SubFolder[]): string[] {
+  return subFolders.flatMap((sf) => [sf.id, ...getAllIds(sf.subFolders ?? [])]);
+}
+
+function countInSubtree(sf: SubFolder, results: SearchResult[]): number {
+  const direct = results.filter((r) => r.entry.subFolderId === sf.id).length;
+  return direct + (sf.subFolders ?? []).reduce((n, child) => n + countInSubtree(child, results), 0);
+}
+
+export default function VerticalGroupComponent({
+  group, subFolders, onToggle, onEdit, onCopy, onOpen,
+  focusedEntryId, favorites, onToggleFavorite, pinned, onTogglePin,
+}: Props) {
   const hasSubs = (subFolders?.length ?? 0) > 0;
 
   const [expandedSubs, setExpandedSubs] = useState<Set<string>>(
-    () => new Set(subFolders?.map((sf) => sf.id) ?? [])
+    () => new Set(getAllIds(subFolders ?? []))
   );
 
   function toggleSub(id: string) {
@@ -32,12 +45,50 @@ export default function VerticalGroupComponent({ group, subFolders, onToggle, on
   }
 
   const topLevel = group.results.filter((r) => !r.entry.subFolderId);
-  const inSubs = hasSubs
-    ? (subFolders ?? []).map((sf) => ({
-        subFolder: sf,
-        results: group.results.filter((r) => r.entry.subFolderId === sf.id),
-      })).filter((g) => g.results.length > 0)
-    : [];
+
+  function renderSubFolder(sf: SubFolder, depth: number): React.ReactNode {
+    const directResults = group.results.filter((r) => r.entry.subFolderId === sf.id);
+    const childSubs = sf.subFolders ?? [];
+    const total = countInSubtree(sf, group.results);
+    const isOpen = expandedSubs.has(sf.id);
+
+    return (
+      <div key={sf.id} className="subfolder-group" style={depth > 0 ? { marginLeft: 14 } : undefined}>
+        <button className="subfolder-header" onClick={() => toggleSub(sf.id)}>
+          <span className={`subfolder-chevron${isOpen ? " expanded" : ""}`}>›</span>
+          <FolderIcon open={isOpen} />
+          <span className="subfolder-label">{sf.label}</span>
+          <span className="subfolder-count">{total}</span>
+        </button>
+        {isOpen && (
+          <>
+            {directResults.length > 0 && (
+              <ul className="result-list subfolder-result-list">
+                {directResults.map((result) => (
+                  <ResultItem
+                    key={result.entry.id}
+                    result={result}
+                    onEdit={onEdit}
+                    onCopy={onCopy}
+                    onOpen={onOpen}
+                    isFocused={focusedEntryId === result.entry.id}
+                    isFavorite={favorites?.has(result.entry.id)}
+                    onToggleFavorite={onToggleFavorite}
+                    isPinned={pinned?.has(result.entry.id)}
+                    onTogglePin={onTogglePin}
+                  />
+                ))}
+              </ul>
+            )}
+            {childSubs.map((child) => renderSubFolder(child, depth + 1))}
+            {directResults.length === 0 && childSubs.length === 0 && (
+              <p className="subfolder-empty-hint">No entries</p>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="vertical-group">
@@ -67,35 +118,7 @@ export default function VerticalGroupComponent({ group, subFolders, onToggle, on
             </ul>
           )}
 
-          {inSubs.map(({ subFolder, results }) => (
-            <div key={subFolder.id} className="subfolder-group">
-              <button
-                className="subfolder-header"
-                onClick={() => toggleSub(subFolder.id)}
-              >
-                <span className={`subfolder-chevron${expandedSubs.has(subFolder.id) ? " expanded" : ""}`}>›</span>
-                <span className="subfolder-icon">📁</span>
-                <span className="subfolder-label">{subFolder.label}</span>
-                <span className="subfolder-count">{results.length}</span>
-              </button>
-              {expandedSubs.has(subFolder.id) && (
-                <ul className="result-list subfolder-result-list">
-                  {results.map((result) => (
-                    <ResultItem
-                      key={result.entry.id}
-                      result={result}
-                      onEdit={onEdit}
-                      onCopy={onCopy}
-                      onOpen={onOpen}
-                      isFocused={focusedEntryId === result.entry.id}
-                      isFavorite={favorites?.has(result.entry.id)}
-                      onToggleFavorite={onToggleFavorite}
-                    />
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
+          {hasSubs && (subFolders ?? []).map((sf) => renderSubFolder(sf, 0))}
         </>
       )}
     </div>

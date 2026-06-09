@@ -10,6 +10,7 @@ export type VerticalId =
 export interface SubFolder {
   id: string;
   label: string;
+  subFolders?: SubFolder[];
 }
 
 export interface Vertical {
@@ -104,4 +105,7 @@ export const IPC = {
   SET_DENSITY: "set-density",
   SET_VERTICAL_ORDER: "set-vertical-order",
   SET_AUTO_HIDE_ON_COPY: "set-auto-hide-on-copy",
+  CHECK_FOR_UPDATES: "check-for-updates",
+  UPDATE_AVAILABLE: "update-available",
+  DELETE_VERTICAL: "delete-vertical",
 } as const;

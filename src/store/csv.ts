@@ -1,6 +1,6 @@
 import Papa from "papaparse";
 import { randomUUID } from "crypto";
-import type { Entry } from "../shared/types";
+import type { Entry, Vertical, SubFolder } from "../shared/types";
 import type { StoreData } from "./schema";
 
 const REQUIRED_COLUMNS = ["title", "vertical", "type"] as const;
@@ -10,18 +10,58 @@ const VALID_TYPES: Entry["type"][] = ["reply", "doc", "sop", "link", "tool"];
 const URL_COLUMN = "url";
 
 // Locked column order for export. source is internal and never written to CSV.
-const EXPORT_COLUMNS = ["title", "vertical", "type", "body", URL_COLUMN, "tags", "id", "createdAt", "updatedAt"] as const;
+const EXPORT_COLUMNS = ["title", "vertical", "type", "subfolder", "body", URL_COLUMN, "tags", "id", "createdAt", "updatedAt"] as const;
 
 interface CsvRow {
   title?: string;
   vertical?: string;
   type?: string;
+  subfolder?: string;
   body?: string;
   url?: string;
   tags?: string;
   id?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+// ── Subfolder helpers ──────────────────────────────────────────────────────────
+
+function getAllSubFolderIds(subFolders: SubFolder[]): string[] {
+  return subFolders.flatMap((sf) => [sf.id, ...getAllSubFolderIds(sf.subFolders ?? [])]);
+}
+
+function findSubFolderByLabel(subFolders: SubFolder[], label: string): SubFolder | undefined {
+  const lower = label.toLowerCase();
+  for (const sf of subFolders) {
+    if (sf.label.toLowerCase() === lower) return sf;
+    const found = findSubFolderByLabel(sf.subFolders ?? [], label);
+    if (found) return found;
+  }
+}
+
+function findSubFolderById(subFolders: SubFolder[], id: string): SubFolder | undefined {
+  for (const sf of subFolders) {
+    if (sf.id === id) return sf;
+    const found = findSubFolderById(sf.subFolders ?? [], id);
+    if (found) return found;
+  }
+}
+
+// Find an existing subfolder by label, or create a new top-level one.
+function ensureSubFolder(vertical: Vertical, label: string): { vertical: Vertical; subFolder: SubFolder } {
+  const existing = findSubFolderByLabel(vertical.subFolders ?? [], label);
+  if (existing) return { vertical, subFolder: existing };
+  const slug = label.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || "folder";
+  const existingIds = getAllSubFolderIds(vertical.subFolders ?? []);
+  let id = slug;
+  let n = 1;
+  while (existingIds.includes(id)) { id = `${slug}-${n}`; n++; }
+  const subFolder: SubFolder = { id, label };
+  return {
+    vertical: { ...vertical, subFolders: [...(vertical.subFolders ?? []), subFolder] },
+    subFolder,
+  };
 }
 
 export interface ImportResult {
@@ -36,6 +76,7 @@ export interface CsvPreviewRow {
   title: string;
   vertical: string;
   type: string;
+  subfolder: string;
   hasBody: boolean;
   hasUrl: boolean;
   tags: string;
@@ -49,16 +90,17 @@ export interface CsvPreviewResult {
 }
 
 // Template content bundled inline so it's accessible in packaged builds.
-export const CSV_TEMPLATE_CONTENT = `title,vertical,type,body,url,tags
-Refund request — standard response,Saved Replies,reply,"Hi [Name],
+// Column order matches EXPORT_COLUMNS. subfolder is optional — leave blank to place entries at the top level.
+export const CSV_TEMPLATE_CONTENT = `title,vertical,type,subfolder,body,url,tags
+Refund request — standard response,Saved Replies,reply,Billing,"Hi [Name],
 
 Thanks for reaching out. I've gone ahead and processed your refund. You should see the credit back to your original payment method within 5-10 business days depending on your bank.
 
 Let me know if there's anything else I can help with!
 
 Best,
-[Your name]",,billing|refund|payment
-How to reset your password,Documentation,doc,"To reset your password:
+[Your name]",, billing|refund|payment
+How to reset your password,Documentation,doc,,"To reset your password:
 1. Go to the login page and click ""Forgot password?""
 2. Enter your email address and click Send.
 3. Check your inbox for the reset email (check spam if you don't see it).
@@ -66,13 +108,13 @@ How to reset your password,Documentation,doc,"To reset your password:
 5. Choose a new password and confirm it.
 
 If you don't receive the email within a few minutes, make sure the address matches the one on your account.",https://help.example.com/password-reset,password reset|account|login
-New ticket escalation SOP,Internal SOPs,sop,"1. Confirm the issue cannot be resolved at Tier 1 (check KB and saved replies first).
+New ticket escalation SOP,Internal SOPs,sop,,"1. Confirm the issue cannot be resolved at Tier 1 (check KB and saved replies first).
 2. Collect: account ID, error message (exact text or screenshot), steps the customer already tried.
 3. Open a Tier 2 ticket in the support portal - link the original ticket in the description.
 4. Set priority based on impact: P1 = service down, P2 = core feature broken, P3 = degraded/workaround exists.
 5. Notify the customer that their case has been escalated and give a response SLA.
 6. Monitor the Tier 2 queue for updates and relay them to the customer promptly.",,escalation|tier-2|sop
-Statuspage - live incident feed,Support Tools,tool,,https://status.example.com,status|incidents|uptime
+Statuspage - live incident feed,Support Tools,tool,,,https://status.example.com,status|incidents|uptime
 `;
 
 function parseRows(csvString: string): { data: CsvRow[]; parseErrors: string[] } {
@@ -113,6 +155,7 @@ export function parseCsvPreview(csvString: string): CsvPreviewResult {
         title: row.title!.trim(),
         vertical: row.vertical!.trim(),
         type: row.type!.trim(),
+        subfolder: row.subfolder?.trim() ?? "",
         hasBody: !!row.body?.trim(),
         hasUrl: !!row.url?.trim(),
         tags: row.tags?.trim() ?? "",
@@ -166,6 +209,19 @@ export function importCsv(
       verticals = [...verticals, { id: vertical, label: vertical, builtIn: false }];
     }
 
+    // Resolve subfolder: find or create by label within the vertical.
+    // undefined column = column absent from CSV (preserve on update); "" = clear; label = assign.
+    let subFolderId: string | undefined;
+    const sfLabel = row.subfolder?.trim();
+    if (sfLabel) {
+      const vertIdx = verticals.findIndex((v) => v.id === vertical);
+      if (vertIdx !== -1) {
+        const sfResult = ensureSubFolder(verticals[vertIdx], sfLabel);
+        verticals = verticals.map((v, i) => (i === vertIdx ? sfResult.vertical : v));
+        subFolderId = sfResult.subFolder.id;
+      }
+    }
+
     const now = new Date().toISOString();
     const existing = entries.find((e) => e.vertical === vertical && e.title === title);
 
@@ -178,6 +234,8 @@ export function importCsv(
               link: row.url?.trim() || null,
               tags: row.tags?.trim() || "",
               type,
+              // If column is absent (undefined), preserve existing. Empty string clears it.
+              subFolderId: row.subfolder !== undefined ? subFolderId : e.subFolderId,
               updatedAt: now,
               // preserve existing source — re-importing doesn't change ownership
             }
@@ -194,6 +252,7 @@ export function importCsv(
         tags: row.tags?.trim() || "",
         type,
         source,
+        subFolderId,
         createdAt: now,
         updatedAt: now,
       };
@@ -261,18 +320,25 @@ export function parseSyncedCsv(csvString: string): SyncParseResult {
   return { entries, errors, skipped };
 }
 
-export function exportCsv(entries: Entry[]): string {
-  const rows = entries.map((e) => ({
-    title: e.title,
-    vertical: e.vertical,
-    type: e.type,
-    body: e.body ?? "",
-    [URL_COLUMN]: e.link ?? "",
-    tags: e.tags,
-    id: e.id,
-    createdAt: e.createdAt,
-    updatedAt: e.updatedAt,
-    // source is intentionally excluded from CSV output
-  }));
+export function exportCsv(entries: Entry[], verticals: Vertical[]): string {
+  const rows = entries.map((e) => {
+    const vertical = verticals.find((v) => v.id === e.vertical);
+    const subfolder = e.subFolderId
+      ? findSubFolderById(vertical?.subFolders ?? [], e.subFolderId)?.label ?? ""
+      : "";
+    return {
+      title: e.title,
+      vertical: e.vertical,
+      type: e.type,
+      subfolder,
+      body: e.body ?? "",
+      [URL_COLUMN]: e.link ?? "",
+      tags: e.tags,
+      id: e.id,
+      createdAt: e.createdAt,
+      updatedAt: e.updatedAt,
+      // source is intentionally excluded from CSV output
+    };
+  });
   return Papa.unparse(rows, { columns: [...EXPORT_COLUMNS] });
 }
