@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
-import type { ColumnMapping, Entry } from "@shared/types";
+import type { ColumnMapping, Entry, Vertical } from "@shared/types";
+import MdImportScreen from "./MdImportScreen";
+import PdfImportScreen from "./PdfImportScreen";
 
 type RowResolution = "skip" | "overwrite" | "import-as-new";
 
@@ -10,7 +12,9 @@ type ImportState =
   | { status: "previewing"; totalRows: number; previewRows: PreviewRow[]; skippedCount: number; errors: string[] }
   | { status: "committing" }
   | { status: "done"; imported: number; updated: number; skipped: number; errors: string[] }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string }
+  | { status: "md-import"; filePath: string }
+  | { status: "pdf-import"; filePath: string };
 
 interface PreviewRow {
   rowIndex: number;
@@ -36,9 +40,10 @@ interface Props {
   onComplete: () => void;
   onCancel: () => void;
   existingEntries: Entry[];
+  verticals: Vertical[];
 }
 
-export default function ImportScreen({ onComplete, onCancel, existingEntries }: Props) {
+export default function ImportScreen({ onComplete, onCancel, existingEntries, verticals }: Props) {
   const [state, setState] = useState<ImportState>({ status: "idle" });
   const [mapping, setMapping] = useState<ColumnMapping>({
     title: null, vertical: null, type: null,
@@ -109,16 +114,22 @@ export default function ImportScreen({ onComplete, onCancel, existingEntries }: 
     const file = e.dataTransfer.files[0];
     if (!file) return;
     const filePath = (file as File & { path: string }).path;
-    if (!filePath?.toLowerCase().endsWith(".csv")) {
-      setState({ status: "error", message: "Please drop a CSV file (.csv)." });
-      return;
-    }
-    setState({ status: "loading" });
-    try {
-      const result = await window.shortpath.stageCsvFile(filePath);
-      await stageResult(result);
-    } catch {
-      setState({ status: "error", message: "Failed to read file." });
+    const ext = filePath?.split(".").pop()?.toLowerCase();
+
+    if (ext === "csv") {
+      setState({ status: "loading" });
+      try {
+        const result = await window.shortpath.stageCsvFile(filePath);
+        await stageResult(result);
+      } catch {
+        setState({ status: "error", message: "Failed to read file." });
+      }
+    } else if (ext === "md") {
+      setState({ status: "md-import", filePath });
+    } else if (ext === "pdf") {
+      setState({ status: "pdf-import", filePath });
+    } else {
+      setState({ status: "error", message: "Please drop a CSV, Markdown (.md), or PDF file." });
     }
   }, []);
 
@@ -185,7 +196,7 @@ export default function ImportScreen({ onComplete, onCancel, existingEntries }: 
               onDrop={handleDrop}
             >
               <span className="import-dropzone-icon">⬆</span>
-              <span className="import-dropzone-text">Drop a CSV file here</span>
+              <span className="import-dropzone-text">Drop a CSV, Markdown, or PDF file here</span>
               <span className="import-dropzone-or">or</span>
               <button className="btn-primary import-choose-btn" onClick={handleChooseFile}>
                 Choose file...
@@ -384,6 +395,24 @@ export default function ImportScreen({ onComplete, onCancel, existingEntries }: 
               </button>
             </div>
           </div>
+        )}
+
+        {state.status === "md-import" && (
+          <MdImportScreen
+            filePath={state.filePath}
+            verticals={verticals}
+            onComplete={onComplete}
+            onCancel={() => setState({ status: "idle" })}
+          />
+        )}
+
+        {state.status === "pdf-import" && (
+          <PdfImportScreen
+            filePath={state.filePath}
+            verticals={verticals}
+            onComplete={onComplete}
+            onCancel={() => setState({ status: "idle" })}
+          />
         )}
       </div>
     </div>
