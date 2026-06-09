@@ -1094,7 +1094,7 @@ function registerIpcHandlers() {
   ipcMain.handle("preview-pdf-import", async (_e, filePath: string) => {
     try {
       const buffer = fs.readFileSync(filePath);
-      const { default: pdfParse } = await import("pdf-parse");
+      const pdfParse = (await import("pdf-parse")).default as unknown as (buf: Buffer, opts?: Record<string, unknown>) => Promise<{ text: string; numpages: number }>;
       const data = await pdfParse(buffer, { max: 0 });
       const sections = splitPdfText(data.text);
       return { sections };
