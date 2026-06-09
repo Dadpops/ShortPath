@@ -9,6 +9,7 @@ import ImportScreen from "./components/ImportScreen";
 import SplitImport from "./components/SplitImport";
 import SettingsScreen from "./components/SettingsScreen";
 import HelpPanel from "./components/HelpPanel";
+import KeyboardPanel from "./components/KeyboardPanel";
 import MacroOverlay from "./components/MacroOverlay";
 import FavoritesView from "./components/FavoritesView";
 import NotesView from "./components/NotesView";
@@ -17,7 +18,7 @@ import ResultItem from "./components/ResultItem";
 import ExportSelectScreen from "./components/ExportSelectScreen";
 
 type AppStatus = "loading" | "ready" | "error";
-type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "favorites" | "notes" | "export-select";
+type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "keyboard" | "favorites" | "notes" | "export-select";
 type SortMode = "relevance" | "most-used" | "recently-used" | "recently-added" | "a-to-z";
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -68,12 +69,11 @@ export default function App() {
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("relevance");
   const [recentCopies, setRecentCopies] = useState<Array<{ id: string; copiedAt: string }>>([]);
-  const [pinCap, setPinCap] = useState(8);
+  const [currentHotkey, setCurrentHotkey] = useState("CommandOrControl+Shift+Space");
   const [queryHistory, setQueryHistory] = useState<string[]>([]);
   const [queryHistoryIdx, setQueryHistoryIdx] = useState(-1);
   const [activeVerticalFilter, setActiveVerticalFilter] = useState<string | null>(null);
   const [verticalOrder, setVerticalOrder] = useState<string[]>([]);
-  const [pinLimitMsg, setPinLimitMsg] = useState(false);
   const [pinnedExpanded, setPinnedExpanded] = useState(true);
   const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null);
   const [updateDownloaded, setUpdateDownloaded] = useState(false);
@@ -86,14 +86,13 @@ export default function App() {
   useEffect(() => {
     window.shortpath
       .loadEntries()
-      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, recentCopies: rc, fontSize: fs, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc, alwaysOnTop: aot, pinCap: pc }) => {
+      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, recentCopies: rc, fontSize: fs, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc, alwaysOnTop: aot }) => {
         setEntries(e);
         setVerticals(v);
         setRecents(r);
         setFavorites(new Set(favs));
         setPinned(new Set(pins));
         setRecentCopies(rc ?? []);
-        setPinCap(pc ?? 8);
         setExpandedGroups(new Set(v.map((vert) => vert.id)));
         setVerticalOrder(vo ?? []);
         setAutoHideOnCopy(ahoc ?? false);
@@ -112,6 +111,7 @@ export default function App() {
     void window.shortpath.getSyncStatus().then((status) => {
       setSyncSources(status.sources);
     });
+    void window.shortpath.getSettings().then((s) => setCurrentHotkey(s.hotkey));
 
     const unsubscribe = window.shortpath.onStoreUpdated(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins }) => {
       setEntries(e);
@@ -178,6 +178,14 @@ export default function App() {
       unsubSync();
     };
   }, []);
+
+  // Refresh sync sources and hotkey when returning to browse (e.g. after rename in Settings)
+  useEffect(() => {
+    if (mode === "browse") {
+      void window.shortpath.getSyncStatus().then((s) => setSyncSources(s.sources));
+      void window.shortpath.getSettings().then((s) => setCurrentHotkey(s.hotkey));
+    }
+  }, [mode]);
 
   // Validate activeSource whenever syncSources update — fall back to "local" if source was removed
   useEffect(() => {
@@ -272,9 +280,9 @@ export default function App() {
       items = items.filter((i) => i.entry.vertical === activeVerticalFilter);
     }
 
-    // Filter by source (non-"all" modes)
+    // Filter by source (non-"all" modes); sample entries appear alongside local
     if (activeSource === "local") {
-      items = items.filter(i => i.entry.source === "local");
+      items = items.filter(i => i.entry.source === "local" || i.entry.source === "sample");
     } else if (!isAllMode) {
       items = items.filter(i => i.entry.syncSource === activeSource);
     }
@@ -484,11 +492,7 @@ export default function App() {
   }
 
   async function handleTogglePin(id: string) {
-    const result = await window.shortpath.togglePin(id);
-    if (result.limitReached) {
-      setPinLimitMsg(true);
-      setTimeout(() => setPinLimitMsg(false), 3000);
-    }
+    await window.shortpath.togglePin(id);
   }
 
   function handleGoHome() {
@@ -592,6 +596,14 @@ export default function App() {
         setEditingEntry(null);
         setQuickAddPrefill(undefined);
         setMode("add");
+        return;
+      }
+
+      if (e.altKey && !inInput) {
+        if (e.key === "n" || e.key === "N") { e.preventDefault(); setMode("notes"); return; }
+        if (e.key === "k" || e.key === "K") { e.preventDefault(); setMode("keyboard"); return; }
+        if (e.key === "h" || e.key === "H") { e.preventDefault(); setMode("help"); return; }
+        if (e.key === "s" || e.key === "S") { e.preventDefault(); setMode("settings"); return; }
       }
     }
     window.addEventListener("keydown", onWindowKeyDown);
@@ -754,6 +766,14 @@ export default function App() {
     );
   }
 
+  if (mode === "keyboard") {
+    return (
+      <div className={shellClass}>
+        <KeyboardPanel onClose={() => setMode("browse")} hotkey={currentHotkey} />
+      </div>
+    );
+  }
+
   if (mode === "favorites") {
     return (
       <div className={shellClass}>
@@ -820,6 +840,17 @@ export default function App() {
     <div className={shellClass}>
       <header className="app-header">
         <div className="app-path-group">
+          <button
+            className={`header-icon-btn pin-window-btn${alwaysOnTop ? " active" : ""}`}
+            onClick={() => {
+              const next = !alwaysOnTop;
+              setAlwaysOnTop(next);
+              void window.shortpath.setAlwaysOnTop(next);
+            }}
+            title={alwaysOnTop ? "Unpin window" : "Pin window on top"}
+          >
+            {alwaysOnTop ? "📌" : "📍"}
+          </button>
           <button className="app-path-btn" onClick={handleGoHome} title="Go home">
             shortpath
           </button>
@@ -850,24 +881,28 @@ export default function App() {
           {isSearching && totalHits > 0 && (
             <span className="app-hit-summary">{totalHits} result{totalHits !== 1 ? "s" : ""}</span>
           )}
-          <button
-            className={`header-icon-btn pin-window-btn${alwaysOnTop ? " active" : ""}`}
-            onClick={() => {
-              const next = !alwaysOnTop;
-              setAlwaysOnTop(next);
-              void window.shortpath.setAlwaysOnTop(next);
-            }}
-            title={alwaysOnTop ? "Unpin window (currently always on top)" : "Pin window to stay above other windows"}
-          >
-            {alwaysOnTop ? "📌" : "📍"}
-          </button>
-          <button className="header-icon-btn" onClick={() => setMode("notes")} title="Notes">✎</button>
+          <button className="header-icon-btn header-icon-letter" onClick={() => setMode("keyboard")} title="Keyboard shortcuts (Alt+K)">K</button>
+          <button className="header-icon-btn header-icon-letter" onClick={() => setMode("notes")} title="Notes (Alt+N)">N</button>
           <button className="header-icon-btn" onClick={() => setMode("favorites")} title="Favorites">☆</button>
-          <button className="header-icon-btn" onClick={() => setMode("help")} title="Help">?</button>
-          <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings">⚙</button>
+          <button className="header-icon-btn" onClick={() => setMode("help")} title="Help (Alt+H)">?</button>
+          <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings (Alt+S)">⚙</button>
           <button className="header-icon-btn" onClick={() => void window.shortpath.minimizeWindow()} title="Minimize">−</button>
         </div>
       </header>
+
+      {hasClipboard && (
+        <div className="clipboard-strip">
+          <span className="clipboard-strip-text">
+            ⎘ "{clipboardText!.length > 48 ? clipboardText!.slice(0, 48) + "…" : clipboardText}"
+          </span>
+          <button className="clipboard-strip-save" onClick={handleClipboardIconClick} title="Save as new entry">
+            Save
+          </button>
+          <button className="clipboard-strip-dismiss" onClick={() => setClipboardDismissed(true)} aria-label="Dismiss">
+            ✕
+          </button>
+        </div>
+      )}
 
       {hasSampleData && (
         <div className="sample-data-banner">
@@ -1034,9 +1069,6 @@ export default function App() {
             </button>
             {pinnedExpanded && (
               <>
-                {pinLimitMsg && (
-                  <div className="pin-limit-msg">Unpin an entry to pin this one (max {pinCap}).</div>
-                )}
                 <ul className="result-list">
                   {pinnedEntries.map((entry) => (
                     <ResultItem
@@ -1083,12 +1115,6 @@ export default function App() {
           </div>
         )}
 
-        {pinLimitMsg && isSearching && (
-          <div className="pin-limit-msg" style={{ padding: "4px 14px 6px" }}>
-            Unpin an entry to pin this one (max 8).
-          </div>
-        )}
-
         {groups.map((group) => {
           const actualVId = group.verticalId.includes("::") ? group.verticalId.split("::")[1] : group.verticalId;
           return actualVId === "support-tools" ? (
@@ -1123,20 +1149,6 @@ export default function App() {
           );
         })}
       </main>
-
-      {hasClipboard && (
-        <div className="clipboard-strip">
-          <span className="clipboard-strip-text">
-            ⎘ "{clipboardText!.length > 48 ? clipboardText!.slice(0, 48) + "…" : clipboardText}"
-          </span>
-          <button className="clipboard-strip-save" onClick={handleClipboardIconClick} title="Save as new entry">
-            Save
-          </button>
-          <button className="clipboard-strip-dismiss" onClick={() => setClipboardDismissed(true)} aria-label="Dismiss">
-            ✕
-          </button>
-        </div>
-      )}
 
       <button
         className="fab-add"

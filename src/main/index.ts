@@ -836,11 +836,6 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle("toggle-pin", (_e, entryId: string) => {
-    const alreadyPinned = store.pinned.includes(entryId);
-    const cap = settings.pinCap ?? 8;
-    if (!alreadyPinned && store.pinned.length >= cap) {
-      return { ok: false, limitReached: true };
-    }
     store = togglePin(store, entryId);
     saveStore(userDataPath, store);
     pushStoreUpdate();

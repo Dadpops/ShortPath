@@ -71,7 +71,6 @@ export default function SettingsScreen({
   const [streamDeckCols, setStreamDeckCols] = useState(5);
   const [streamDeckRows, setStreamDeckRows] = useState(3);
   const [lastStreamDeckExport, setLastStreamDeckExport] = useState<string | null>(null);
-  const [pinCap, setPinCapLocal] = useState(8);
 
   // Vertical management
   const [editingVerticalId, setEditingVerticalId] = useState<string | null>(null);
@@ -117,7 +116,7 @@ export default function SettingsScreen({
   const [renameValue, setRenameValue] = useState("");
 
   useEffect(() => {
-    window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d, pinCap: pc, lastStreamDeckExport: lsd }) => {
+    window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d, lastStreamDeckExport: lsd }) => {
       setCurrentHotkey(hotkey);
       setFontSize(fs);
       setTheme(t);
@@ -125,7 +124,6 @@ export default function SettingsScreen({
       setOpacity(op);
       setWindowSize(ws);
       setDensity(d);
-      setPinCapLocal(pc ?? 8);
       setLastStreamDeckExport(lsd ?? null);
     });
     window.shortpath.getSyncStatus().then(setSyncStatus);
@@ -608,24 +606,6 @@ export default function SettingsScreen({
               )}
 
               <div className="settings-row">
-                <div className="settings-row-label">Pin limit</div>
-                <div className="font-size-control">
-                  {([4, 8, 12] as const).map((val) => (
-                    <button
-                      key={val}
-                      className={`font-size-btn${pinCap === val ? " active" : ""}`}
-                      onClick={() => {
-                        setPinCapLocal(val);
-                        void window.shortpath.setPinCap(val);
-                      }}
-                    >
-                      {val}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="settings-row">
                 <div className="settings-row-label">Position and size are saved automatically.</div>
               </div>
               <button className="btn-secondary settings-action-btn" onClick={handleResetPosition}>
@@ -655,6 +635,9 @@ export default function SettingsScreen({
                   )}
                 </div>
               </div>
+              <p className="settings-row-note" style={{ marginTop: 2 }}>
+                Checks GitHub for a newer release. If a newer version is found, a download link appears. After downloading, restart the app to install.
+              </p>
             </div>
           )}
 
