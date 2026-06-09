@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-09 — Friction-point UX improvements](sessions/2026-06-09-friction-points.md) — Sample data onboarding banner; recent copies persist 24h in store; "recently used" sort mode; hotkey in tray tooltip and menu; first-launch notification; configurable pin cap (4/8/12); Stream Deck re-export timestamp; Ctrl+N; search history via up-arrow; empty search state with save-as-entry button.
 - [2026-06-09 — Polish and bug fixes: app crash, sync UI, styling](sessions/2026-06-09-polish.md) — Fixed ESM crash (jsdom removed from main process, parsing moved to renderer); 4 TS build errors; Sync management added to SettingsScreen; URL import button styled; btn-link and --color-error added.
 - [2026-06-09 — Phase 14: browser capture server, URL import, MD/PDF import, browser extension](sessions/2026-06-09-phase-14.md) — HTTP capture server on port 57433; URL import with Readability section picker in EntryForm; Markdown and PDF drag-in import screens; MV3 Chrome/Firefox extension with context menu, offline queue, and popup; 4 help topics.
 - [2026-06-09 — Phase 13: pin window, Tiptap, duplicate detection, Stream Deck export](sessions/2026-06-09-phase-13.md) — Always-on-top pin button; Tiptap rich text editor with toolbar and copy-mode toggle; duplicate detection on CSV import (per-row resolution) and manual add (inline warning); Stream Deck .sdProfile ZIP export; README overhauled for open source.
