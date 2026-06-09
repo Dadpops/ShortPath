@@ -3287,3 +3287,10 @@ body[data-density="compact"] .result-tags {
 .import-dup-count {
   color: var(--color-warning);
 }
+
+/* ===== Duplicate warning on manual add ===== */
+.form-dup-warning {
+  font-size: var(--font-size-xs);
+  color: var(--color-warning);
+  margin-top: 4px;
+}

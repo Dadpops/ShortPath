@@ -532,6 +532,7 @@ export default function App() {
         <EntryForm
           entry={editingEntry ?? undefined}
           verticals={verticals}
+          allEntries={entries}
           onSave={handleFormSave}
           onDelete={mode === "edit" ? handleFormDelete : undefined}
           onCancel={handleFormCancel}

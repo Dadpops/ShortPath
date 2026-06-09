@@ -5,6 +5,7 @@ import RichTextEditor from "./RichTextEditor";
 interface Props {
   entry?: Entry;        // undefined = add mode
   verticals: Vertical[];
+  allEntries?: Entry[];          // all existing entries for duplicate detection
   onSave: (entry: Entry, newVerticals: Vertical[]) => void;
   onDelete?: () => void;
   onCancel: () => void;
@@ -29,7 +30,7 @@ function normalizeTags(raw: string): string {
     .join("|");
 }
 
-export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel, quickAdd, prefillBody, defaultVerticalId }: Props) {
+export default function EntryForm({ entry, verticals, allEntries, onSave, onDelete, onCancel, quickAdd, prefillBody, defaultVerticalId }: Props) {
   const isEdit = !!entry;
 
   const [title, setTitle] = useState(entry?.title ?? "");
@@ -46,6 +47,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showMore, setShowMore] = useState(false);
+  const [titleDupWarning, setTitleDupWarning] = useState("");
 
   const selectedVertical = useMemo(
     () => verticals.find((v) => v.id === (isNewVertical ? "" : verticalId)),
@@ -59,6 +61,20 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
   }, [selectedVertical]);
 
   const finalVerticalId = isNewVertical ? slugify(newVerticalLabel) : verticalId;
+
+  function handleTitleBlur() {
+    if (isEdit || !allEntries || !title.trim()) { setTitleDupWarning(""); return; }
+    const vid = isNewVertical ? slugify(newVerticalLabel) : verticalId;
+    const dup = allEntries.find(
+      (e) => e.vertical === vid && e.title.toLowerCase().trim() === title.toLowerCase().trim()
+    );
+    if (dup) {
+      const vLabel = verticals.find((v) => v.id === vid)?.label ?? vid;
+      setTitleDupWarning(`An entry with this title already exists in ${vLabel}.`);
+    } else {
+      setTitleDupWarning("");
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -199,11 +215,13 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
             className="form-input"
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setTitle(e.target.value); if (titleDupWarning) setTitleDupWarning(""); }}
+            onBlur={handleTitleBlur}
             placeholder="Short descriptive label"
             disabled={saving}
             autoFocus={!isNewVertical}
           />
+          {titleDupWarning && <p className="form-dup-warning">{titleDupWarning}</p>}
         </div>
 
         {quickAdd && !isEdit && !showMore && (
