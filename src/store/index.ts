@@ -23,6 +23,7 @@ export function openStore(userDataPath: string): StoreData {
       recents: parsed.recents ?? [],
       favorites: parsed.favorites ?? [],
       pinned: parsed.pinned ?? [],
+      recentCopies: parsed.recentCopies ?? [],
     });
   } catch {
     console.error("store.json corrupted, resetting to defaults");
@@ -123,11 +124,20 @@ export function togglePin(store: StoreData, entryId: string): StoreData {
 }
 
 export function incrementCopyCount(store: StoreData, entryId: string): StoreData {
+  const now = new Date().toISOString();
   const entries = store.entries.map((e) => {
-    if (e.id !== entryId || e.source !== "local") return e;
-    return { ...e, copyCount: (e.copyCount ?? 0) + 1 };
+    if (e.id !== entryId) return e;
+    if (e.source === "local" || e.source === "sample") {
+      return { ...e, copyCount: (e.copyCount ?? 0) + 1, lastCopiedAt: now };
+    }
+    return { ...e, lastCopiedAt: now };
   });
-  return { ...store, entries };
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const recentCopies = [
+    { id: entryId, copiedAt: now },
+    ...(store.recentCopies ?? []).filter((r) => r.id !== entryId && r.copiedAt > cutoff),
+  ].slice(0, 20);
+  return { ...store, entries, recentCopies };
 }
 
 export function toggleFavorite(store: StoreData, entryId: string): StoreData {
@@ -179,7 +189,24 @@ export function clearLocalEntries(store: StoreData): StoreData {
     recents: store.recents.filter((id) => syncedIds.has(id)),
     favorites: store.favorites.filter((id) => syncedIds.has(id)),
     pinned: store.pinned.filter((id) => syncedIds.has(id)),
+    recentCopies: (store.recentCopies ?? []).filter((r) => syncedIds.has(r.id)),
   };
+}
+
+export function clearSampleData(store: StoreData): StoreData {
+  const sampleIds = new Set(store.entries.filter((e) => e.source === "sample").map((e) => e.id));
+  return {
+    ...store,
+    entries: store.entries.filter((e) => e.source !== "sample"),
+    recents: store.recents.filter((id) => !sampleIds.has(id)),
+    favorites: store.favorites.filter((id) => !sampleIds.has(id)),
+    pinned: store.pinned.filter((id) => !sampleIds.has(id)),
+    recentCopies: (store.recentCopies ?? []).filter((r) => !sampleIds.has(r.id)),
+  };
+}
+
+export function hasSampleData(store: StoreData): boolean {
+  return store.entries.some((e) => e.source === "sample");
 }
 
 // ── SubFolder tree helpers ────────────────────────────────────────────────────

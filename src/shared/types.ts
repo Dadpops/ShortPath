@@ -28,7 +28,7 @@ export interface Entry {
   link: string | null;   // URL for link-type entries; null for text-only
   tags: string;          // pipe-separated: "billing|refund|payment"
   type: "reply" | "doc" | "link" | "sop" | "tool";
-  source: "local" | "synced"; // "local" = user-created; "synced" = from shared team file
+  source: "local" | "synced" | "sample"; // "local" = user-created; "synced" = from shared team file; "sample" = bundled demo data
   syncSource?: string;         // ID of the sync source this entry came from (multi-sync)
   subFolderId?: string;  // optional reference to a SubFolder.id within the entry's vertical
   createdAt: string;     // ISO 8601
@@ -36,6 +36,7 @@ export interface Entry {
   copyCount?: number;    // Phase 10: copies made this entry; only tracked for source === "local"
   copyMode?: "plain" | "html"; // Phase 13: how to write to clipboard; default "plain"
   sourceUrl?: string;    // Phase 14: original URL when captured from browser extension
+  lastCopiedAt?: string; // ISO 8601 timestamp of the most recent copy — used for "Recently Used" sort
 }
 
 // Payload sent by the browser extension to the capture server.

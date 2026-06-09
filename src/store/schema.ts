@@ -9,6 +9,7 @@ export interface StoreData {
   recents: string[]; // entry IDs, most recent first, max 10
   favorites: string[]; // entry IDs
   pinned: string[];   // entry IDs, Phase 10; max 8
+  recentCopies: Array<{ id: string; copiedAt: string }>; // timestamped, 24-hour rolling window
 }
 
 export const DEFAULT_VERTICALS: Vertical[] = [
@@ -26,5 +27,6 @@ export function defaultStore(): StoreData {
     recents: [],
     favorites: [],
     pinned: [],
+    recentCopies: [],
   };
 }

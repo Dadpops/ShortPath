@@ -4,7 +4,7 @@ import type { StoreData } from "./schema";
 
 function entry(fields: Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">): Entry {
   const now = new Date().toISOString();
-  return { ...fields, source: "local", id: randomUUID(), createdAt: now, updatedAt: now };
+  return { ...fields, source: "sample", id: randomUUID(), createdAt: now, updatedAt: now };
 }
 
 const SEED_ENTRIES: Entry[] = [
