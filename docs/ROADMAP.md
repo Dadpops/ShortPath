@@ -204,9 +204,9 @@ Goal: installable builds for Windows and Mac.
 
 - [x] electron-builder targets: NSIS (Windows), DMG (Mac)
 - [x] Code signing: documented in docs/SIGNING.md; signing fields commented in electron-builder.yml; no certs committed
-- [ ] Auto-update scaffold (electron-updater) — out of scope for v0.1.0; manual reinstall model documented in docs/RELEASING.md
+- [x] Auto-update scaffold (electron-updater) — shipped in v0.2.0; replaces manual reinstall model
 - [x] Build and release scripts in package.json (dist:win, dist:mac)
-- [ ] First tagged release (v0.1.0) on GitHub
+- [x] First tagged release on GitHub — v0.1.0 shipped 2026-06-08; v0.2.0 shipped 2026-06-09
 
 ---
 
