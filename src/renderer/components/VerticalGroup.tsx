@@ -12,9 +12,11 @@ interface Props {
   focusedEntryId?: string | null;
   favorites?: Set<string>;
   onToggleFavorite?: (id: string) => void;
+  pinned?: Set<string>;
+  onTogglePin?: (id: string) => void;
 }
 
-export default function VerticalGroupComponent({ group, subFolders, onToggle, onEdit, onCopy, onOpen, focusedEntryId, favorites, onToggleFavorite }: Props) {
+export default function VerticalGroupComponent({ group, subFolders, onToggle, onEdit, onCopy, onOpen, focusedEntryId, favorites, onToggleFavorite, pinned, onTogglePin }: Props) {
   const hasSubs = (subFolders?.length ?? 0) > 0;
 
   const [expandedSubs, setExpandedSubs] = useState<Set<string>>(
@@ -58,6 +60,8 @@ export default function VerticalGroupComponent({ group, subFolders, onToggle, on
                   isFocused={focusedEntryId === result.entry.id}
                   isFavorite={favorites?.has(result.entry.id)}
                   onToggleFavorite={onToggleFavorite}
+                  isPinned={pinned?.has(result.entry.id)}
+                  onTogglePin={onTogglePin}
                 />
               ))}
             </ul>

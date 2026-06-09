@@ -9,9 +9,11 @@ interface Props {
   isFocused?: boolean;
   isFavorite?: boolean;
   onToggleFavorite?: (id: string) => void;
+  isPinned?: boolean;
+  onTogglePin?: (id: string) => void;
 }
 
-export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, isFavorite, onToggleFavorite }: Props) {
+export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, isFavorite, onToggleFavorite, isPinned, onTogglePin }: Props) {
   const [copied, setCopied] = useState(false);
   const { entry } = result;
 
@@ -45,6 +47,11 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
     onToggleFavorite?.(entry.id);
   }
 
+  function handleTogglePin(e: React.MouseEvent) {
+    e.stopPropagation();
+    onTogglePin?.(entry.id);
+  }
+
   return (
     <li
       className={`result-item${isFocused ? " focused" : ""}`}
@@ -52,6 +59,15 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
       onClick={() => onOpen(entry)}
       style={{ cursor: "pointer" }}
     >
+      {onTogglePin !== undefined && (
+        <button
+          className={`pin-toggle${isPinned ? " pinned" : ""}`}
+          onClick={handleTogglePin}
+          title={isPinned ? "Unpin" : "Pin to top"}
+        >
+          {isPinned ? "📌" : "📍"}
+        </button>
+      )}
       {onToggleFavorite !== undefined && (
         <button
           className={`star-toggle${isFavorite ? " starred" : ""}`}
@@ -62,7 +78,12 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
         </button>
       )}
       <div className="result-content">
-        <span className="result-title">{entry.title}</span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 0, minWidth: 0 }}>
+          <span className="result-title">{entry.title}</span>
+          {(entry.copyCount ?? 0) > 0 && (
+            <span className="copy-count-badge">{entry.copyCount}×</span>
+          )}
+        </div>
         {entry.source === "synced" && <span className="result-source-badge">synced</span>}
         {entry.tags && <span className="result-tags">{entry.tags}</span>}
       </div>

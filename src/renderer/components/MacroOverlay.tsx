@@ -8,12 +8,14 @@ interface Props {
   onCopied: (entryId: string) => void;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
   onEdit?: (entry: Entry) => void;
   onDuplicate?: (entry: Entry) => void;
   onAddNote?: () => void;
 }
 
-export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFavorite, onToggleFavorite, onEdit, onDuplicate, onAddNote }: Props) {
+export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFavorite, onToggleFavorite, isPinned, onTogglePin, onEdit, onDuplicate, onAddNote }: Props) {
   const [copied, setCopied] = useState(false);
 
   const verticalLabel = verticals.find((v) => v.id === entry.vertical)?.label ?? entry.vertical;
@@ -25,11 +27,17 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFa
         e.preventDefault();
         e.stopPropagation();
         onClose();
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCopy();
       }
     }
     window.addEventListener("keydown", onKeyDown, { capture: true });
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
-  }, [onClose]);
+  }, [onClose, entry]);
 
   function handleCopy() {
     const text = entry.body ?? entry.link ?? entry.title;
@@ -58,6 +66,16 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFa
                 title={isFavorite ? "Remove from favorites" : "Add to favorites"}
               >
                 {isFavorite ? "★" : "☆"}
+              </button>
+            )}
+            {onTogglePin && (
+              <button
+                className={`macro-star-toggle${isPinned ? " starred" : ""}`}
+                onClick={onTogglePin}
+                title={isPinned ? "Unpin" : "Pin to top"}
+                style={{ color: isPinned ? "var(--color-accent)" : undefined }}
+              >
+                {isPinned ? "📌" : "📍"}
               </button>
             )}
             <span className="macro-badge macro-badge-vertical">{verticalLabel}</span>
