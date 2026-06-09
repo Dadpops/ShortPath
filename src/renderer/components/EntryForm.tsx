@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import type { Entry, Vertical, SubFolder } from "@shared/types";
+import RichTextEditor from "./RichTextEditor";
 
 interface Props {
   entry?: Entry;        // undefined = add mode
@@ -36,6 +37,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
   const [link, setLink] = useState(entry?.link ?? "");
   const [tags, setTags] = useState(entry?.tags ?? "");
   const [type, setType] = useState<Entry["type"]>(entry?.type ?? "reply");
+  const [copyMode, setCopyMode] = useState<"plain" | "html">(entry?.copyMode ?? "plain");
   const [verticalId, setVerticalId] = useState(entry?.vertical ?? defaultVerticalId ?? "saved-replies");
   const [subFolderId, setSubFolderId] = useState(entry?.subFolderId ?? "");
   const [isNewVertical, setIsNewVertical] = useState(false);
@@ -76,6 +78,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
         tags: tags.trim(),
         type,
         subFolderId: subFolderId || undefined,
+        copyMode,
       };
 
       if (isEdit && entry) {
@@ -236,14 +239,37 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
 
         <div className="form-field">
           <label className="form-label">Body</label>
-          <textarea
-            className="form-textarea"
-            rows={4}
+          <RichTextEditor
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={setBody}
             placeholder="Full text content (saved reply, doc, process steps)"
             disabled={saving}
           />
+          <div className="copy-mode-row">
+            <span className="copy-mode-label">Copy as:</span>
+            <label className={`copy-mode-option${copyMode === "plain" ? " selected" : ""}`}>
+              <input
+                type="radio"
+                name="copyMode"
+                value="plain"
+                checked={copyMode === "plain"}
+                onChange={() => setCopyMode("plain")}
+                disabled={saving}
+              />
+              Plain text
+            </label>
+            <label className={`copy-mode-option${copyMode === "html" ? " selected" : ""}`}>
+              <input
+                type="radio"
+                name="copyMode"
+                value="html"
+                checked={copyMode === "html"}
+                onChange={() => setCopyMode("html")}
+                disabled={saving}
+              />
+              HTML
+            </label>
+          </div>
         </div>
 
         <div className="form-field">

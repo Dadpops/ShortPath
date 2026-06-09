@@ -526,6 +526,29 @@ The brief delay lets you see the "Copied ✓" confirmation before the window dis
 This setting is off by default. Turn it on if you prefer a one-and-done workflow where copying a reply automatically gets ShortPath out of your way.`,
   },
   {
+    id: "rich-text",
+    title: "Rich text and copy modes",
+    tags: ["rich text", "html", "bold", "italic", "copy mode", "tiptap", "formatting"],
+    content: `The body field in the add and edit forms uses a rich text editor. You can apply formatting using the toolbar above the editor.
+
+Toolbar buttons
+- B / I / U: bold, italic, underline
+- Bullet list / ordered list: multi-item content
+- <> / { }: inline code span and code block
+- Link icon: add or remove a hyperlink (prompts for URL)
+
+Active buttons highlight in your accent color.
+
+Copy modes
+Each entry has a "Copy as" setting below the editor:
+
+Plain text (default): strips all HTML tags before writing to the clipboard. What you see in the editor is what gets pasted as plain text into your support tool or browser field.
+
+HTML: writes the formatted HTML to the clipboard, plus a plain-text fallback. Paste into a rich-text field (an email editor, Notion, Google Docs) and the formatting is preserved. Paste into a plain-text field and you get the stripped version automatically.
+
+Existing entries created before this feature are treated as plain text. Their body content will render as-is in the editor with no formatting applied.`,
+  },
+  {
     id: "troubleshooting",
     title: "Troubleshooting",
     tags: ["troubleshooting", "hotkey conflict", "not opening", "missing entries", "sync", "problem"],

@@ -33,6 +33,7 @@ export interface Entry {
   createdAt: string;     // ISO 8601
   updatedAt: string;
   copyCount?: number;    // Phase 10: copies made this entry; only tracked for source === "local"
+  copyMode?: "plain" | "html"; // Phase 13: how to write to clipboard; default "plain"
 }
 
 export interface SearchResult {

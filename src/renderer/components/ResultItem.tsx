@@ -1,6 +1,22 @@
 import React, { useState } from "react";
 import type { Entry, SearchResult } from "@shared/types";
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+}
+
+function copyEntry(entry: Entry): Promise<void> {
+  const raw = entry.body ?? entry.link ?? entry.title;
+  if (entry.copyMode === "html" && entry.body) {
+    const plain = stripHtml(entry.body);
+    const htmlBlob = new Blob([raw], { type: "text/html" });
+    const plainBlob = new Blob([plain], { type: "text/plain" });
+    return navigator.clipboard.write([new ClipboardItem({ "text/html": htmlBlob, "text/plain": plainBlob })]);
+  }
+  const plain = stripHtml(raw);
+  return navigator.clipboard.writeText(plain);
+}
+
 interface Props {
   result: SearchResult;
   onEdit: (entry: Entry) => void;
@@ -17,12 +33,11 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
   const [copied, setCopied] = useState(false);
   const { entry } = result;
 
-  const textToCopy = entry.body ?? entry.link ?? entry.title;
   const isOpenable = !!entry.link && (entry.type === "link" || entry.type === "tool");
 
   function handleCopy(e: React.MouseEvent) {
     e.stopPropagation();
-    navigator.clipboard.writeText(textToCopy).then(() => {
+    copyEntry(entry).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
       onCopy(entry.id);

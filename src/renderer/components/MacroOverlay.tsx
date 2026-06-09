@@ -1,6 +1,22 @@
 import { useState, useEffect } from "react";
 import type { Entry, Vertical } from "@shared/types";
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+}
+
+function copyEntry(entry: Entry): Promise<void> {
+  const raw = entry.body ?? entry.link ?? entry.title;
+  if (entry.copyMode === "html" && entry.body) {
+    const plain = stripHtml(entry.body);
+    const htmlBlob = new Blob([raw], { type: "text/html" });
+    const plainBlob = new Blob([plain], { type: "text/plain" });
+    return navigator.clipboard.write([new ClipboardItem({ "text/html": htmlBlob, "text/plain": plainBlob })]);
+  }
+  const plain = stripHtml(raw);
+  return navigator.clipboard.writeText(plain);
+}
+
 interface Props {
   entry: Entry;
   verticals: Vertical[];
@@ -40,8 +56,7 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFa
   }, [onClose, entry]);
 
   function handleCopy() {
-    const text = entry.body ?? entry.link ?? entry.title;
-    navigator.clipboard.writeText(text).then(() => {
+    copyEntry(entry).then(() => {
       setCopied(true);
       onCopied(entry.id);
       setTimeout(() => setCopied(false), 1500);
@@ -97,7 +112,9 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFa
 
         <div className="macro-body">
           {entry.body ? (
-            <pre className="macro-body-text">{entry.body}</pre>
+            entry.copyMode === "html"
+              ? <div className="macro-body-rich" dangerouslySetInnerHTML={{ __html: entry.body }} />
+              : <pre className="macro-body-text">{stripHtml(entry.body)}</pre>
           ) : (
             <p className="macro-body-empty">No body text.</p>
           )}
