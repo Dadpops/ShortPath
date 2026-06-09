@@ -531,6 +531,7 @@ export default function App() {
           onCancel={handleFormCancel}
           quickAdd={mode === "add" && !editingEntry}
           prefillBody={quickAddPrefill}
+          defaultVerticalId={mode === "add" && !editingEntry ? (activeVerticalFilter ?? undefined) : undefined}
         />
       </div>
     );

@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [0.2.2] - 2026-06-09
+
+### Fixed
+
+- Quick-add now pre-selects the active vertical tab as the default vertical, so opening the form while browsing Documentation (or any other vertical) immediately shows the sub-folder picker for that vertical. Previously it always defaulted to Saved Replies.
+
+---
+
 ## [0.2.1] - 2026-06-09
 
 ### Fixed

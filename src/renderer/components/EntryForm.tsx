@@ -9,6 +9,7 @@ interface Props {
   onCancel: () => void;
   quickAdd?: boolean;           // hides type/tags behind "More options" toggle
   prefillBody?: string;         // pre-populate body field (e.g. from clipboard)
+  defaultVerticalId?: string;   // pre-select a vertical when adding (e.g. from active filter)
 }
 
 function slugify(label: string): string {
@@ -27,7 +28,7 @@ function normalizeTags(raw: string): string {
     .join("|");
 }
 
-export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel, quickAdd, prefillBody }: Props) {
+export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel, quickAdd, prefillBody, defaultVerticalId }: Props) {
   const isEdit = !!entry;
 
   const [title, setTitle] = useState(entry?.title ?? "");
@@ -35,7 +36,7 @@ export default function EntryForm({ entry, verticals, onSave, onDelete, onCancel
   const [link, setLink] = useState(entry?.link ?? "");
   const [tags, setTags] = useState(entry?.tags ?? "");
   const [type, setType] = useState<Entry["type"]>(entry?.type ?? "reply");
-  const [verticalId, setVerticalId] = useState(entry?.vertical ?? "saved-replies");
+  const [verticalId, setVerticalId] = useState(entry?.vertical ?? defaultVerticalId ?? "saved-replies");
   const [subFolderId, setSubFolderId] = useState(entry?.subFolderId ?? "");
   const [isNewVertical, setIsNewVertical] = useState(false);
   const [newVerticalLabel, setNewVerticalLabel] = useState("");
