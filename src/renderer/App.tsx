@@ -13,9 +13,11 @@ import MacroOverlay from "./components/MacroOverlay";
 import FavoritesView from "./components/FavoritesView";
 import NotesView from "./components/NotesView";
 import RecentsDropdown from "./components/RecentsDropdown";
+import ResultItem from "./components/ResultItem";
 
 type AppStatus = "loading" | "ready" | "error";
 type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "favorites" | "notes";
+type SortMode = "relevance" | "most-used" | "recently-added" | "a-to-z";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -24,6 +26,16 @@ function useDebounce<T>(value: T, delay: number): T {
     return () => clearTimeout(t);
   }, [value, delay]);
   return debounced;
+}
+
+function applyAccent(color: string) {
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+  const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+  const alpha = isDark ? 0.15 : 0.12;
+  document.documentElement.style.setProperty("--color-accent", color);
+  document.documentElement.style.setProperty("--color-accent-dim", `rgba(${r},${g},${b},${alpha})`);
 }
 
 export default function App() {
@@ -45,26 +57,37 @@ export default function App() {
   const [animating, setAnimating] = useState(false);
   const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [pinned, setPinned] = useState<Set<string>>(new Set());
   const [sourceMode, setSourceMode] = useState<"local" | "sync" | undefined>(undefined);
   const [sourceName, setSourceName] = useState<string | undefined>(undefined);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [pendingNoteEntry, setPendingNoteEntry] = useState<{ id: string; title: string } | null>(null);
+  const [autoHideOnCopy, setAutoHideOnCopy] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("relevance");
+  const [sessionCopies, setSessionCopies] = useState<string[]>([]);
+  const [activeVerticalFilter, setActiveVerticalFilter] = useState<string | null>(null);
+  const [verticalOrder, setVerticalOrder] = useState<string[]>([]);
+  const [pinLimitMsg, setPinLimitMsg] = useState(false);
 
   const debouncedQuery = useDebounce(query, 120);
 
   useEffect(() => {
     window.shortpath
       .loadEntries()
-      .then(({ entries: e, verticals: v, recents: r, favorites: favs, fontSize: fs, sourceMode: sm, sourceName: sn, theme: t }) => {
+      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, fontSize: fs, sourceMode: sm, sourceName: sn, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc }) => {
         setEntries(e);
         setVerticals(v);
         setRecents(r);
         setFavorites(new Set(favs));
+        setPinned(new Set(pins));
         setExpandedGroups(new Set(v.map((vert) => vert.id)));
+        setVerticalOrder(vo ?? []);
+        setAutoHideOnCopy(ahoc ?? false);
         document.documentElement.style.setProperty("--font-size-base", `${fs}px`);
         document.documentElement.setAttribute("data-theme", t);
+        if (accentColor) applyAccent(accentColor);
+        if (density === "compact") document.body.setAttribute("data-density", "compact");
         if (sm === null || sm === undefined) {
-          // Auto-default to local mode; no setup screen.
           setSourceMode("local");
           void window.shortpath.saveSourceMode("local");
         } else {
@@ -78,11 +101,12 @@ export default function App() {
         setStatus("error");
       });
 
-    const unsubscribe = window.shortpath.onStoreUpdated(({ entries: e, verticals: v, recents: r, favorites: favs }) => {
+    const unsubscribe = window.shortpath.onStoreUpdated(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins }) => {
       setEntries(e);
       setVerticals(v);
       setRecents(r);
       setFavorites(new Set(favs));
+      setPinned(new Set(pins));
     });
     return unsubscribe;
   }, []);
@@ -136,14 +160,25 @@ export default function App() {
   const rawGroups = useMemo(() => {
     const verticalMap = new Map(verticals.map((v) => [v.id, v]));
     const trimmed = debouncedQuery.trim();
+    const isSearching = trimmed.length >= 2;
 
     let items: { entry: Entry; matches: SearchResult["matches"] }[];
 
-    if (trimmed.length < 2) {
-      items = entries.map((entry) => ({ entry, matches: [] }));
+    if (!isSearching) {
+      // When not searching, apply sort mode
+      let sorted = [...entries];
+      const effectiveSort = sortMode === "relevance" ? "most-used" : sortMode;
+      if (effectiveSort === "most-used") {
+        sorted.sort((a, b) => (b.copyCount ?? 0) - (a.copyCount ?? 0));
+      } else if (effectiveSort === "recently-added") {
+        sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      } else if (effectiveSort === "a-to-z") {
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+      }
+      items = sorted.map((entry) => ({ entry, matches: [] }));
     } else if (fuse) {
       const fuseResults: FuseResult<Entry>[] = fuse.search(trimmed);
-      items = fuseResults.map((r) => ({
+      let resultItems = fuseResults.map((r) => ({
         entry: r.item,
         matches:
           r.matches?.map((m) => ({
@@ -151,8 +186,22 @@ export default function App() {
             indices: [...m.indices] as [number, number][],
           })) ?? [],
       }));
+      // Apply non-relevance sort during search too
+      if (sortMode === "most-used") {
+        resultItems.sort((a, b) => (b.entry.copyCount ?? 0) - (a.entry.copyCount ?? 0));
+      } else if (sortMode === "recently-added") {
+        resultItems.sort((a, b) => b.entry.createdAt.localeCompare(a.entry.createdAt));
+      } else if (sortMode === "a-to-z") {
+        resultItems.sort((a, b) => a.entry.title.localeCompare(b.entry.title));
+      }
+      items = resultItems;
     } else {
       return [];
+    }
+
+    // Filter by active vertical tab
+    if (activeVerticalFilter) {
+      items = items.filter((i) => i.entry.vertical === activeVerticalFilter);
     }
 
     const byVertical = new Map<string, typeof items>();
@@ -164,7 +213,15 @@ export default function App() {
 
     const result: Array<{ verticalId: string; label: string; hitCount: number; results: SearchResult[] }> = [];
 
-    for (const v of verticals) {
+    // Render verticals in custom order (if set), then any remaining
+    const orderedVerticals = verticalOrder.length > 0
+      ? [
+          ...verticalOrder.map(id => verticals.find(v => v.id === id)).filter(Boolean) as Vertical[],
+          ...verticals.filter(v => !verticalOrder.includes(v.id)),
+        ]
+      : verticals;
+
+    for (const v of orderedVerticals) {
       const groupItems = byVertical.get(v.id);
       if (!groupItems?.length) continue;
       result.push({
@@ -176,7 +233,7 @@ export default function App() {
     }
 
     for (const [vid, groupItems] of byVertical) {
-      if (verticals.find((v) => v.id === vid)) continue;
+      if (orderedVerticals.find((v) => v.id === vid)) continue;
       result.push({
         verticalId: vid,
         label: verticalMap.get(vid)?.label ?? vid,
@@ -186,7 +243,7 @@ export default function App() {
     }
 
     return result;
-  }, [entries, verticals, debouncedQuery, fuse]);
+  }, [entries, verticals, debouncedQuery, fuse, sortMode, activeVerticalFilter, verticalOrder]);
 
   const groups = useMemo((): VerticalGroup[] => {
     return rawGroups.map((g) => ({ ...g, expanded: expandedGroups.has(g.verticalId) }));
@@ -197,19 +254,26 @@ export default function App() {
     [recents, entries]
   );
 
-  // Flat list of all currently visible results for keyboard navigation.
+  const pinnedEntries = useMemo(
+    () => Array.from(pinned).map((id) => entries.find((e) => e.id === id)).filter(Boolean) as Entry[],
+    [pinned, entries]
+  );
+
+  const sessionCopiedEntries = useMemo(
+    () => sessionCopies.map((id) => entries.find((e) => e.id === id)).filter(Boolean) as Entry[],
+    [sessionCopies, entries]
+  );
+
   const flatResults = useMemo((): Entry[] => {
     const searching = debouncedQuery.trim().length >= 2;
     if (!searching && recentEntries.length > 0) return recentEntries;
     return groups.flatMap((g) => (g.expanded ? g.results.map((r) => r.entry) : []));
   }, [groups, recentEntries, debouncedQuery]);
 
-  // Reset keyboard focus when the query or visible results change.
   useEffect(() => {
     setFocusedEntryId(null);
   }, [debouncedQuery]);
 
-  // Scroll focused item into view.
   useEffect(() => {
     if (focusedEntryId) {
       document.querySelector("[data-focused='true']")?.scrollIntoView({ block: "nearest" });
@@ -232,6 +296,14 @@ export default function App() {
 
   function handleCopy(entryId: string) {
     setRecents((prev) => [entryId, ...prev.filter((id) => id !== entryId)].slice(0, 10));
+    setSessionCopies((prev) => [entryId, ...prev.filter((id) => id !== entryId)].slice(0, 5));
+    const entry = entries.find((e) => e.id === entryId);
+    if (entry?.source === "local") {
+      void window.shortpath.incrementCopyCount(entryId);
+    }
+    if (autoHideOnCopy) {
+      setTimeout(() => void window.shortpath.hideWindow(), 300);
+    }
   }
 
   function navigateDown() {
@@ -252,6 +324,24 @@ export default function App() {
     });
   }
 
+  // Cycle the vertical filter tab
+  const orderedTabVerticals = useMemo(() => {
+    if (verticalOrder.length > 0) {
+      return [
+        ...verticalOrder.map(id => verticals.find(v => v.id === id)).filter(Boolean) as Vertical[],
+        ...verticals.filter(v => !verticalOrder.includes(v.id)),
+      ];
+    }
+    return verticals;
+  }, [verticals, verticalOrder]);
+
+  function cycleVerticalTab(direction: 1 | -1) {
+    const tabs = [null, ...orderedTabVerticals.map(v => v.id)];
+    const currentIdx = tabs.indexOf(activeVerticalFilter);
+    const nextIdx = (currentIdx + direction + tabs.length) % tabs.length;
+    setActiveVerticalFilter(tabs[nextIdx]);
+  }
+
   function handleClipboardIconClick() {
     setQuickAddPrefill(clipboardText!);
     setEditingEntry(null);
@@ -261,12 +351,18 @@ export default function App() {
 
   function handleReorderEntry(entryId: string, direction: "up" | "down") {
     void window.shortpath.reorderEntry(entryId, direction);
-    // store-updated push from main will refresh entries
   }
 
   function handleToggleFavorite(id: string) {
     void window.shortpath.toggleFavorite(id);
-    // store-updated push from main will refresh favorites
+  }
+
+  async function handleTogglePin(id: string) {
+    const result = await window.shortpath.togglePin(id);
+    if (result.limitReached) {
+      setPinLimitMsg(true);
+      setTimeout(() => setPinLimitMsg(false), 3000);
+    }
   }
 
   function handleGoHome() {
@@ -322,27 +418,34 @@ export default function App() {
     }
   }
 
-  // Window-level Esc: fires when focus is not inside a text input (those call
-  // handleEscape via onEscape prop on SearchBar). MacroOverlay's capture listener
-  // intercepts Esc first when the overlay is open, so no double-handling occurs.
+  // Window-level Esc and Tab handling
   useEffect(() => {
     function onWindowKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Escape") return;
       const active = document.activeElement;
-      if (active?.tagName === "INPUT" || active?.tagName === "TEXTAREA") return;
-      if (overlayEntry) {
-        setOverlayEntry(null);
-      } else if (focusedEntryId) {
-        setFocusedEntryId(null);
-      } else if (query) {
-        setQuery("");
-      } else {
-        void window.shortpath.hideWindow();
+      const inInput = active?.tagName === "INPUT" || active?.tagName === "TEXTAREA";
+
+      if (e.key === "Escape") {
+        if (inInput) return;
+        if (overlayEntry) {
+          setOverlayEntry(null);
+        } else if (focusedEntryId) {
+          setFocusedEntryId(null);
+        } else if (query) {
+          setQuery("");
+        } else {
+          void window.shortpath.hideWindow();
+        }
+        return;
+      }
+
+      if (e.key === "Tab" && !inInput && mode === "browse") {
+        e.preventDefault();
+        cycleVerticalTab(e.shiftKey ? -1 : 1);
       }
     }
     window.addEventListener("keydown", onWindowKeyDown);
     return () => window.removeEventListener("keydown", onWindowKeyDown);
-  }, [overlayEntry, focusedEntryId, query]);
+  }, [overlayEntry, focusedEntryId, query, mode, activeVerticalFilter, orderedTabVerticals]);
 
   function handleFormSave(entry: Entry, newVerticals: Vertical[]) {
     if (mode === "add") {
@@ -374,7 +477,6 @@ export default function App() {
   }
 
   function handleImportComplete() {
-    // store-updated push from main will refresh entries/verticals
     setMode("browse");
   }
 
@@ -454,6 +556,17 @@ export default function App() {
             setVerticals((prev) => [...prev, v]);
             setExpandedGroups((prev) => new Set([...prev, v.id]));
           }}
+          entries={entries}
+          verticalOrder={verticalOrder}
+          onVerticalOrderChange={(order) => {
+            setVerticalOrder(order);
+            void window.shortpath.setVerticalOrder(order);
+          }}
+          autoHideOnCopy={autoHideOnCopy}
+          onAutoHideOnCopyChange={(val) => {
+            setAutoHideOnCopy(val);
+            void window.shortpath.setAutoHideOnCopy(val);
+          }}
         />
       </div>
     );
@@ -487,6 +600,8 @@ export default function App() {
             onCopied={handleCopy}
             isFavorite={favorites.has(overlayEntry.id)}
             onToggleFavorite={() => handleToggleFavorite(overlayEntry.id)}
+            isPinned={pinned.has(overlayEntry.id)}
+            onTogglePin={() => void handleTogglePin(overlayEntry.id)}
             onEdit={handleEditFromOverlay}
             onDuplicate={handleDuplicateEntry}
             onAddNote={() => {
@@ -576,6 +691,42 @@ export default function App() {
         )}
       </div>
 
+      {/* Vertical filter tabs */}
+      {orderedTabVerticals.length > 1 && (
+        <div className="vertical-tabs">
+          <button
+            className={`vtab${activeVerticalFilter === null ? " active" : ""}`}
+            onClick={() => setActiveVerticalFilter(null)}
+          >
+            All
+          </button>
+          {orderedTabVerticals.map((v) => (
+            <button
+              key={v.id}
+              className={`vtab${activeVerticalFilter === v.id ? " active" : ""}`}
+              onClick={() => setActiveVerticalFilter(activeVerticalFilter === v.id ? null : v.id)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Sort control */}
+      <div className="sort-bar">
+        <span className="sort-label">Sort:</span>
+        <select
+          className="sort-select"
+          value={sortMode}
+          onChange={(e) => setSortMode(e.target.value as SortMode)}
+        >
+          <option value="relevance">{isSearching ? "Relevance" : "Most used"}</option>
+          <option value="most-used">Most used</option>
+          <option value="recently-added">Recently added</option>
+          <option value="a-to-z">A to Z</option>
+        </select>
+      </div>
+
       <main className="results-container">
 
         {isSearching && groups.length === 0 && (
@@ -587,6 +738,65 @@ export default function App() {
         {!isSearching && entries.length === 0 && (
           <div className="empty-state">
             <p>No entries yet. Press <strong>+</strong> to add one or open <strong>⚙ Settings</strong> to import a CSV.</p>
+          </div>
+        )}
+
+        {/* Pinned section — only when not searching */}
+        {!isSearching && pinnedEntries.length > 0 && (
+          <div className="pinned-section">
+            <div className="section-header-row">
+              <span className="section-header-label">Pinned</span>
+            </div>
+            {pinLimitMsg && (
+              <div className="pin-limit-msg">Unpin an entry to pin this one (max 8).</div>
+            )}
+            <ul className="result-list">
+              {pinnedEntries.map((entry) => (
+                <ResultItem
+                  key={entry.id}
+                  result={{ entry, matches: [] }}
+                  onEdit={handleEditEntry}
+                  onCopy={handleCopy}
+                  onOpen={handleOpenOverlay}
+                  isFocused={focusedEntryId === entry.id}
+                  isFavorite={favorites.has(entry.id)}
+                  onToggleFavorite={handleToggleFavorite}
+                  isPinned={true}
+                  onTogglePin={(id) => void handleTogglePin(id)}
+                />
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Recent copies section — only when not searching */}
+        {!isSearching && sessionCopiedEntries.length > 0 && (
+          <div className="recent-section">
+            <div className="section-header-row">
+              <span className="section-header-label">Recent</span>
+            </div>
+            <ul className="result-list">
+              {sessionCopiedEntries.map((entry) => (
+                <ResultItem
+                  key={entry.id}
+                  result={{ entry, matches: [] }}
+                  onEdit={handleEditEntry}
+                  onCopy={handleCopy}
+                  onOpen={handleOpenOverlay}
+                  isFocused={focusedEntryId === entry.id}
+                  isFavorite={favorites.has(entry.id)}
+                  onToggleFavorite={handleToggleFavorite}
+                  isPinned={pinned.has(entry.id)}
+                  onTogglePin={(id) => void handleTogglePin(id)}
+                />
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {pinLimitMsg && isSearching && (
+          <div className="pin-limit-msg" style={{ padding: "4px 14px 6px" }}>
+            Unpin an entry to pin this one (max 8).
           </div>
         )}
 
@@ -613,6 +823,8 @@ export default function App() {
               focusedEntryId={focusedEntryId}
               favorites={favorites}
               onToggleFavorite={handleToggleFavorite}
+              pinned={pinned}
+              onTogglePin={(id) => void handleTogglePin(id)}
             />
           )
         )}
@@ -634,6 +846,8 @@ export default function App() {
           onCopied={handleCopy}
           isFavorite={favorites.has(overlayEntry.id)}
           onToggleFavorite={() => handleToggleFavorite(overlayEntry.id)}
+          isPinned={pinned.has(overlayEntry.id)}
+          onTogglePin={() => void handleTogglePin(overlayEntry.id)}
           onEdit={handleEditFromOverlay}
           onDuplicate={handleDuplicateEntry}
           onAddNote={() => {
