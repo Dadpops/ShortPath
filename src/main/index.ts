@@ -349,13 +349,13 @@ function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle("commit-csv-import", () => {
+  ipcMain.handle("commit-csv-import", (_e, resolutions: Record<number, string> = {}) => {
     if (!pendingCsvImport) return { success: false, errors: ["No pending import. Open a file first."] };
 
     try {
       const result = pendingColumnMapping
-        ? importCsvWithMapping(store, pendingCsvImport, pendingColumnMapping, "local")
-        : importCsv(store, pendingCsvImport, "local");
+        ? importCsvWithMapping(store, pendingCsvImport, pendingColumnMapping, "local", resolutions as Record<number, import("../store/csv").RowResolution>)
+        : importCsv(store, pendingCsvImport, "local", resolutions as Record<number, import("../store/csv").RowResolution>);
       store = result.store;
       saveStore(userDataPath, store);
       pendingCsvImport = null;

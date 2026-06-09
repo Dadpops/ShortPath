@@ -1,5 +1,7 @@
-import { useState, useCallback } from "react";
-import type { ColumnMapping } from "@shared/types";
+import { useState, useCallback, useMemo } from "react";
+import type { ColumnMapping, Entry } from "@shared/types";
+
+type RowResolution = "skip" | "overwrite" | "import-as-new";
 
 type ImportState =
   | { status: "idle" }
@@ -11,6 +13,7 @@ type ImportState =
   | { status: "error"; message: string };
 
 interface PreviewRow {
+  rowIndex: number;
   title: string;
   vertical: string;
   type: string;
@@ -32,15 +35,31 @@ const FIELDS: { key: keyof ColumnMapping; label: string; required: boolean; note
 interface Props {
   onComplete: () => void;
   onCancel: () => void;
+  existingEntries: Entry[];
 }
 
-export default function ImportScreen({ onComplete, onCancel }: Props) {
+export default function ImportScreen({ onComplete, onCancel, existingEntries }: Props) {
   const [state, setState] = useState<ImportState>({ status: "idle" });
   const [mapping, setMapping] = useState<ColumnMapping>({
     title: null, vertical: null, type: null,
     body: null, url: null, tags: null, subfolder: null,
   });
   const [isDragOver, setIsDragOver] = useState(false);
+  const [resolutions, setResolutions] = useState<Record<number, RowResolution>>({});
+
+  // Build a lookup set of "vertical:::title" keys for fast duplicate detection.
+  const existingKeys = useMemo(
+    () => new Set(existingEntries.map((e) => `${e.vertical}:::${e.title.toLowerCase().trim()}`)),
+    [existingEntries]
+  );
+
+  function isDuplicate(row: PreviewRow) {
+    return existingKeys.has(`${row.vertical.toLowerCase()}:::${row.title.toLowerCase().trim()}`);
+  }
+
+  function setResolution(rowIndex: number, res: RowResolution) {
+    setResolutions((prev) => ({ ...prev, [rowIndex]: res }));
+  }
 
   async function stageResult(result: Awaited<ReturnType<typeof window.shortpath.previewCsvImport>>) {
     if (!result.success) {
@@ -54,6 +73,7 @@ export default function ImportScreen({ onComplete, onCancel }: Props) {
       setState({ status: "needsMapping", availableColumns: cols });
       return;
     }
+    setResolutions({});
     setState({
       status: "previewing",
       totalRows: result.totalRows ?? 0,
@@ -110,6 +130,7 @@ export default function ImportScreen({ onComplete, onCancel }: Props) {
         setState({ status: "error", message: result.errors?.[0] ?? "Mapping failed." });
         return;
       }
+      setResolutions({});
       setState({
         status: "previewing",
         totalRows: result.totalRows ?? 0,
@@ -125,7 +146,7 @@ export default function ImportScreen({ onComplete, onCancel }: Props) {
   async function handleConfirm() {
     setState({ status: "committing" });
     try {
-      const result = await window.shortpath.commitCsvImport();
+      const result = await window.shortpath.commitCsvImport(resolutions);
       if (!result.success) {
         setState({ status: "error", message: result.errors?.[0] ?? "Import failed." });
         return;
@@ -255,56 +276,81 @@ export default function ImportScreen({ onComplete, onCancel }: Props) {
           </div>
         )}
 
-        {state.status === "previewing" && (
-          <div className="import-preview">
-            <p className="import-preview-summary">
-              <strong>{state.totalRows}</strong> row{state.totalRows !== 1 ? "s" : ""} found
-              {state.skippedCount > 0 && (
-                <span className="import-skip-count"> — {state.skippedCount} will be skipped</span>
-              )}
-            </p>
-
-            {state.previewRows.length > 0 && (
-              <ul className="import-preview-rows">
-                {state.previewRows.map((row, i) => (
-                  <li key={i} className="import-preview-row">
-                    <span className="preview-row-vertical">{row.vertical}</span>
-                    <span className="preview-row-title">{row.title}</span>
-                    <span className="preview-row-type">{row.type}</span>
-                  </li>
-                ))}
-                {state.totalRows > state.previewRows.length && (
-                  <li className="import-preview-more">
-                    + {state.totalRows - state.previewRows.length} more...
-                  </li>
+        {state.status === "previewing" && (() => {
+          const duplicateCount = state.previewRows.filter((r) => isDuplicate(r)).length;
+          // Rows counted as skipped: invalid rows + duplicate rows with "skip" resolution
+          const skippedDuplicates = state.previewRows.filter(
+            (r) => isDuplicate(r) && (resolutions[r.rowIndex] ?? "skip") === "skip"
+          ).length;
+          const effectiveSkipped = state.skippedCount + skippedDuplicates;
+          const importCount = state.totalRows - effectiveSkipped;
+          return (
+            <div className="import-preview">
+              <p className="import-preview-summary">
+                <strong>{state.totalRows}</strong> row{state.totalRows !== 1 ? "s" : ""} found
+                {effectiveSkipped > 0 && (
+                  <span className="import-skip-count"> — {effectiveSkipped} will be skipped</span>
                 )}
-              </ul>
-            )}
+                {duplicateCount > 0 && (
+                  <span className="import-dup-count"> — {duplicateCount} duplicate{duplicateCount !== 1 ? "s" : ""} flagged</span>
+                )}
+              </p>
 
-            {state.errors.length > 0 && (
-              <div className="import-error-list">
-                <p className="import-error-heading">Issues found:</p>
-                <ul>
-                  {state.errors.slice(0, 5).map((err, i) => (
-                    <li key={i}>{err}</li>
-                  ))}
-                  {state.errors.length > 5 && (
-                    <li>+ {state.errors.length - 5} more issues</li>
-                  )}
+              {state.previewRows.length > 0 && (
+                <ul className="import-preview-rows">
+                  {state.previewRows.map((row) => {
+                    const dup = isDuplicate(row);
+                    const res: RowResolution = resolutions[row.rowIndex] ?? (dup ? "skip" : "import-as-new");
+                    return (
+                      <li key={row.rowIndex} className={`import-preview-row${dup ? " is-duplicate" : ""}`}>
+                        <span className="preview-row-vertical">{row.vertical}</span>
+                        <span className="preview-row-title">{row.title}</span>
+                        <span className="preview-row-type">{row.type}</span>
+                        {dup && (
+                          <>
+                            <span className="preview-dup-badge">Duplicate</span>
+                            <select
+                              className="preview-dup-select"
+                              value={res}
+                              onChange={(e) => setResolution(row.rowIndex, e.target.value as RowResolution)}
+                            >
+                              <option value="skip">Skip</option>
+                              <option value="overwrite">Overwrite</option>
+                              <option value="import-as-new">Import as new</option>
+                            </select>
+                          </>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
-              </div>
-            )}
+              )}
 
-            <div className="form-footer">
-              <button className="btn-secondary" onClick={() => setState({ status: "idle" })}>
-                Cancel
-              </button>
-              <button className="btn-primary" onClick={handleConfirm}>
-                Import {state.totalRows - state.skippedCount} rows
-              </button>
+              {state.errors.length > 0 && (
+                <div className="import-error-list">
+                  <p className="import-error-heading">Issues found:</p>
+                  <ul>
+                    {state.errors.slice(0, 5).map((err, i) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                    {state.errors.length > 5 && (
+                      <li>+ {state.errors.length - 5} more issues</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              <div className="form-footer">
+                <button className="btn-secondary" onClick={() => setState({ status: "idle" })}>
+                  Cancel
+                </button>
+                <button className="btn-primary" onClick={handleConfirm}>
+                  Import {importCount} row{importCount !== 1 ? "s" : ""}
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {state.status === "committing" && (
           <div className="import-status-msg">Importing...</div>

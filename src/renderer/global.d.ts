@@ -35,6 +35,7 @@ interface ImportCsvResult {
 }
 
 interface CsvPreviewRow {
+  rowIndex: number;
   title: string;
   vertical: string;
   type: string;
@@ -88,7 +89,7 @@ declare global {
       exportSelected: (ids: string[]) => Promise<{ success: boolean }>;
 
       previewCsvImport: () => Promise<CsvPreviewResult>;
-      commitCsvImport: () => Promise<CsvCommitResult>;
+      commitCsvImport: (resolutions?: Record<number, string>) => Promise<CsvCommitResult>;
       stageCsvFile: (filePath: string) => Promise<CsvPreviewResult>;
       previewCsvWithMapping: (mapping: ColumnMapping) => Promise<CsvPreviewResult>;
       downloadTemplateCsv: () => Promise<{ success: boolean }>;

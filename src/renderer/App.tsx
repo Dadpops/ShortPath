@@ -546,7 +546,7 @@ export default function App() {
   if (mode === "import") {
     return (
       <div className={shellClass}>
-        <ImportScreen onComplete={handleImportComplete} onCancel={() => setMode("browse")} />
+        <ImportScreen onComplete={handleImportComplete} onCancel={() => setMode("browse")} existingEntries={entries} />
       </div>
     );
   }

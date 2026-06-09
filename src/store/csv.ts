@@ -73,6 +73,7 @@ export interface ImportResult {
 }
 
 export interface CsvPreviewRow {
+  rowIndex: number;  // 0-based index in the parsed data array, used to key per-row resolutions
   title: string;
   vertical: string;
   type: string;
@@ -200,17 +201,16 @@ export function parseCsvPreview(csvString: string): CsvPreviewResult {
       continue;
     }
 
-    if (previewRows.length < 5) {
-      previewRows.push({
-        title: row.title!.trim(),
-        vertical: row.vertical!.trim(),
-        type: row.type!.trim(),
-        subfolder: row.subfolder?.trim() ?? "",
-        hasBody: !!row.body?.trim(),
-        hasUrl: !!row.url?.trim(),
-        tags: row.tags?.trim() ?? "",
-      });
-    }
+    previewRows.push({
+      rowIndex: i,
+      title: row.title!.trim(),
+      vertical: row.vertical!.trim(),
+      type: row.type!.trim(),
+      subfolder: row.subfolder?.trim() ?? "",
+      hasBody: !!row.body?.trim(),
+      hasUrl: !!row.url?.trim(),
+      tags: row.tags?.trim() ?? "",
+    });
   }
 
   return {
@@ -246,27 +246,29 @@ export function parseCsvPreviewWithMapping(csvString: string, mapping: ColumnMap
       continue;
     }
 
-    if (previewRows.length < 5) {
-      previewRows.push({
-        title: row.title!.trim(),
-        vertical: row.vertical!.trim(),
-        type: row.type!.trim(),
-        subfolder: row.subfolder?.trim() ?? "",
-        hasBody: !!row.body?.trim(),
-        hasUrl: !!row.url?.trim(),
-        tags: row.tags?.trim() ?? "",
-      });
-    }
+    previewRows.push({
+      rowIndex: i,
+      title: row.title!.trim(),
+      vertical: row.vertical!.trim(),
+      type: row.type!.trim(),
+      subfolder: row.subfolder?.trim() ?? "",
+      hasBody: !!row.body?.trim(),
+      hasUrl: !!row.url?.trim(),
+      tags: row.tags?.trim() ?? "",
+    });
   }
 
   return { totalRows: rawData.length, previewRows, skippedCount, errors };
 }
 
+export type RowResolution = "skip" | "overwrite" | "import-as-new";
+
 export function importCsvWithMapping(
   store: StoreData,
   csvString: string,
   mapping: ColumnMapping,
-  source: "local" | "synced" = "local"
+  source: "local" | "synced" = "local",
+  resolutions: Record<number, RowResolution> = {}
 ): ImportResult {
   const { data: rawData, parseErrors } = parseRowsRaw(csvString);
   const data = applyColumnMapping(rawData, mapping);
@@ -313,9 +315,12 @@ export function importCsvWithMapping(
     }
 
     const now = new Date().toISOString();
-    const existing = entries.find((e) => e.vertical === vertical && e.title === title);
+    const existing = entries.find((e) => e.vertical === vertical && e.title.toLowerCase().trim() === title.toLowerCase());
+    const resolution: RowResolution = resolutions[i] ?? (existing ? "skip" : "import-as-new");
 
-    if (existing) {
+    if (resolution === "skip") {
+      skipped++;
+    } else if (resolution === "overwrite" && existing) {
       entries = entries.map((e) =>
         e.id === existing.id
           ? { ...e, body: row.body?.trim() || null, link: row.url?.trim() || null, tags: row.tags?.trim() || "", type, subFolderId, updatedAt: now }
@@ -340,7 +345,8 @@ export function importCsvWithMapping(
 export function importCsv(
   store: StoreData,
   csvString: string,
-  source: "local" | "synced" = "local"
+  source: "local" | "synced" = "local",
+  resolutions: Record<number, RowResolution> = {}
 ): ImportResult {
   const { data, parseErrors } = parseRows(csvString);
   const errors: string[] = [...parseErrors];
@@ -388,9 +394,12 @@ export function importCsv(
     }
 
     const now = new Date().toISOString();
-    const existing = entries.find((e) => e.vertical === vertical && e.title === title);
+    const existing = entries.find((e) => e.vertical === vertical && e.title.toLowerCase().trim() === title.toLowerCase());
+    const resolution: RowResolution = resolutions[i] ?? (existing ? "skip" : "import-as-new");
 
-    if (existing) {
+    if (resolution === "skip") {
+      skipped++;
+    } else if (resolution === "overwrite" && existing) {
       entries = entries.map((e) =>
         e.id === existing.id
           ? {
@@ -399,10 +408,8 @@ export function importCsv(
               link: row.url?.trim() || null,
               tags: row.tags?.trim() || "",
               type,
-              // If column is absent (undefined), preserve existing. Empty string clears it.
               subFolderId: row.subfolder !== undefined ? subFolderId : e.subFolderId,
               updatedAt: now,
-              // preserve existing source — re-importing doesn't change ownership
             }
           : e
       );

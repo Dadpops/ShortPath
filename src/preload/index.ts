@@ -29,7 +29,7 @@ contextBridge.exposeInMainWorld("shortpath", {
   exportSelected: (ids: string[]) => ipcRenderer.invoke("export-selected", ids),
 
   previewCsvImport: () => ipcRenderer.invoke("preview-csv-import"),
-  commitCsvImport: () => ipcRenderer.invoke("commit-csv-import"),
+  commitCsvImport: (resolutions?: Record<number, string>) => ipcRenderer.invoke("commit-csv-import", resolutions ?? {}),
   stageCsvFile: (filePath: string) => ipcRenderer.invoke("stage-csv-file", filePath),
   previewCsvWithMapping: (mapping: ColumnMapping) => ipcRenderer.invoke("preview-csv-with-mapping", mapping),
   downloadTemplateCsv: () => ipcRenderer.invoke("download-template-csv"),
