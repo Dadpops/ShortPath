@@ -1,18 +1,21 @@
 import React, { useState, useMemo } from "react";
-import type { Entry, Vertical, SubFolder } from "@shared/types";
+import type { Entry, Vertical, SubFolder, CapturePayload } from "@shared/types";
 import RichTextEditor from "./RichTextEditor";
 
 interface Props {
-  entry?: Entry;        // undefined = add mode
+  entry?: Entry;
   verticals: Vertical[];
-  allEntries?: Entry[];          // all existing entries for duplicate detection
+  allEntries?: Entry[];
   onSave: (entry: Entry, newVerticals: Vertical[]) => void;
   onDelete?: () => void;
   onCancel: () => void;
-  quickAdd?: boolean;           // hides type/tags behind "More options" toggle
-  prefillBody?: string;         // pre-populate body field (e.g. from clipboard)
-  defaultVerticalId?: string;   // pre-select a vertical when adding (e.g. from active filter)
+  quickAdd?: boolean;
+  prefillBody?: string;
+  defaultVerticalId?: string;
+  capturePayload?: CapturePayload;  // pre-fill from browser extension capture
 }
+
+interface UrlSection { heading: string; body: string }
 
 function slugify(label: string): string {
   return label
@@ -30,11 +33,11 @@ function normalizeTags(raw: string): string {
     .join("|");
 }
 
-export default function EntryForm({ entry, verticals, allEntries, onSave, onDelete, onCancel, quickAdd, prefillBody, defaultVerticalId }: Props) {
+export default function EntryForm({ entry, verticals, allEntries, onSave, onDelete, onCancel, quickAdd, prefillBody, defaultVerticalId, capturePayload }: Props) {
   const isEdit = !!entry;
 
-  const [title, setTitle] = useState(entry?.title ?? "");
-  const [body, setBody] = useState(entry?.body ?? prefillBody ?? "");
+  const [title, setTitle] = useState(entry?.title ?? capturePayload?.title ?? "");
+  const [body, setBody] = useState(entry?.body ?? prefillBody ?? capturePayload?.body ?? "");
   const [link, setLink] = useState(entry?.link ?? "");
   const [tags, setTags] = useState(entry?.tags ?? "");
   const [type, setType] = useState<Entry["type"]>(entry?.type ?? "reply");
@@ -48,6 +51,15 @@ export default function EntryForm({ entry, verticals, allEntries, onSave, onDele
   const [error, setError] = useState("");
   const [showMore, setShowMore] = useState(false);
   const [titleDupWarning, setTitleDupWarning] = useState("");
+
+  // URL import state
+  const [showUrlImport, setShowUrlImport] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [urlImportStatus, setUrlImportStatus] = useState<"idle" | "loading" | "sections" | "error">("idle");
+  const [urlSections, setUrlSections] = useState<UrlSection[]>([]);
+  const [urlImportError, setUrlImportError] = useState("");
+
+  const capturedFromUrl = capturePayload?.url ?? entry?.sourceUrl ?? "";
 
   const selectedVertical = useMemo(
     () => verticals.find((v) => v.id === (isNewVertical ? "" : verticalId)),
@@ -76,6 +88,38 @@ export default function EntryForm({ entry, verticals, allEntries, onSave, onDele
     }
   }
 
+  async function handleFetchUrl() {
+    if (!importUrl.trim()) return;
+    setUrlImportStatus("loading");
+    try {
+      const result = await window.shortpath.fetchUrlContent(importUrl.trim());
+      if ("error" in result) {
+        setUrlImportError(result.error);
+        setUrlImportStatus("error");
+      } else {
+        setUrlSections(result.sections);
+        setUrlImportStatus("sections");
+      }
+    } catch (err) {
+      setUrlImportError(String(err));
+      setUrlImportStatus("error");
+    }
+  }
+
+  function applyUrlSection(section: UrlSection) {
+    setBody(section.body);
+    if (!title.trim()) setTitle(section.heading);
+    setShowUrlImport(false);
+    setUrlImportStatus("idle");
+  }
+
+  function applyAllUrlSections() {
+    const combined = urlSections.map((s) => `${s.heading}\n\n${s.body}`).join("\n\n---\n\n");
+    setBody(combined);
+    setShowUrlImport(false);
+    setUrlImportStatus("idle");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -95,6 +139,7 @@ export default function EntryForm({ entry, verticals, allEntries, onSave, onDele
         type,
         subFolderId: subFolderId || undefined,
         copyMode,
+        sourceUrl: capturedFromUrl || undefined,
       };
 
       if (isEdit && entry) {
@@ -255,8 +300,81 @@ export default function EntryForm({ entry, verticals, allEntries, onSave, onDele
           </div>
         )}
 
+        {capturedFromUrl && (
+          <div className="form-field">
+            <label className="form-label">Captured from</label>
+            <p className="capture-source-url">{capturedFromUrl}</p>
+          </div>
+        )}
+
         <div className="form-field">
           <label className="form-label">Body</label>
+          {!showUrlImport && (
+            <button
+              type="button"
+              className="url-import-toggle"
+              onClick={() => { setShowUrlImport(true); setUrlImportStatus("idle"); }}
+            >
+              Import from URL
+            </button>
+          )}
+          {showUrlImport && (
+            <div className="url-import-panel">
+              <div className="url-import-row">
+                <input
+                  className="form-input url-import-input"
+                  type="url"
+                  placeholder="https://..."
+                  value={importUrl}
+                  onChange={(e) => setImportUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); void handleFetchUrl(); }
+                    if (e.key === "Escape") { setShowUrlImport(false); setUrlImportStatus("idle"); }
+                  }}
+                  disabled={urlImportStatus === "loading"}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="btn-secondary url-import-fetch-btn"
+                  onClick={() => void handleFetchUrl()}
+                  disabled={urlImportStatus === "loading" || !importUrl.trim()}
+                >
+                  {urlImportStatus === "loading" ? "Fetching..." : "Fetch"}
+                </button>
+                <button
+                  type="button"
+                  className="url-import-dismiss"
+                  onClick={() => { setShowUrlImport(false); setUrlImportStatus("idle"); }}
+                  title="Cancel"
+                >
+                  ✕
+                </button>
+              </div>
+              {urlImportStatus === "error" && (
+                <p className="url-import-error">{urlImportError}</p>
+              )}
+              {urlImportStatus === "sections" && urlSections.length > 0 && (
+                <div className="url-sections-list">
+                  <div className="url-sections-header">
+                    <span className="url-sections-label">{urlSections.length} section{urlSections.length !== 1 ? "s" : ""} found</span>
+                    <button type="button" className="btn-link" onClick={applyAllUrlSections}>Use all</button>
+                  </div>
+                  {urlSections.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="url-section-item"
+                      onClick={() => applyUrlSection(s)}
+                    >
+                      <span className="url-section-heading">{s.heading}</span>
+                      <span className="url-section-preview">{s.body.slice(0, 80)}{s.body.length > 80 ? "…" : ""}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <RichTextEditor
             value={body}
             onChange={setBody}
