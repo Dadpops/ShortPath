@@ -13,7 +13,7 @@ import {
 } from "electron";
 import path from "path";
 import fs from "fs";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
 import { applySeed } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
@@ -21,9 +21,15 @@ import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import type { StoreData } from "../store/schema";
 import type { Entry, Note } from "../shared/types";
 
-const WINDOW_WIDTH = 512;
-const WINDOW_HEIGHT = 632;
+const WINDOW_WIDTH = 480;
+const WINDOW_HEIGHT = 640;
 const MARGIN = 12;
+
+const SIZE_PRESETS = {
+  small:  { width: 380, height: 520 },
+  medium: { width: 480, height: 640 },
+  large:  { width: 580, height: 760 },
+} as const;
 
 let tray: Tray | null = null;
 let trayIconBase: ReturnType<typeof nativeImage.createFromPath> | null = null;
@@ -57,14 +63,16 @@ function getBottomLeftPosition() {
 function createWindow() {
   const saved = settings.windowBounds;
   const pos = saved ?? getBottomLeftPosition();
-  const width = saved?.width ?? WINDOW_WIDTH;
-  const height = saved?.height ?? WINDOW_HEIGHT;
+  const preset = settings.windowSize ? SIZE_PRESETS[settings.windowSize] : null;
+  const width = preset ? preset.width : (saved?.width ?? WINDOW_WIDTH);
+  const height = preset ? preset.height : (saved?.height ?? WINDOW_HEIGHT);
 
   win = new BrowserWindow({
     width,
     height,
     x: pos.x,
     y: pos.y,
+    opacity: settings.opacity !== undefined ? settings.opacity / 100 : 1,
     resizable: true,
     frame: false,
     transparent: true,
@@ -178,6 +186,7 @@ function pushStoreUpdate() {
     verticals: store.verticals,
     recents: store.recents,
     favorites: store.favorites,
+    pinned: store.pinned,
   });
 }
 
@@ -254,10 +263,17 @@ function registerIpcHandlers() {
     verticals: store.verticals,
     recents: store.recents,
     favorites: store.favorites,
+    pinned: store.pinned,
     fontSize: settings.fontSize ?? 13,
     sourceMode: settings.sourceMode ?? null,
     sourceName: settings.sourceName ?? null,
     theme: settings.theme ?? "dark",
+    accentColor: settings.accentColor ?? null,
+    opacity: settings.opacity ?? 100,
+    windowSize: settings.windowSize ?? null,
+    density: settings.density ?? "comfortable",
+    verticalOrder: settings.verticalOrder ?? [],
+    autoHideOnCopy: settings.autoHideOnCopy ?? false,
   }));
 
   ipcMain.handle(
@@ -420,6 +436,12 @@ function registerIpcHandlers() {
     hotkey: settings.hotkey,
     fontSize: settings.fontSize ?? 13,
     theme: settings.theme ?? "dark",
+    accentColor: settings.accentColor ?? null,
+    opacity: settings.opacity ?? 100,
+    windowSize: settings.windowSize ?? null,
+    density: settings.density ?? "comfortable",
+    verticalOrder: settings.verticalOrder ?? [],
+    autoHideOnCopy: settings.autoHideOnCopy ?? false,
   }));
 
   ipcMain.handle("toggle-favorite", (_e, entryId: string) => {
@@ -436,6 +458,58 @@ function registerIpcHandlers() {
   ipcMain.handle("set-theme", (_e, theme: "dark" | "light") => {
     settings = { ...settings, theme };
     saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-accent", (_e, color: string) => {
+    settings = { ...settings, accentColor: color };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-opacity", (_e, value: number) => {
+    const clamped = Math.max(70, Math.min(100, value));
+    win?.setOpacity(clamped / 100);
+    settings = { ...settings, opacity: clamped };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-window-size", (_e, size: "small" | "medium" | "large") => {
+    const dims = SIZE_PRESETS[size];
+    if (!dims || !win) return;
+    win.setSize(dims.width, dims.height);
+    settings = { ...settings, windowSize: size };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-density", (_e, density: "compact" | "comfortable") => {
+    settings = { ...settings, density };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-vertical-order", (_e, order: string[]) => {
+    settings = { ...settings, verticalOrder: order };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-auto-hide-on-copy", (_e, value: boolean) => {
+    settings = { ...settings, autoHideOnCopy: value };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("toggle-pin", (_e, entryId: string) => {
+    const alreadyPinned = store.pinned.includes(entryId);
+    if (!alreadyPinned && store.pinned.length >= 8) {
+      return { ok: false, limitReached: true };
+    }
+    store = togglePin(store, entryId);
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
+    return { ok: true, pinned: store.pinned.includes(entryId) };
+  });
+
+  ipcMain.handle("increment-copy-count", (_e, entryId: string) => {
+    store = incrementCopyCount(store, entryId);
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
   });
 
   ipcMain.handle("minimize-window", () => win?.minimize());

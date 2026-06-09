@@ -5,10 +5,17 @@ interface LoadEntriesResult {
   verticals: Vertical[];
   recents: string[];
   favorites: string[];
+  pinned: string[];
   fontSize: number;
   sourceMode: "local" | "sync" | null;
   sourceName: string | null;
   theme: "dark" | "light";
+  accentColor: string | null;
+  opacity: number;
+  windowSize: "small" | "medium" | "large" | null;
+  density: "compact" | "comfortable";
+  verticalOrder: string[];
+  autoHideOnCopy: boolean;
 }
 
 interface CreateEntryResult {
@@ -87,11 +94,29 @@ declare global {
       hideWindow: () => Promise<void>;
       minimizeWindow: () => Promise<void>;
 
-      getSettings: () => Promise<{ hotkey: string; fontSize: number; theme: "dark" | "light" }>;
+      getSettings: () => Promise<{
+        hotkey: string;
+        fontSize: number;
+        theme: "dark" | "light";
+        accentColor: string | null;
+        opacity: number;
+        windowSize: "small" | "medium" | "large" | null;
+        density: "compact" | "comfortable";
+        verticalOrder: string[];
+        autoHideOnCopy: boolean;
+      }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
 
       toggleFavorite: (entryId: string) => Promise<void>;
+      togglePin: (entryId: string) => Promise<{ ok: boolean; limitReached?: boolean; pinned?: boolean }>;
+      incrementCopyCount: (entryId: string) => Promise<void>;
+      setAccent: (color: string) => Promise<void>;
+      setOpacity: (value: number) => Promise<void>;
+      setWindowSize: (size: "small" | "medium" | "large") => Promise<void>;
+      setDensity: (density: "compact" | "comfortable") => Promise<void>;
+      setVerticalOrder: (order: string[]) => Promise<void>;
+      setAutoHideOnCopy: (value: boolean) => Promise<void>;
       setFontSize: (size: number) => Promise<void>;
       setTheme: (theme: "dark" | "light") => Promise<void>;
       saveSourceMode: (mode: "local" | "sync", name?: string) => Promise<void>;
@@ -114,7 +139,7 @@ declare global {
       onSyncRefreshed: (callback: () => void) => () => void;
 
       onStoreUpdated: (
-        callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[]; favorites: string[] }) => void
+        callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[]; favorites: string[]; pinned: string[] }) => void
       ) => () => void;
 
       loadNotes: () => Promise<Note[]>;

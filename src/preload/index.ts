@@ -53,6 +53,15 @@ contextBridge.exposeInMainWorld("shortpath", {
   saveSourceMode: (mode: "local" | "sync", name?: string) => ipcRenderer.invoke("save-source-mode", mode, name),
   disconnectSync: () => ipcRenderer.invoke("disconnect-sync"),
 
+  setAccent: (color: string) => ipcRenderer.invoke("set-accent", color),
+  setOpacity: (value: number) => ipcRenderer.invoke("set-opacity", value),
+  setWindowSize: (size: "small" | "medium" | "large") => ipcRenderer.invoke("set-window-size", size),
+  setDensity: (density: "compact" | "comfortable") => ipcRenderer.invoke("set-density", density),
+  setVerticalOrder: (order: string[]) => ipcRenderer.invoke("set-vertical-order", order),
+  setAutoHideOnCopy: (value: boolean) => ipcRenderer.invoke("set-auto-hide-on-copy", value),
+  togglePin: (entryId: string) => ipcRenderer.invoke("toggle-pin", entryId),
+  incrementCopyCount: (entryId: string) => ipcRenderer.invoke("increment-copy-count", entryId),
+
   onFocusSearch: (callback: () => void) => {
     ipcRenderer.on("focus-search", callback);
     return () => ipcRenderer.removeListener("focus-search", callback);
@@ -74,6 +83,7 @@ contextBridge.exposeInMainWorld("shortpath", {
       verticals: { id: string; label: string; builtIn: boolean }[];
       recents: string[];
       favorites: string[];
+      pinned: string[];
     }) => void
   ) => {
     ipcRenderer.on("store-updated", (_event, data) => callback(data));
