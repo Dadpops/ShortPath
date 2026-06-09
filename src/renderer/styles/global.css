@@ -2429,6 +2429,14 @@ body {
   flex: 1;
 }
 
+.notes-save-status {
+  flex: 1;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  font-style: italic;
+}
+
 .notes-action-btn {
   font-size: var(--font-size-xs);
   padding: 4px 10px;

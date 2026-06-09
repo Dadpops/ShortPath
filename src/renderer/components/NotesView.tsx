@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import type { Note } from "@shared/types";
 
 type NotesViewState = "list" | "editor";
+type SaveStatus = "idle" | "saving" | "saved";
 
 interface Props {
   onBack: () => void;
@@ -16,7 +17,9 @@ export default function NotesView({ onBack, initialEntry }: Props) {
   const [view, setView] = useState<NotesViewState>("list");
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     window.shortpath.loadNotes().then((loaded) => {
@@ -46,20 +49,29 @@ export default function NotesView({ onBack, initialEntry }: Props) {
     setView("editor");
   }
 
+  function clearSavedBadge() {
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+  }
+
+  async function saveNote(note: Note) {
+    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
+    setSaveStatus("saving");
+    const saved = await window.shortpath.updateNote(note.id, { title: note.title, body: note.body });
+    setNotes((prev) => prev.map((n) => (n.id === saved.id ? saved : n)));
+    setEditingNote((prev) => (prev?.id === saved.id ? saved : prev));
+    setSaveStatus("saved");
+    clearSavedBadge();
+  }
+
   function scheduleAutoSave(note: Note) {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(async () => {
-      const saved = await window.shortpath.updateNote(note.id, {
-        title: note.title,
-        body: note.body,
-      });
-      setNotes((prev) => prev.map((n) => (n.id === saved.id ? saved : n)));
-      setEditingNote((prev) => (prev?.id === saved.id ? saved : prev));
-    }, 800);
+    saveTimerRef.current = setTimeout(() => { void saveNote(note); }, 1500);
   }
 
   function handleNoteChange(field: "title" | "body", value: string) {
     if (!editingNote) return;
+    setSaveStatus("idle");
     const updated: Note = {
       ...editingNote,
       [field]: field === "title" ? (value || undefined) : value,
@@ -71,24 +83,22 @@ export default function NotesView({ onBack, initialEntry }: Props) {
 
   async function handleDelete() {
     if (!editingNote) return;
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
+    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
+    if (savedTimerRef.current) { clearTimeout(savedTimerRef.current); savedTimerRef.current = null; }
     await window.shortpath.deleteNote(editingNote.id);
     setNotes((prev) => prev.filter((n) => n.id !== editingNote.id));
     setView("list");
     setEditingNote(null);
     setDeleteConfirm(false);
+    setSaveStatus("idle");
   }
 
   function handleOpenNote(note: Note) {
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
+    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
+    if (savedTimerRef.current) { clearTimeout(savedTimerRef.current); savedTimerRef.current = null; }
     setEditingNote(note);
     setDeleteConfirm(false);
+    setSaveStatus("idle");
     setView("editor");
   }
 
@@ -142,7 +152,7 @@ export default function NotesView({ onBack, initialEntry }: Props) {
             <>
               <span className="notes-delete-confirm-text">Delete this note?</span>
               <button className="btn-danger notes-action-btn" onClick={handleDelete}>
-                Delete
+                Confirm delete
               </button>
               <button
                 className="btn-secondary notes-action-btn"
@@ -152,12 +162,25 @@ export default function NotesView({ onBack, initialEntry }: Props) {
               </button>
             </>
           ) : (
-            <button
-              className="btn-secondary notes-action-btn"
-              onClick={() => setDeleteConfirm(true)}
-            >
-              Delete note
-            </button>
+            <>
+              <button
+                className="btn-secondary notes-action-btn"
+                onClick={() => setDeleteConfirm(true)}
+              >
+                Delete
+              </button>
+              <span className="notes-save-status">
+                {saveStatus === "saving" && "Saving..."}
+                {saveStatus === "saved" && "Saved"}
+              </span>
+              <button
+                className="btn-primary notes-action-btn"
+                onClick={() => editingNote && void saveNote(editingNote)}
+                disabled={saveStatus === "saving"}
+              >
+                Save
+              </button>
+            </>
           )}
         </div>
       </div>
