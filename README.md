@@ -32,7 +32,7 @@ Download the latest installer from the [Releases page](https://github.com/Dadpop
 | Platform | File | Notes |
 |---|---|---|
 | Windows | `ShortPath-Setup-x.y.z.exe` | NSIS installer. SmartScreen will warn on first run — click "More info → Run anyway". See [docs/INSTALLING.md](docs/INSTALLING.md). |
-| macOS | `ShortPath-x.y.z.dmg` | Not notarised in v0.1.0. Gatekeeper will block unsigned builds. See [docs/INSTALLING.md](docs/INSTALLING.md). |
+| macOS | `ShortPath-x.y.z.dmg` | Not notarised. Gatekeeper will block unsigned builds. See [docs/INSTALLING.md](docs/INSTALLING.md). |
 
 Your data lives in the OS app-data folder (`%APPDATA%\ShortPath` on Windows, `~/Library/Application Support/ShortPath` on macOS) and is not affected by reinstalling or updating.
 
@@ -40,13 +40,15 @@ Your data lives in the OS app-data folder (`%APPDATA%\ShortPath` on Windows, `~/
 
 ## Screenshots
 
-<!-- TODO: add screenshots after first release build -->
+| Search results | Settings | Support Tools |
+|:---:|:---:|:---:|
+| ![Search results grouped by vertical with nested sub-folders](docs/screenshots/main.png) | ![Settings — Appearance, Behavior, Organization](docs/screenshots/settings.png) | ![Support Tools quick-launch grid](docs/screenshots/tools.png) |
 
 ---
 
 ## Status
 
-v0.1.0 — initial release. All nine planned phases are complete plus several post-phase additions (sub-folders, clipboard capture, paste-and-split, notes linking, help system).
+v0.2.0 — all planned phases complete. Recent additions include nested sub-folders, delete vertical, in-app update notifications, accent colors, opacity/size presets, density toggle, pinned entries, sort control, and usage tracking.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the full phase checklist and [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
