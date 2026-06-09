@@ -8,7 +8,6 @@ import EntryForm from "./components/EntryForm";
 import ImportScreen from "./components/ImportScreen";
 import SplitImport from "./components/SplitImport";
 import SettingsScreen from "./components/SettingsScreen";
-import HelpPanel from "./components/HelpPanel";
 import KeyboardPanel from "./components/KeyboardPanel";
 import MacroOverlay from "./components/MacroOverlay";
 import FavoritesView from "./components/FavoritesView";
@@ -18,7 +17,7 @@ import ResultItem from "./components/ResultItem";
 import ExportSelectScreen from "./components/ExportSelectScreen";
 
 type AppStatus = "loading" | "ready" | "error";
-type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "help" | "keyboard" | "favorites" | "notes" | "export-select";
+type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "keyboard" | "favorites" | "notes" | "export-select";
 type SortMode = "relevance" | "most-used" | "recently-used" | "recently-added" | "a-to-z";
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -39,6 +38,26 @@ function applyAccent(color: string) {
   document.documentElement.style.setProperty("--color-accent", color);
   document.documentElement.style.setProperty("--color-accent-dim", `rgba(${r},${g},${b},${alpha})`);
 }
+
+const FONT_FAMILIES: Record<string, string> = {
+  system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  serif: 'Georgia, "Times New Roman", serif',
+  mono: '"JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace',
+  rounded: '"Trebuchet MS", "Gill Sans", Optima, sans-serif',
+};
+
+function applyFontFamily(key: string) {
+  document.documentElement.style.setProperty("--font-sans", FONT_FAMILIES[key] ?? FONT_FAMILIES.system);
+}
+
+const DEFAULT_SHORTCUTS: Record<string, string> = {
+  notes: "Alt+N",
+  keyboard: "Alt+K",
+  help: "Alt+H",
+  settings: "Alt+S",
+  newEntry: "Ctrl+N",
+  cycleTab: "Tab",
+};
 
 export default function App() {
   const [status, setStatus] = useState<AppStatus>("loading");
@@ -68,7 +87,6 @@ export default function App() {
   const [autoHideOnCopy, setAutoHideOnCopy] = useState(false);
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("relevance");
-  const [recentCopies, setRecentCopies] = useState<Array<{ id: string; copiedAt: string }>>([]);
   const [currentHotkey, setCurrentHotkey] = useState("CommandOrControl+Shift+Space");
   const [queryHistory, setQueryHistory] = useState<string[]>([]);
   const [queryHistoryIdx, setQueryHistoryIdx] = useState(-1);
@@ -81,19 +99,19 @@ export default function App() {
   const [syncSources, setSyncSources] = useState<Array<{ id: string; path: string; label: string }>>([]);
   const [easterEgg, setEasterEgg] = useState(false);
   const [collapsedSources, setCollapsedSources] = useState<Set<string>>(new Set());
+  const [customShortcuts, setCustomShortcuts] = useState<Record<string, string | null>>({});
 
   const debouncedQuery = useDebounce(query, 120);
 
   useEffect(() => {
     window.shortpath
       .loadEntries()
-      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, recentCopies: rc, fontSize: fs, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc, alwaysOnTop: aot }) => {
+      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, fontSize: fs, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc, alwaysOnTop: aot }) => {
         setEntries(e);
         setVerticals(v);
         setRecents(r);
         setFavorites(new Set(favs));
         setPinned(new Set(pins));
-        setRecentCopies(rc ?? []);
         setExpandedGroups(new Set(v.map((vert) => vert.id)));
         setVerticalOrder(vo ?? []);
         setAutoHideOnCopy(ahoc ?? false);
@@ -112,7 +130,11 @@ export default function App() {
     void window.shortpath.getSyncStatus().then((status) => {
       setSyncSources(status.sources);
     });
-    void window.shortpath.getSettings().then((s) => setCurrentHotkey(s.hotkey));
+    void window.shortpath.getSettings().then((s) => {
+      setCurrentHotkey(s.hotkey);
+      applyFontFamily(s.fontFamily ?? "system");
+      setCustomShortcuts(s.customShortcuts ?? {});
+    });
 
     const unsubscribe = window.shortpath.onStoreUpdated(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins }) => {
       setEntries(e);
@@ -379,14 +401,6 @@ export default function App() {
     [pinned, entries]
   );
 
-  const recentCopiedEntries = useMemo(() => {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    return recentCopies
-      .filter((r) => r.copiedAt > cutoff)
-      .map((r) => entries.find((e) => e.id === r.id))
-      .filter(Boolean) as Entry[];
-  }, [recentCopies, entries]);
-
   const flatResults = useMemo((): Entry[] => {
     const searching = debouncedQuery.trim().length >= 2;
     if (!searching && recentEntries.length > 0) return recentEntries;
@@ -426,16 +440,32 @@ export default function App() {
   }
 
   function handleCopy(entryId: string) {
-    const now = new Date().toISOString();
     setRecents((prev) => [entryId, ...prev.filter((id) => id !== entryId)].slice(0, 10));
-    setRecentCopies((prev) => {
-      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      return [{ id: entryId, copiedAt: now }, ...prev.filter((r) => r.id !== entryId && r.copiedAt > cutoff)].slice(0, 20);
-    });
     void window.shortpath.incrementCopyCount(entryId);
     if (autoHideOnCopy) {
       setTimeout(() => void window.shortpath.hideWindow(), 300);
     }
+  }
+
+  function sc(action: string): string | null {
+    if (action in customShortcuts) return customShortcuts[action];
+    return DEFAULT_SHORTCUTS[action] ?? null;
+  }
+
+  function matchesShortcut(e: KeyboardEvent, combo: string | null): boolean {
+    if (!combo) return false;
+    if (combo === "Tab") return e.key === "Tab" && !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey;
+    const parts = combo.toLowerCase().split("+");
+    const key = parts[parts.length - 1];
+    const needsCtrl = parts.some(p => ["ctrl", "control", "commandorcontrol"].includes(p));
+    const needsAlt = parts.includes("alt");
+    const needsShift = parts.includes("shift");
+    return (
+      !!(e.ctrlKey || e.metaKey) === needsCtrl &&
+      e.altKey === needsAlt &&
+      e.shiftKey === needsShift &&
+      e.key.toLowerCase() === key
+    );
   }
 
   function navigateDown() {
@@ -589,13 +619,13 @@ export default function App() {
         return;
       }
 
-      if (e.key === "Tab" && !inInput && mode === "browse") {
+      if (!inInput && mode === "browse" && matchesShortcut(e, sc("cycleTab"))) {
         e.preventDefault();
         cycleVerticalTab(e.shiftKey ? -1 : 1);
         return;
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === "n" && mode === "browse") {
+      if (mode === "browse" && matchesShortcut(e, sc("newEntry"))) {
         e.preventDefault();
         setEditingEntry(null);
         setQuickAddPrefill(undefined);
@@ -603,16 +633,16 @@ export default function App() {
         return;
       }
 
-      if (e.altKey && !inInput) {
-        if (e.key === "n" || e.key === "N") { e.preventDefault(); setMode("notes"); return; }
-        if (e.key === "k" || e.key === "K") { e.preventDefault(); setMode("keyboard"); return; }
-        if (e.key === "h" || e.key === "H") { e.preventDefault(); setMode("help"); return; }
-        if (e.key === "s" || e.key === "S") { e.preventDefault(); setMode("settings"); return; }
+      if (!inInput) {
+        if (matchesShortcut(e, sc("notes"))) { e.preventDefault(); setMode("notes"); return; }
+        if (matchesShortcut(e, sc("keyboard"))) { e.preventDefault(); setMode("keyboard"); return; }
+        if (matchesShortcut(e, sc("help"))) { e.preventDefault(); void window.shortpath.openHelpWindow(); return; }
+        if (matchesShortcut(e, sc("settings"))) { e.preventDefault(); setMode("settings"); return; }
       }
     }
     window.addEventListener("keydown", onWindowKeyDown);
     return () => window.removeEventListener("keydown", onWindowKeyDown);
-  }, [overlayEntry, focusedEntryId, query, mode, activeVerticalFilter, orderedTabVerticals]);
+  }, [overlayEntry, focusedEntryId, query, mode, activeVerticalFilter, orderedTabVerticals, customShortcuts]);
 
   function handleFormSave(entry: Entry, newVerticals: Vertical[]) {
     if (mode === "add") {
@@ -762,14 +792,6 @@ export default function App() {
     );
   }
 
-  if (mode === "help") {
-    return (
-      <div className={shellClass}>
-        <HelpPanel onClose={() => setMode("browse")} />
-      </div>
-    );
-  }
-
   if (mode === "keyboard") {
     return (
       <div className={shellClass}>
@@ -901,7 +923,7 @@ export default function App() {
           <button className="header-icon-btn header-icon-letter" onClick={() => setMode("keyboard")} title="Keyboard shortcuts (Alt+K)">K</button>
           <button className="header-icon-btn header-icon-letter" onClick={() => setMode("notes")} title="Notes (Alt+N)">N</button>
           <button className="header-icon-btn" onClick={() => setMode("favorites")} title="Favorites">☆</button>
-          <button className="header-icon-btn" onClick={() => setMode("help")} title="Help (Alt+H)">?</button>
+          <button className="header-icon-btn" onClick={() => void window.shortpath.openHelpWindow()} title="Help (Alt+H)">?</button>
           <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings (Alt+S)">⚙</button>
           <button className="header-icon-btn" onClick={() => void window.shortpath.minimizeWindow()} title="Minimize">−</button>
         </div>
@@ -1017,26 +1039,28 @@ export default function App() {
           <option value="recently-added">Recently added</option>
           <option value="a-to-z">A to Z</option>
         </select>
-        {groups.length > 0 && (
-          expandedGroups.size > 0
-            ? (
-              <button
-                className="collapse-all-btn"
-                onClick={() => setExpandedGroups(new Set())}
-                title="Collapse all sections"
-              >
-                ⊟ Collapse
-              </button>
+        {(() => {
+          const allSourceKeys = activeSource === "all"
+            ? [...new Set(groups.map(g => g.verticalId.split("::")[0]))]
+            : [];
+          const anythingExpanded = activeSource === "all"
+            ? (collapsedSources.size < allSourceKeys.length || expandedGroups.size > 0)
+            : expandedGroups.size > 0;
+
+          return groups.length > 0 && (
+            anythingExpanded ? (
+              <button className="collapse-all-btn" onClick={() => {
+                setExpandedGroups(new Set());
+                if (activeSource === "all") setCollapsedSources(new Set(allSourceKeys));
+              }} title="Collapse all sections">⊟ Collapse</button>
             ) : (
-              <button
-                className="collapse-all-btn"
-                onClick={() => setExpandedGroups(new Set(groups.map((g) => g.verticalId)))}
-                title="Expand all sections"
-              >
-                ⊞ Expand
-              </button>
+              <button className="collapse-all-btn" onClick={() => {
+                setExpandedGroups(new Set(groups.map((g) => g.verticalId)));
+                if (activeSource === "all") setCollapsedSources(new Set());
+              }} title="Expand all sections">⊞ Expand</button>
             )
-        )}
+          );
+        })()}
       </div>
 
       <main className="results-container">
@@ -1093,31 +1117,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Recent copies section — persisted 24-hour rolling window */}
-        {!isSearching && recentCopiedEntries.length > 0 && (
-          <div className="recent-section">
-            <div className="section-header-row">
-              <span className="section-header-label">Recent</span>
-            </div>
-            <ul className="result-list">
-              {recentCopiedEntries.map((entry) => (
-                <ResultItem
-                  key={entry.id}
-                  result={{ entry, matches: [] }}
-                  onEdit={handleEditEntry}
-                  onCopy={handleCopy}
-                  onOpen={handleOpenOverlay}
-                  isFocused={focusedEntryId === entry.id}
-                  isFavorite={favorites.has(entry.id)}
-                  onToggleFavorite={handleToggleFavorite}
-                  isPinned={pinned.has(entry.id)}
-                  onTogglePin={(id) => void handleTogglePin(id)}
-                />
-              ))}
-            </ul>
-          </div>
-        )}
-
         {activeSource === "all" ? (
           (() => {
             const bySource = new Map<string, typeof groups>();
@@ -1155,6 +1154,7 @@ export default function App() {
                             onToggleFavorite={handleToggleFavorite}
                             pinned={pinned}
                             onTogglePin={(id) => void handleTogglePin(id)}
+                            onOpen={handleOpenOverlay}
                           />
                         ) : (
                           <VerticalGroupComponent
@@ -1195,6 +1195,7 @@ export default function App() {
                 onToggleFavorite={handleToggleFavorite}
                 pinned={pinned}
                 onTogglePin={(id) => void handleTogglePin(id)}
+                onOpen={handleOpenOverlay}
               />
             ) : (
               <VerticalGroupComponent

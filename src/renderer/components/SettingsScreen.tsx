@@ -65,6 +65,10 @@ export default function SettingsScreen({
   const [opacity, setOpacity] = useState(100);
   const [windowSize, setWindowSize] = useState<"small" | "medium" | "large" | null>(null);
   const [density, setDensity] = useState<"compact" | "comfortable">("comfortable");
+  const [fontFamily, setFontFamily] = useState("system");
+  const [customShortcuts, setCustomShortcuts] = useState<Record<string, string | null>>({});
+  const [capturingAction, setCapturingAction] = useState<string | null>(null);
+  const [capturedShortcut, setCapturedShortcut] = useState<string | null>(null);
   const [exportingAll, setExportingAll] = useState(false);
   const [streamDeckToast, setStreamDeckToast] = useState("");
   const [streamDeckDialogOpen, setStreamDeckDialogOpen] = useState(false);
@@ -115,8 +119,24 @@ export default function SettingsScreen({
   const [renamingSourceId, setRenamingSourceId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
+  const FONT_FAMILIES_MAP: Record<string, string> = {
+    system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    serif: 'Georgia, "Times New Roman", serif',
+    mono: '"JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace',
+    rounded: '"Trebuchet MS", "Gill Sans", Optima, sans-serif',
+  };
+
+  const SHORTCUT_DEFS = [
+    { action: "notes",     label: "Notes",              default: "Alt+N" },
+    { action: "keyboard",  label: "Keyboard shortcuts", default: "Alt+K" },
+    { action: "help",      label: "Help",               default: "Alt+H" },
+    { action: "settings",  label: "Settings",           default: "Alt+S" },
+    { action: "newEntry",  label: "New entry",          default: "Ctrl+N" },
+    { action: "cycleTab",  label: "Cycle vertical tab", default: "Tab" },
+  ] as const;
+
   useEffect(() => {
-    window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d, lastStreamDeckExport: lsd }) => {
+    window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d, lastStreamDeckExport: lsd, fontFamily: ff, customShortcuts: cs }) => {
       setCurrentHotkey(hotkey);
       setFontSize(fs);
       setTheme(t);
@@ -125,9 +145,51 @@ export default function SettingsScreen({
       setWindowSize(ws);
       setDensity(d);
       setLastStreamDeckExport(lsd ?? null);
+      setFontFamily(ff ?? "system");
+      setCustomShortcuts(cs ?? {});
     });
     window.shortpath.getSyncStatus().then(setSyncStatus);
   }, []);
+
+  useEffect(() => {
+    if (capturingAction === null) return;
+    function onKeyDown(e: KeyboardEvent) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === "Escape") { setCapturingAction(null); setCapturedShortcut(null); return; }
+      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
+      const parts: string[] = [];
+      if (e.ctrlKey || e.metaKey) parts.push("Ctrl");
+      if (e.shiftKey) parts.push("Shift");
+      if (e.altKey) parts.push("Alt");
+      const key = e.code.startsWith("Key")
+        ? e.code.slice(3)
+        : e.code.startsWith("Digit")
+        ? e.code.slice(5)
+        : e.key === " " ? "Space"
+        : e.key.length === 1 ? e.key.toUpperCase()
+        : e.key;
+      if (!key) return;
+      parts.push(key);
+      setCapturedShortcut(parts.join("+"));
+    }
+    function onKeyUp(e: KeyboardEvent) {
+      if (e.key === "Escape") return;
+      if (capturedShortcut && capturingAction) {
+        const newMap = { ...customShortcuts, [capturingAction]: capturedShortcut };
+        setCustomShortcuts(newMap);
+        void window.shortpath.setCustomShortcuts(newMap);
+        setCapturingAction(null);
+        setCapturedShortcut(null);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    window.addEventListener("keyup", onKeyUp, { capture: true });
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, { capture: true });
+      window.removeEventListener("keyup", onKeyUp, { capture: true });
+    };
+  }, [capturingAction, capturedShortcut, customShortcuts]);
 
   useEffect(() => {
     if (hotkeyState !== "capturing") return;
@@ -176,6 +238,12 @@ export default function SettingsScreen({
     setExportingAll(false);
   }
 
+
+  function handleFontFamily(key: string) {
+    setFontFamily(key);
+    document.documentElement.style.setProperty("--font-sans", FONT_FAMILIES_MAP[key] ?? FONT_FAMILIES_MAP.system);
+    void window.shortpath.setFontFamily(key);
+  }
 
   function handleFontSize(size: number) {
     setFontSize(size);
@@ -541,6 +609,20 @@ export default function SettingsScreen({
                   ))}
                 </div>
               </div>
+              <div className="settings-row">
+                <div className="settings-row-label">Font family</div>
+                <div className="font-size-control">
+                  {(["system", "serif", "mono", "rounded"] as const).map((key) => (
+                    <button
+                      key={key}
+                      className={`font-size-btn${fontFamily === key ? " active" : ""}`}
+                      onClick={() => handleFontFamily(key)}
+                    >
+                      {key.charAt(0).toUpperCase() + key.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -638,6 +720,60 @@ export default function SettingsScreen({
               <p className="settings-row-note" style={{ marginTop: 2 }}>
                 Checks GitHub for a newer release. If a newer version is found, a download link appears. After downloading, restart the app to install.
               </p>
+
+              <div className="settings-group-label" style={{ marginTop: 16 }}>Keyboard shortcuts</div>
+              {SHORTCUT_DEFS.map(({ action, label, default: defaultCombo }) => {
+                const current = action in customShortcuts ? customShortcuts[action] : defaultCombo;
+                const isDisabled = customShortcuts[action] === null;
+                const isCapturing = capturingAction === action;
+                return (
+                  <div key={action} className="settings-row" style={{ gap: 8 }}>
+                    <div className="settings-row-label" style={{ minWidth: 140 }}>{label}</div>
+                    <div className="settings-hotkey-display" style={{ minWidth: 90 }}>
+                      {isCapturing
+                        ? (capturedShortcut ?? "Press keys…")
+                        : isDisabled
+                        ? <span style={{ color: "var(--color-text-muted)" }}>Disabled</span>
+                        : (current ?? defaultCombo)}
+                    </div>
+                    {!isCapturing && (
+                      <button
+                        className="btn-secondary settings-action-btn"
+                        onClick={() => { setCapturingAction(action); setCapturedShortcut(null); }}
+                      >
+                        Change
+                      </button>
+                    )}
+                    {isCapturing && (
+                      <button
+                        className="btn-secondary settings-action-btn"
+                        onClick={() => { setCapturingAction(null); setCapturedShortcut(null); }}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      className={`btn-secondary settings-action-btn${isDisabled ? " active" : ""}`}
+                      onClick={() => {
+                        const newMap = { ...customShortcuts };
+                        if (isDisabled) {
+                          delete newMap[action];
+                        } else {
+                          newMap[action] = null;
+                        }
+                        setCustomShortcuts(newMap);
+                        void window.shortpath.setCustomShortcuts(newMap);
+                      }}
+                      title={isDisabled ? "Re-enable" : "Disable"}
+                    >
+                      {isDisabled ? "Enable" : "Disable"}
+                    </button>
+                  </div>
+                );
+              })}
+              {capturingAction !== null && (
+                <div className="settings-capture-hint">Hold a key combination, then release. Press Esc to cancel.</div>
+              )}
             </div>
           )}
 

@@ -374,9 +374,33 @@ body {
   border-color: var(--color-accent);
 }
 
+.pin-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-accent);
+  background: transparent;
+  transition: background 0.1s;
+  flex-shrink: 0;
+}
+
+.pin-btn.pinned .pin-dot {
+  background: var(--color-accent);
+}
+
 .action-btn.starred {
-  color: #fbbf24;
-  border-color: #fbbf24;
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.star-btn.starred {
+  color: var(--color-accent) !important;
+}
+
+.tool-action-btn.starred {
+  color: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
 }
 
 /* Sync source number badge — low profile, inline with title */
@@ -1707,11 +1731,6 @@ body {
 .tool-action-btn.pinned {
   color: var(--color-accent);
   border-color: var(--color-accent);
-}
-
-.tool-action-btn.starred {
-  color: #fbbf24;
-  border-color: #fbbf24;
 }
 
 /* Help panel */

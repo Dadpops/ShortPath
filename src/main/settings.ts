@@ -34,6 +34,8 @@ export interface AppSettings {
   firstLaunchNotified?: boolean; // true once the first-launch tray notification has fired
   pinCap?: number;               // max pinned entries; default 8
   lastStreamDeckExport?: string; // ISO 8601 timestamp of last Stream Deck profile export
+  fontFamily?: string;           // font family key: "system" | "serif" | "mono" | "rounded"
+  customShortcuts?: Record<string, string | null>; // null = disabled, undefined key = use default
 }
 
 const DEFAULT_SETTINGS: AppSettings = {

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Entry, VerticalGroup } from "@shared/types";
 
 interface Props {
@@ -11,10 +12,56 @@ interface Props {
   onToggleFavorite?: (id: string) => void;
   pinned?: Set<string>;
   onTogglePin?: (id: string) => void;
+  onOpen: (entry: Entry) => void;
 }
 
-export default function SupportToolsGroup({ group, onToggle, onEdit, onCopy, onReorder, isSearching, favorites, onToggleFavorite, pinned, onTogglePin }: Props) {
-  function launch(entry: Entry) {
+function copyEntry(entry: Entry): Promise<void> {
+  const raw = entry.body ?? entry.link ?? entry.title;
+  const plain = raw.replace(/<[^>]+>/g, "").trim();
+  return navigator.clipboard.writeText(plain);
+}
+
+function ToolItem({
+  entry,
+  isFirst,
+  isLast,
+  isSearching,
+  isFav,
+  isPinned,
+  onToggleFavorite,
+  onTogglePin,
+  onEdit,
+  onCopy,
+  onOpen,
+  onReorder,
+}: {
+  entry: Entry;
+  isFirst: boolean;
+  isLast: boolean;
+  isSearching: boolean;
+  isFav: boolean;
+  isPinned: boolean;
+  onToggleFavorite?: (id: string) => void;
+  onTogglePin?: (id: string) => void;
+  onEdit: (entry: Entry) => void;
+  onCopy: (entryId: string) => void;
+  onOpen: (entry: Entry) => void;
+  onReorder: (entryId: string, direction: "up" | "down") => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy(e: React.MouseEvent) {
+    e.stopPropagation();
+    copyEntry(entry).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+      onCopy(entry.id);
+      window.shortpath.recordAccess(entry.id);
+    });
+  }
+
+  function handleOpenLink(e: React.MouseEvent) {
+    e.stopPropagation();
     if (entry.link) {
       window.shortpath.openExternal(entry.link);
       window.shortpath.recordAccess(entry.id);
@@ -22,6 +69,81 @@ export default function SupportToolsGroup({ group, onToggle, onEdit, onCopy, onR
     }
   }
 
+  return (
+    <li
+      className="result-item"
+      onClick={() => onOpen(entry)}
+      style={{ cursor: "pointer" }}
+    >
+      <div className="result-content">
+        <span className="result-title">{entry.title}</span>
+        {entry.tags && <span className="result-tags">{entry.tags}</span>}
+      </div>
+      <div className="result-actions" onClick={(e) => e.stopPropagation()}>
+        {onTogglePin && (
+          <button
+            className={`action-btn pin-btn${isPinned ? " pinned" : ""}`}
+            onClick={(e) => { e.stopPropagation(); onTogglePin(entry.id); }}
+            title={isPinned ? "Unpin" : "Pin to top"}
+          >
+            <span className="pin-dot" />
+          </button>
+        )}
+        {onToggleFavorite && (
+          <button
+            className={`action-btn star-btn${isFav ? " starred" : ""}`}
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(entry.id); }}
+            title={isFav ? "Remove from favorites" : "Add to favorites"}
+          >
+            {isFav ? "★" : "☆"}
+          </button>
+        )}
+        {entry.link && (
+          <button className="action-btn open-btn" onClick={handleOpenLink} title="Open link">
+            ↗
+          </button>
+        )}
+        {entry.body && (
+          <button
+            className={`action-btn copy-btn${copied ? " copied" : ""}`}
+            onClick={handleCopy}
+            title="Copy to clipboard"
+          >
+            {copied ? "✓" : "⎘"}
+          </button>
+        )}
+        <button
+          className="action-btn edit-btn"
+          onClick={(e) => { e.stopPropagation(); onEdit(entry); }}
+          title="Edit"
+        >
+          ✎
+        </button>
+        {!isSearching && (
+          <>
+            <button
+              className="action-btn"
+              onClick={(e) => { e.stopPropagation(); onReorder(entry.id, "up"); }}
+              disabled={isFirst}
+              title="Move up"
+            >↑</button>
+            <button
+              className="action-btn"
+              onClick={(e) => { e.stopPropagation(); onReorder(entry.id, "down"); }}
+              disabled={isLast}
+              title="Move down"
+            >↓</button>
+          </>
+        )}
+      </div>
+    </li>
+  );
+}
+
+export default function SupportToolsGroup({
+  group, onToggle, onEdit, onCopy, onReorder, isSearching,
+  favorites, onToggleFavorite, pinned, onTogglePin, onOpen,
+}: Props) {
   return (
     <div className="vertical-group support-tools-group">
       <button className="group-header" onClick={onToggle}>
@@ -31,68 +153,28 @@ export default function SupportToolsGroup({ group, onToggle, onEdit, onCopy, onR
       </button>
 
       {group.expanded && (
-        <div className="support-tools-grid">
+        <ul className="result-list">
           {group.results.map((result, idx) => {
             const { entry } = result;
-            const isFirst = idx === 0;
-            const isLast = idx === group.results.length - 1;
-            const isFav = favorites?.has(entry.id) ?? false;
-            const isPinned = pinned?.has(entry.id) ?? false;
             return (
-              <div key={entry.id} className="tool-card" onClick={() => launch(entry)}>
-                <div className="tool-card-body">
-                  <div className="tool-card-title-row">
-                    <span className="tool-card-title">{entry.title}</span>
-                  </div>
-                  {entry.link && (
-                    <span className="tool-card-url">{entry.link.replace(/^https?:\/\//, "")}</span>
-                  )}
-                </div>
-                <div className="tool-card-actions" onClick={(e) => e.stopPropagation()}>
-                  {onTogglePin && (
-                    <button
-                      className={`tool-action-btn pin-btn${isPinned ? " pinned" : ""}`}
-                      onClick={() => onTogglePin(entry.id)}
-                      title={isPinned ? "Unpin" : "Pin to top"}
-                    >
-                      {isPinned ? "📌" : "📍"}
-                    </button>
-                  )}
-                  {onToggleFavorite && (
-                    <button
-                      className={`tool-action-btn star-btn${isFav ? " starred" : ""}`}
-                      onClick={() => onToggleFavorite(entry.id)}
-                      title={isFav ? "Remove from favorites" : "Add to favorites"}
-                    >
-                      {isFav ? "★" : "☆"}
-                    </button>
-                  )}
-                  {!isSearching && (
-                    <>
-                      <button
-                        className="tool-action-btn"
-                        onClick={() => onReorder(entry.id, "up")}
-                        disabled={isFirst}
-                        title="Move up"
-                      >↑</button>
-                      <button
-                        className="tool-action-btn"
-                        onClick={() => onReorder(entry.id, "down")}
-                        disabled={isLast}
-                        title="Move down"
-                      >↓</button>
-                    </>
-                  )}
-                  <button
-                    className="tool-action-btn"
-                    onClick={() => onEdit(entry)}
-                    title="Edit"
-                  >✎</button>
-                </div>
-              </div>
+              <ToolItem
+                key={entry.id}
+                entry={entry}
+                isFirst={idx === 0}
+                isLast={idx === group.results.length - 1}
+                isSearching={isSearching}
+                isFav={favorites?.has(entry.id) ?? false}
+                isPinned={pinned?.has(entry.id) ?? false}
+                onToggleFavorite={onToggleFavorite}
+                onTogglePin={onTogglePin}
+                onEdit={onEdit}
+                onCopy={onCopy}
+                onOpen={onOpen}
+                onReorder={onReorder}
+              />
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

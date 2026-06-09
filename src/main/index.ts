@@ -55,6 +55,7 @@ let tray: Tray | null = null;
 let trayIconBase: ReturnType<typeof nativeImage.createFromPath> | null = null;
 let trayIconActive: ReturnType<typeof nativeImage.createFromPath> | null = null;
 let win: BrowserWindow | null = null;
+let helpWin: BrowserWindow | null = null;
 let store: StoreData;
 let notesData: { notes: Note[] };
 let userDataPath: string;
@@ -773,7 +774,43 @@ function registerIpcHandlers() {
     alwaysOnTop: settings.alwaysOnTop ?? false,
     pinCap: settings.pinCap ?? 8,
     lastStreamDeckExport: settings.lastStreamDeckExport ?? null,
+    fontFamily: settings.fontFamily ?? "system",
+    customShortcuts: settings.customShortcuts ?? {},
   }));
+
+  ipcMain.handle("set-font-family", (_e, f: string) => {
+    settings = { ...settings, fontFamily: f };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-custom-shortcuts", (_e, s: Record<string, string | null>) => {
+    settings = { ...settings, customShortcuts: s };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("open-help-window", () => {
+    if (helpWin && !helpWin.isDestroyed()) { helpWin.focus(); return; }
+    helpWin = new BrowserWindow({
+      width: 440,
+      height: 580,
+      minWidth: 360,
+      minHeight: 400,
+      frame: false,
+      transparent: true,
+      backgroundColor: "#00000000",
+      webPreferences: {
+        preload: path.join(__dirname, "../preload/index.js"),
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    });
+    if (process.env.NODE_ENV === "development") {
+      void helpWin.loadURL("http://localhost:5173?mode=help");
+    } else {
+      void helpWin.loadFile(path.join(__dirname, "../renderer/index.html"), { query: { mode: "help" } });
+    }
+    helpWin.once("closed", () => { helpWin = null; });
+  });
 
   ipcMain.handle("toggle-favorite", (_e, entryId: string) => {
     store = toggleFavorite(store, entryId);

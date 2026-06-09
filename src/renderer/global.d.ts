@@ -117,6 +117,8 @@ declare global {
         alwaysOnTop: boolean;
         pinCap: number;
         lastStreamDeckExport: string | null;
+        fontFamily: string;
+        customShortcuts: Record<string, string | null>;
       }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
@@ -192,6 +194,10 @@ declare global {
       >;
 
       onCaptureEntry: (callback: (payload: CapturePayload) => void) => () => void;
+
+      setFontFamily: (f: string) => Promise<void>;
+      setCustomShortcuts: (s: Record<string, string | null>) => Promise<void>;
+      openHelpWindow: () => Promise<void>;
     };
   }
 }

@@ -91,7 +91,7 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
             onClick={handleTogglePin}
             title={isPinned ? "Unpin" : "Pin to top"}
           >
-            {isPinned ? "📌" : "📍"}
+            <span className="pin-dot" />
           </button>
         )}
         {onToggleFavorite !== undefined && (
