@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld("shortpath", {
   exportCsv: () => ipcRenderer.invoke("export-csv"),
   exportMine: () => ipcRenderer.invoke("export-mine"),
   exportSelected: (ids: string[]) => ipcRenderer.invoke("export-selected", ids),
+  exportStreamDeckProfile: () => ipcRenderer.invoke("export-streamdeck-profile"),
 
   previewCsvImport: () => ipcRenderer.invoke("preview-csv-import"),
   commitCsvImport: (resolutions?: Record<number, string>) => ipcRenderer.invoke("commit-csv-import", resolutions ?? {}),

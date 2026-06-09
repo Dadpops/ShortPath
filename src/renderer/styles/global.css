@@ -3294,3 +3294,15 @@ body[data-density="compact"] .result-tags {
   color: var(--color-warning);
   margin-top: 4px;
 }
+
+/* ===== Settings toast ===== */
+.settings-toast {
+  margin: 10px 14px 0;
+  padding: 8px 12px;
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  border-radius: var(--radius);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}

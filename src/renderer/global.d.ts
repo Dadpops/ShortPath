@@ -87,6 +87,7 @@ declare global {
       exportCsv: () => Promise<{ success: boolean }>;
       exportMine: () => Promise<{ success: boolean }>;
       exportSelected: (ids: string[]) => Promise<{ success: boolean }>;
+      exportStreamDeckProfile: () => Promise<{ success: boolean; capped?: boolean }>;
 
       previewCsvImport: () => Promise<CsvPreviewResult>;
       commitCsvImport: (resolutions?: Record<number, string>) => Promise<CsvCommitResult>;

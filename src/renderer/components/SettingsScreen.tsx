@@ -63,6 +63,7 @@ export default function SettingsScreen({
   const [windowSize, setWindowSize] = useState<"small" | "medium" | "large" | null>(null);
   const [density, setDensity] = useState<"compact" | "comfortable">("comfortable");
   const [exportingAll, setExportingAll] = useState(false);
+  const [streamDeckToast, setStreamDeckToast] = useState("");
 
   // Vertical management
   const [editingVerticalId, setEditingVerticalId] = useState<string | null>(null);
@@ -376,6 +377,17 @@ export default function SettingsScreen({
     { label: "↓ Download template", topicId: "importing-csv", onClick: () => window.shortpath.downloadTemplateCsv() },
     { label: exportingAll ? "Saving…" : "Export all", topicId: "exporting-csv", onClick: handleExportAll, disabled: exportingAll },
     { label: "Export selected", topicId: "exporting-csv", onClick: () => onNavigate("export-select") },
+    {
+      label: "Export Stream Deck Profile",
+      topicId: "stream-deck-export",
+      onClick: async () => {
+        const result = await window.shortpath.exportStreamDeckProfile();
+        if (result.capped) {
+          setStreamDeckToast("First 32 entries exported. Stream Deck supports up to 32 buttons per page.");
+          setTimeout(() => setStreamDeckToast(""), 5000);
+        }
+      },
+    },
   ];
 
   return (
@@ -386,6 +398,9 @@ export default function SettingsScreen({
       </div>
 
       <div className="settings-body">
+        {streamDeckToast && (
+          <div className="settings-toast">{streamDeckToast}</div>
+        )}
 
         {/* ── Appearance ────────────────────────────────────────── */}
         <section className="settings-section">

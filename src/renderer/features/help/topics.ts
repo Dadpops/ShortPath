@@ -526,6 +526,24 @@ The brief delay lets you see the "Copied ✓" confirmation before the window dis
 This setting is off by default. Turn it on if you prefer a one-and-done workflow where copying a reply automatically gets ShortPath out of your way.`,
   },
   {
+    id: "stream-deck-export",
+    title: "Stream Deck profile export",
+    tags: ["stream deck", "elgato", "profile", "export", "hardware", "buttons"],
+    content: `Settings > Data > Export Stream Deck Profile creates a .streamDeckProfile file you can import directly into the Elgato Stream Deck app.
+
+What the file contains
+Each entry in your library is mapped to one button on a 5-column grid. The button label is the entry title. Buttons are ordered left-to-right, top-to-bottom in the same order as your entry list. Profiles are capped at 32 buttons (one full XL page). If you have more than 32 entries, the first 32 are exported.
+
+How to import it
+1. Double-click the .streamDeckProfile file — Stream Deck app opens and prompts you to import.
+   Or: open the Stream Deck app, go to Preferences > Profiles, click the gear icon, and choose Import.
+2. The profile appears in your profile list under "ShortPath".
+3. Switch to it and you will see your entries as labeled buttons.
+
+Wiring up button actions
+The exported buttons have labels but no action assigned yet. After import, click any button in the Stream Deck editor and assign the action you want: a hotkey that triggers a text-insert macro, a website open action, a system shortcut, etc. ShortPath exports the layout and labels so you spend less time creating buttons by hand.`,
+  },
+  {
     id: "rich-text",
     title: "Rich text and copy modes",
     tags: ["rich text", "html", "bold", "italic", "copy mode", "tiptap", "formatting"],
