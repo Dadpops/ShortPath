@@ -233,12 +233,16 @@ export default function App() {
 
     for (const v of orderedVerticals) {
       const groupItems = byVertical.get(v.id);
-      if (!groupItems?.length) continue;
+      const hasEntries = (groupItems?.length ?? 0) > 0;
+      const hasSubFolders = (v.subFolders?.length ?? 0) > 0;
+      // When searching, only show verticals with matching results.
+      // When browsing, also show verticals that have sub-folders defined (even if empty).
+      if (!hasEntries && (isSearching || !hasSubFolders)) continue;
       result.push({
         verticalId: v.id,
         label: v.label,
-        hitCount: groupItems.length,
-        results: groupItems.map((i) => ({ entry: i.entry, matches: i.matches })),
+        hitCount: groupItems?.length ?? 0,
+        results: (groupItems ?? []).map((i) => ({ entry: i.entry, matches: i.matches })),
       });
     }
 
