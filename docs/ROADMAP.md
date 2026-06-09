@@ -262,3 +262,77 @@ Goal: nested sub-folder organization, delete vertical, and in-app update notific
 - [x] Favorites on Support Tools: star toggle added to tool entries in SupportToolsGroup for parity with other verticals
 - [x] Search bar clear icon: SVG X replaces text × button; occupies the same slot as the search icon when focused or non-empty
 - [x] Vertical tab overflow: filter row switches to a <select> when more than 5 verticals exist
+
+---
+
+## Phase 12 — Onboarding and import UX
+
+Goal: smoother first-run experience and flexible CSV import for non-standard files.
+
+- [x] SetupScreen onboarding wizard: 4-step flow (source mode, sync name, optional import, done); local flow skips step 2
+- [x] Drag-drop CSV import: drop a .csv file directly onto the import zone; no native dialog required
+- [x] Column mapping: if required headers are missing, show manual mapping UI with dropdowns for each required/optional field
+- [x] Subfolder CSV column: documented in format table and Help topics; expand-after-import bug fixed
+- [x] Notes Save button: explicit Save + debounced auto-save; "Saving…" / "Saved" status badge
+- [x] Text size CSS fix: all hardcoded font-size values replaced with helper variables; live px indicator in Settings
+- [x] Collapse-all toggle: ⊟ Collapse / ⊞ Expand button in sort bar collapses all vertical groups at once
+- [x] Export Selected screen: replaces Export Mine; checkbox tree (vertical → subfolder → entry) with indeterminate state; All / None shortcuts
+- [x] Write Help topics for Phase 12 features
+
+---
+
+## Phase 13 — Pin window, rich text, duplicate detection, Stream Deck export
+
+Goal: quality-of-life upgrades for power users — always-visible window, rich content, cleaner imports, and hardware integration.
+
+### Window pin
+
+- [ ] Always-on-top toggle: pin icon (or button) in the main window header; calls win.setAlwaysOnTop via IPC; persists preference to settings store
+- [ ] Visual indicator: pinned state shows filled/highlighted pin icon; unpinned shows outline pin icon
+- [ ] Help topic: explain pin behavior and how it interacts with the global hotkey
+
+### Rich text editor
+
+- [ ] Install Tiptap: @tiptap/react, @tiptap/pm, @tiptap/starter-kit, @tiptap/extension-link, @tiptap/extension-code-block, @tiptap/extension-underline
+- [ ] Replace <textarea> in add/edit entry forms with Tiptap editor
+- [ ] Toolbar: Bold, Italic, Underline, | , Bullet list, Ordered list, | , Inline code, Code block, | , Hyperlink
+- [ ] Active toolbar state uses --color-accent
+- [ ] Add copyMode?: "plain" | "html" to Entry type (default "plain" for backward compat)
+- [ ] Copy-mode toggle below editor: "Copy as: Plain text | HTML"; persists with entry
+- [ ] Copy logic: plain strips HTML tags; html writes text/html + text/plain fallback in same clipboard write
+- [ ] Existing plain-text entries render safely in Tiptap
+- [ ] Write Help topic for rich text and copy modes
+
+### Duplicate detection on CSV import
+
+- [ ] During preview step, flag rows whose title (trimmed, lowercased) matches an existing entry in the same vertical with a "Duplicate" badge
+- [ ] Per-row resolution choice: Skip (default), Overwrite, Import as new
+- [ ] commitCsvImport accepts and applies per-row resolution decisions
+- [ ] Write Help topic update for import duplicate handling
+
+### Duplicate detection on manual add
+
+- [ ] On blur of title input in add entry form, check for case-insensitive title match within selected vertical
+- [ ] Show inline warning below field: "An entry with this title already exists in [vertical name]."
+- [ ] Style with color: var(--color-warning) (amber); non-blocking
+
+### Stream Deck profile export
+
+- [ ] Install jszip
+- [ ] Add "Export Stream Deck Profile" to Settings export section
+- [ ] export-streamdeck-profile IPC handler: generates valid .streamDeckProfile ZIP (outer manifest + page manifest + button layout); uses crypto.randomUUID() for profile/page UUIDs; caps at 32 buttons; shows save dialog
+- [ ] Expose in preload and global.d.ts: exportStreamDeckProfile(): Promise<{ success: boolean; capped?: boolean }>
+- [ ] Show toast in SettingsScreen if capped: true
+- [ ] Write Help topic: what the export contains, how to import into Stream Deck app, note that button actions need manual wiring
+
+### Open source cleanup
+
+- [ ] Confirm no license/activation code present; remove if found
+- [ ] README overhaul: features list, install, Stream Deck section, contributing, MIT license
+
+### Session wrap
+
+- [ ] Update CURRENT_SESSION.md
+- [ ] Create dated session file in docs/sessions/
+- [ ] Append to docs/SESSION_LOG.md
+- [ ] Commit and push
