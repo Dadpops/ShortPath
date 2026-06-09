@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-08 — Phase 10: customization and polish](sessions/2026-06-08-phase-10.md) — Accent color, opacity, window size, density, vertical tabs, tab order, pin entries, sort control, usage counter, recent copies, keyboard nav upgrades, auto-hide, Settings reorganization.
 - [2026-06-08 — Release prep: bug fixes, polish, v0.1.0](sessions/2026-06-08-release-prep.md) — Platform-aware hotkey, tag normalisation, empty states, Esc query-clear, CHANGELOG, README polish, Windows build, v0.1.0 tag.
 - [2026-06-08 — Sub-folders, danger zone, close button](sessions/2026-06-08-subfolders-danger-zone.md) — Sub-folders per vertical (Settings + EntryForm + results grouping), clear-local-entries danger zone, ✕ close button, README rewrite.
 - [2026-06-08 — Polish and new features](sessions/2026-06-08-polish-features.md) — ESLint CI fix, shadow, drag fix, font scaling, add-vertical, note-entry linking, data info buttons.
