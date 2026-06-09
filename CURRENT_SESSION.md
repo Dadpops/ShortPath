@@ -1,8 +1,8 @@
 # Current Session State
 
-**Status:** Friction-point improvements complete. Sample data onboarding, recent copies persistence, "recently used" sort, hotkey discoverability, configurable pin cap, Stream Deck re-export timestamp, Ctrl+N, search history, empty search state. TypeScript clean. Committed and ready to push.
+**Status:** v0.4.0 — Keyboard panel, UX fixes (sample data filter, friendly name dropdown, clipboard strip position, pin button position, N/K letter buttons), pin limit removed, full keyboard nav shortcuts, Check for updates info note. TypeScript clean. Ready to release.
 
-**Last session:** [2026-06-09 — Friction-point UX improvements](docs/sessions/2026-06-09-friction-points.md)
+**Last session:** [2026-06-09 — Keyboard panel, UX fixes, full keyboard nav](docs/sessions/2026-06-09-ux-fixes.md)
 
 **Open items:**
 - SetupScreen (`src/renderer/components/SetupScreen.tsx`) is defined but never imported or rendered. Wire it up for first-time users or delete it.

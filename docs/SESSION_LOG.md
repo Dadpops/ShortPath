@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-09 — Keyboard panel, UX fixes, full keyboard nav](sessions/2026-06-09-ux-fixes.md) — Keyboard shortcuts panel (K button); N letter button for notes; pin moved left; clipboard strip moved to top; pin limit removed; sample data filter bug fixed; sync friendly name refresh fixed; Alt+K/N/H/S shortcuts; Check for updates info note; v0.4.0.
 - [2026-06-09 — Friction-point UX improvements](sessions/2026-06-09-friction-points.md) — Sample data onboarding banner; recent copies persist 24h in store; "recently used" sort mode; hotkey in tray tooltip and menu; first-launch notification; configurable pin cap (4/8/12); Stream Deck re-export timestamp; Ctrl+N; search history via up-arrow; empty search state with save-as-entry button.
 - [2026-06-09 — Polish and bug fixes: app crash, sync UI, styling](sessions/2026-06-09-polish.md) — Fixed ESM crash (jsdom removed from main process, parsing moved to renderer); 4 TS build errors; Sync management added to SettingsScreen; URL import button styled; btn-link and --color-error added.
 - [2026-06-09 — Phase 14: browser capture server, URL import, MD/PDF import, browser extension](sessions/2026-06-09-phase-14.md) — HTTP capture server on port 57433; URL import with Readability section picker in EntryForm; Markdown and PDF drag-in import screens; MV3 Chrome/Firefox extension with context menu, offline queue, and popup; 4 help topics.
