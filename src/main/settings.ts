@@ -16,6 +16,13 @@ export interface AppSettings {
   sourceMode?: "local" | "sync";
   sourceName?: string;
   theme?: "dark" | "light";
+  // Phase 10
+  accentColor?: string;
+  opacity?: number;           // 70–100; default 100
+  windowSize?: "small" | "medium" | "large";
+  density?: "compact" | "comfortable";
+  verticalOrder?: string[];   // ordered array of vertical IDs
+  autoHideOnCopy?: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {

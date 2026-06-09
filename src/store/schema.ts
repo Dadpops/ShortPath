@@ -8,6 +8,7 @@ export interface StoreData {
   verticals: Vertical[];
   recents: string[]; // entry IDs, most recent first, max 10
   favorites: string[]; // entry IDs
+  pinned: string[];   // entry IDs, Phase 10; max 8
 }
 
 export const DEFAULT_VERTICALS: Vertical[] = [
@@ -24,5 +25,6 @@ export function defaultStore(): StoreData {
     verticals: [...DEFAULT_VERTICALS],
     recents: [],
     favorites: [],
+    pinned: [],
   };
 }

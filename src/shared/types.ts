@@ -31,6 +31,7 @@ export interface Entry {
   subFolderId?: string;  // optional reference to a SubFolder.id within the entry's vertical
   createdAt: string;     // ISO 8601
   updatedAt: string;
+  copyCount?: number;    // Phase 10: copies made this entry; only tracked for source === "local"
 }
 
 export interface SearchResult {
@@ -95,4 +96,12 @@ export const IPC = {
   SAVE_SOURCE_MODE: "save-source-mode",
   SET_FONT_SIZE: "set-font-size",
   DISCONNECT_SYNC: "disconnect-sync",
+  TOGGLE_PIN: "toggle-pin",
+  INCREMENT_COPY_COUNT: "increment-copy-count",
+  SET_ACCENT: "set-accent",
+  SET_OPACITY: "set-opacity",
+  SET_WINDOW_SIZE: "set-window-size",
+  SET_DENSITY: "set-density",
+  SET_VERTICAL_ORDER: "set-vertical-order",
+  SET_AUTO_HIDE_ON_COPY: "set-auto-hide-on-copy",
 } as const;

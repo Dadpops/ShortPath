@@ -22,6 +22,7 @@ export function openStore(userDataPath: string): StoreData {
       verticals: parsed.verticals ?? [],
       recents: parsed.recents ?? [],
       favorites: parsed.favorites ?? [],
+      pinned: parsed.pinned ?? [],
     });
   } catch {
     console.error("store.json corrupted, resetting to defaults");
@@ -107,7 +108,26 @@ export function deleteEntry(store: StoreData, id: string): StoreData {
     entries: store.entries.filter((e) => e.id !== id),
     recents: store.recents.filter((rid) => rid !== id),
     favorites: store.favorites.filter((fid) => fid !== id),
+    pinned: store.pinned.filter((pid) => pid !== id),
   };
+}
+
+export function togglePin(store: StoreData, entryId: string): StoreData {
+  const already = store.pinned.includes(entryId);
+  return {
+    ...store,
+    pinned: already
+      ? store.pinned.filter((id) => id !== entryId)
+      : [...store.pinned, entryId],
+  };
+}
+
+export function incrementCopyCount(store: StoreData, entryId: string): StoreData {
+  const entries = store.entries.map((e) => {
+    if (e.id !== entryId || e.source !== "local") return e;
+    return { ...e, copyCount: (e.copyCount ?? 0) + 1 };
+  });
+  return { ...store, entries };
 }
 
 export function toggleFavorite(store: StoreData, entryId: string): StoreData {
@@ -158,6 +178,7 @@ export function clearLocalEntries(store: StoreData): StoreData {
     entries: store.entries.filter((e) => e.source === "synced"),
     recents: store.recents.filter((id) => syncedIds.has(id)),
     favorites: store.favorites.filter((id) => syncedIds.has(id)),
+    pinned: store.pinned.filter((id) => syncedIds.has(id)),
   };
 }
 
@@ -233,10 +254,11 @@ export function replaceSyncedEntries(store: StoreData, newSyncedEntries: Entry[]
     }
   }
 
-  // Prune recents and favorites that no longer exist after the replacement.
+  // Prune recents, favorites, and pins that no longer exist after the replacement.
   const liveIds = new Set([...localEntries, ...newSyncedEntries].map((e) => e.id));
   const recents = store.recents.filter((id) => liveIds.has(id));
   const favorites = store.favorites.filter((id) => liveIds.has(id));
+  const pinned = store.pinned.filter((id) => liveIds.has(id));
 
-  return { ...store, entries: [...localEntries, ...newSyncedEntries], verticals, recents, favorites };
+  return { ...store, entries: [...localEntries, ...newSyncedEntries], verticals, recents, favorites, pinned };
 }
