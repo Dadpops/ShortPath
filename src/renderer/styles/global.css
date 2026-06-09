@@ -1045,9 +1045,9 @@ body {
 
 /* Keyboard-focused result item */
 .result-item.focused {
-  background: var(--color-surface-hover);
-  outline: 1px solid var(--color-accent);
-  outline-offset: -1px;
+  background: var(--color-accent-dim);
+  border-left: 3px solid var(--color-accent);
+  padding-left: 27px;
 }
 
 .result-item.focused .result-actions {
@@ -2403,4 +2403,252 @@ body {
 .btn-danger-outline:hover {
   background: rgba(127, 29, 29, 0.15);
   border-color: #f87171;
+}
+
+/* ===== Phase 10: Compact density ===== */
+body[data-density="compact"] .result-item {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+body[data-density="compact"] .result-title {
+  font-size: calc(var(--font-size-base) - 1px);
+}
+
+body[data-density="compact"] .group-header {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+body[data-density="compact"] .result-tags {
+  font-size: 10px;
+}
+
+/* ===== Phase 10: Vertical tab bar ===== */
+.vertical-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+
+.vertical-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.vtab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.1s, border-color 0.1s;
+  flex-shrink: 0;
+}
+
+.vtab:hover {
+  color: var(--color-text);
+}
+
+.vtab.active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/* ===== Phase 10: Sort control ===== */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.sort-label {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  white-space: nowrap;
+}
+
+.sort-select {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  padding: 2px 6px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.1s;
+}
+
+.sort-select:focus {
+  border-color: var(--color-accent);
+}
+
+/* ===== Phase 10: Pinned / Recent sections ===== */
+.pinned-section,
+.recent-section {
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.section-header-row {
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-header-label {
+  font-size: calc(var(--font-size-base) - 2px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.pin-limit-msg {
+  font-size: 11px;
+  color: #fbbf24;
+  padding: 4px 14px 6px;
+}
+
+/* ===== Phase 10: Pin toggle ===== */
+.pin-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  color: var(--color-text-faint);
+  opacity: 0;
+  transition: opacity 0.1s, color 0.1s;
+  -webkit-app-region: no-drag;
+}
+
+.pin-toggle.pinned {
+  color: var(--color-accent);
+  opacity: 1;
+}
+
+.result-item:hover .pin-toggle {
+  opacity: 1;
+}
+
+/* ===== Phase 10: Copy count badge ===== */
+.copy-count-badge {
+  font-size: 10px;
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  margin-left: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ===== Phase 10: Settings group labels ===== */
+.settings-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  margin-bottom: 2px;
+}
+
+/* ===== Phase 10: Accent swatches ===== */
+.accent-swatches {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.accent-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s;
+  flex-shrink: 0;
+}
+
+.accent-swatch:hover {
+  transform: scale(1.12);
+}
+
+.accent-swatch.active {
+  outline-offset: 3px;
+}
+
+/* ===== Phase 10: Opacity / settings row note ===== */
+.settings-row-note {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ===== Phase 10: Tab order drag rows ===== */
+.tab-order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tab-order-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  cursor: grab;
+  transition: background 0.1s, border-color 0.1s;
+  user-select: none;
+}
+
+.tab-order-row:active {
+  cursor: grabbing;
+}
+
+.tab-order-row.drag-over {
+  border-color: var(--color-accent);
+  background: var(--color-accent-dim);
+}
+
+.drag-handle {
+  color: var(--color-text-faint);
+  font-size: 13px;
+  flex-shrink: 0;
+  letter-spacing: -1px;
+}
+
+.tab-order-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--color-text);
+}
+
+.tab-order-count {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
 }
