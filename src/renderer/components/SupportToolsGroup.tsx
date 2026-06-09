@@ -7,9 +7,11 @@ interface Props {
   onCopy: (entryId: string) => void;
   onReorder: (entryId: string, direction: "up" | "down") => void;
   isSearching: boolean;
+  favorites?: Set<string>;
+  onToggleFavorite?: (id: string) => void;
 }
 
-export default function SupportToolsGroup({ group, onToggle, onEdit, onCopy, onReorder, isSearching }: Props) {
+export default function SupportToolsGroup({ group, onToggle, onEdit, onCopy, onReorder, isSearching, favorites, onToggleFavorite }: Props) {
   function launch(entry: Entry) {
     if (entry.link) {
       window.shortpath.openExternal(entry.link);
@@ -32,6 +34,7 @@ export default function SupportToolsGroup({ group, onToggle, onEdit, onCopy, onR
             const { entry } = result;
             const isFirst = idx === 0;
             const isLast = idx === group.results.length - 1;
+            const isFav = favorites?.has(entry.id) ?? false;
             return (
               <div key={entry.id} className="tool-card" onClick={() => launch(entry)}>
                 <div className="tool-card-body">
@@ -41,6 +44,15 @@ export default function SupportToolsGroup({ group, onToggle, onEdit, onCopy, onR
                   )}
                 </div>
                 <div className="tool-card-actions" onClick={(e) => e.stopPropagation()}>
+                  {onToggleFavorite && (
+                    <button
+                      className={`tool-action-btn star-toggle${isFav ? " starred" : ""}`}
+                      onClick={() => onToggleFavorite(entry.id)}
+                      title={isFav ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      {isFav ? "★" : "☆"}
+                    </button>
+                  )}
                   {!isSearching && (
                     <>
                       <button

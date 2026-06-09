@@ -68,6 +68,7 @@ export default function App() {
   const [activeVerticalFilter, setActiveVerticalFilter] = useState<string | null>(null);
   const [verticalOrder, setVerticalOrder] = useState<string[]>([]);
   const [pinLimitMsg, setPinLimitMsg] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null);
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -136,10 +137,14 @@ export default function App() {
     const unsubSettings = window.shortpath.onOpenSettings(() => {
       setMode("settings");
     });
+    const unsubUpdate = window.shortpath.onUpdateAvailable((info) => {
+      setUpdateInfo(info);
+    });
     return () => {
       unsubFocus();
       unsubHotkey();
       unsubSettings();
+      unsubUpdate();
     };
   }, []);
 
@@ -652,7 +657,6 @@ export default function App() {
           <button className="header-icon-btn" onClick={() => setMode("help")} title="Help">?</button>
           <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings">⚙</button>
           <button className="header-icon-btn" onClick={() => void window.shortpath.minimizeWindow()} title="Minimize">−</button>
-          <button className="header-icon-btn" onClick={() => void window.shortpath.hideWindow()} title="Close">✕</button>
         </div>
       </header>
 
@@ -660,6 +664,14 @@ export default function App() {
         <div className="hotkey-error-banner">
           <span>{hotkeyError}</span>
           <button className="clipboard-banner-dismiss" onClick={() => setHotkeyError(null)} aria-label="Dismiss">✕</button>
+        </div>
+      )}
+
+      {updateInfo && (
+        <div className="update-banner">
+          <span className="update-banner-text">Version {updateInfo.version} is available.</span>
+          <button className="update-banner-link" onClick={() => void window.shortpath.openExternal(updateInfo.url)}>Download</button>
+          <button className="update-banner-dismiss" onClick={() => setUpdateInfo(null)} aria-label="Dismiss">✕</button>
         </div>
       )}
 
@@ -691,25 +703,40 @@ export default function App() {
         )}
       </div>
 
-      {/* Vertical filter tabs */}
+      {/* Vertical filter — tabs up to 5, dropdown beyond */}
       {orderedTabVerticals.length > 1 && (
-        <div className="vertical-tabs">
-          <button
-            className={`vtab${activeVerticalFilter === null ? " active" : ""}`}
-            onClick={() => setActiveVerticalFilter(null)}
-          >
-            All
-          </button>
-          {orderedTabVerticals.map((v) => (
-            <button
-              key={v.id}
-              className={`vtab${activeVerticalFilter === v.id ? " active" : ""}`}
-              onClick={() => setActiveVerticalFilter(activeVerticalFilter === v.id ? null : v.id)}
+        orderedTabVerticals.length > 5 ? (
+          <div className="vertical-filter-select-wrap">
+            <select
+              className={`vertical-filter-select${activeVerticalFilter ? " has-filter" : ""}`}
+              value={activeVerticalFilter ?? ""}
+              onChange={(e) => setActiveVerticalFilter(e.target.value || null)}
             >
-              {v.label}
+              <option value="">All</option>
+              {orderedTabVerticals.map((v) => (
+                <option key={v.id} value={v.id}>{v.label}</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="vertical-tabs">
+            <button
+              className={`vtab${activeVerticalFilter === null ? " active" : ""}`}
+              onClick={() => setActiveVerticalFilter(null)}
+            >
+              All
             </button>
-          ))}
-        </div>
+            {orderedTabVerticals.map((v) => (
+              <button
+                key={v.id}
+                className={`vtab${activeVerticalFilter === v.id ? " active" : ""}`}
+                onClick={() => setActiveVerticalFilter(activeVerticalFilter === v.id ? null : v.id)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        )
       )}
 
       {/* Sort control */}
@@ -810,6 +837,8 @@ export default function App() {
               onCopy={handleCopy}
               onReorder={handleReorderEntry}
               isSearching={isSearching}
+              favorites={favorites}
+              onToggleFavorite={handleToggleFavorite}
             />
           ) : (
             <VerticalGroupComponent

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import type { Entry, Vertical } from "@shared/types";
+import type { Entry, Vertical, SubFolder } from "@shared/types";
 import { formatAccelerator } from "@shared/platform";
 import { HELP_TOPICS } from "../features/help/topics";
+import FolderIcon from "./FolderIcon";
 
 interface Props {
   onClose: () => void;
@@ -72,11 +73,13 @@ export default function SettingsScreen({
 
   // Sub-folder management
   const [expandedSubFolderVerticals, setExpandedSubFolderVerticals] = useState<Set<string>>(new Set());
-  const [addingSubFolderFor, setAddingSubFolderFor] = useState<string | null>(null);
+  const [expandedSubFolderNodes, setExpandedSubFolderNodes] = useState<Set<string>>(new Set());
+  const [addingSubFolderFor, setAddingSubFolderFor] = useState<{ verticalId: string; parentSubFolderId: string | null } | null>(null);
   const [newSubFolderLabel, setNewSubFolderLabel] = useState("");
   const [editingSubFolder, setEditingSubFolder] = useState<{ verticalId: string; subFolderId: string } | null>(null);
   const [editingSubFolderLabel, setEditingSubFolderLabel] = useState("");
   const [confirmRemoveSubFolder, setConfirmRemoveSubFolder] = useState<{ verticalId: string; subFolderId: string } | null>(null);
+  const [confirmDeleteVertical, setConfirmDeleteVertical] = useState<string | null>(null);
 
   // Data info buttons
   const [activeInfoId, setActiveInfoId] = useState<string | null>(null);
@@ -88,6 +91,10 @@ export default function SettingsScreen({
   // Tab order drag state
   const [tabOrderDragIdx, setTabOrderDragIdx] = useState<number | null>(null);
   const [tabOrderDragOverIdx, setTabOrderDragOverIdx] = useState<number | null>(null);
+
+  // Update check
+  type UpdateCheckState = "idle" | "checking" | "up-to-date" | { version: string; url: string };
+  const [updateCheck, setUpdateCheck] = useState<UpdateCheckState>("idle");
 
   const [expanded, setExpanded] = useState<Set<SectionKey>>(
     new Set(["appearance", "behavior", "organization", "data"])
@@ -244,11 +251,32 @@ export default function SettingsScreen({
     });
   }
 
+  function toggleSubFolderNode(id: string) {
+    setExpandedSubFolderNodes((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
   async function handleAddSubFolder() {
     if (!addingSubFolderFor || !newSubFolderLabel.trim()) return;
-    await window.shortpath.addSubFolder(addingSubFolderFor, newSubFolderLabel.trim());
+    await window.shortpath.addSubFolder(
+      addingSubFolderFor.verticalId,
+      newSubFolderLabel.trim(),
+      addingSubFolderFor.parentSubFolderId ?? undefined
+    );
+    if (addingSubFolderFor.parentSubFolderId) {
+      setExpandedSubFolderNodes((prev) => new Set(prev).add(addingSubFolderFor!.parentSubFolderId!));
+    }
     setNewSubFolderLabel("");
     setAddingSubFolderFor(null);
+  }
+
+  async function handleDeleteVertical(verticalId: string) {
+    await window.shortpath.deleteVertical(verticalId);
+    onVerticalOrderChange(verticalOrder.filter((id) => id !== verticalId));
+    setConfirmDeleteVertical(null);
   }
 
   async function handleSaveSubFolderRename() {
@@ -269,6 +297,17 @@ export default function SettingsScreen({
       confirmRemoveSubFolder.subFolderId
     );
     setConfirmRemoveSubFolder(null);
+  }
+
+  async function handleCheckForUpdates() {
+    setUpdateCheck("checking");
+    const result = await window.shortpath.checkForUpdates();
+    if (result) {
+      setUpdateCheck(result);
+    } else {
+      setUpdateCheck("up-to-date");
+      setTimeout(() => setUpdateCheck("idle"), 3000);
+    }
   }
 
   async function handleClearEntries() {
@@ -500,6 +539,30 @@ export default function SettingsScreen({
               <button className="btn-secondary settings-action-btn" onClick={handleResetPosition}>
                 {positionReset ? "Reset ✓" : "Reset to default position"}
               </button>
+
+              <div className="settings-row" style={{ marginTop: 8 }}>
+                <div className="settings-row-label">Updates</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    className="btn-secondary settings-action-btn"
+                    onClick={() => void handleCheckForUpdates()}
+                    disabled={updateCheck === "checking"}
+                  >
+                    {updateCheck === "checking" ? "Checking…" : "Check for updates"}
+                  </button>
+                  {updateCheck === "up-to-date" && (
+                    <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Up to date</span>
+                  )}
+                  {typeof updateCheck === "object" && (
+                    <button
+                      className="update-banner-link"
+                      onClick={() => void window.shortpath.openExternal(updateCheck.url)}
+                    >
+                      v{updateCheck.version} available — Download
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </section>
@@ -529,100 +592,161 @@ export default function SettingsScreen({
               </div>
 
               <div className="settings-group-label" style={{ marginTop: 12 }}>Verticals</div>
-              {verticals.map((v) => (
-                <div key={v.id} className="settings-vertical-block">
-                  <div className="settings-vertical-row">
-                    {editingVerticalId === v.id ? (
-                      <>
-                        <input
-                          className="form-input settings-vertical-input"
-                          value={editingLabel}
-                          onChange={(e) => setEditingLabel(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") saveEditVertical();
-                            if (e.key === "Escape") setEditingVerticalId(null);
-                          }}
-                          autoFocus
-                        />
-                        <button className="btn-primary settings-action-btn" onClick={saveEditVertical}>Save</button>
-                        <button className="btn-secondary settings-action-btn" onClick={() => setEditingVerticalId(null)}>Cancel</button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="settings-vertical-label">{v.label}</span>
-                        <button className="btn-secondary settings-action-btn" onClick={() => startEditVertical(v)}>Rename</button>
-                        <button
-                          className={`btn-secondary settings-action-btn${expandedSubFolderVerticals.has(v.id) ? " active" : ""}`}
-                          onClick={() => toggleSubFolderExpand(v.id)}
-                          title="Manage sub-folders"
-                        >
-                          📁 {(v.subFolders?.length ?? 0) > 0 ? v.subFolders!.length : "+"}
-                        </button>
-                      </>
-                    )}
-                  </div>
+              {verticals.map((v) => {
+                function renderSubFolderNode(sf: SubFolder, depth: number): React.ReactNode {
+                  const isEditingSf = editingSubFolder?.verticalId === v.id && editingSubFolder.subFolderId === sf.id;
+                  const isConfirmRemove = confirmRemoveSubFolder?.verticalId === v.id && confirmRemoveSubFolder.subFolderId === sf.id;
+                  const isAddingUnder = addingSubFolderFor?.verticalId === v.id && addingSubFolderFor.parentSubFolderId === sf.id;
+                  const nodeExpanded = expandedSubFolderNodes.has(sf.id);
+                  const hasChildren = (sf.subFolders?.length ?? 0) > 0;
 
-                  {expandedSubFolderVerticals.has(v.id) && (
-                    <div className="settings-subfolders">
-                      {(v.subFolders ?? []).map((sf) => (
-                        <div key={sf.id} className="settings-subfolder-row">
-                          {editingSubFolder?.verticalId === v.id && editingSubFolder.subFolderId === sf.id ? (
-                            <>
+                  return (
+                    <div key={sf.id} style={{ paddingLeft: depth * 16 }}>
+                      <div className="settings-subfolder-row">
+                        {hasChildren && (
+                          <button
+                            className="subfolder-tree-toggle"
+                            onClick={() => toggleSubFolderNode(sf.id)}
+                            tabIndex={-1}
+                          >
+                            <span className={`subfolder-chevron${nodeExpanded ? " expanded" : ""}`}>›</span>
+                          </button>
+                        )}
+                        {isEditingSf ? (
+                          <>
+                            <input
+                              className="form-input settings-vertical-input"
+                              value={editingSubFolderLabel}
+                              onChange={(e) => setEditingSubFolderLabel(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") void handleSaveSubFolderRename();
+                                if (e.key === "Escape") setEditingSubFolder(null);
+                              }}
+                              autoFocus
+                            />
+                            <button className="btn-primary settings-action-btn" onClick={() => void handleSaveSubFolderRename()}>Save</button>
+                            <button className="btn-secondary settings-action-btn" onClick={() => setEditingSubFolder(null)}>Cancel</button>
+                          </>
+                        ) : isConfirmRemove ? (
+                          <>
+                            <span className="settings-subfolder-label">Delete "{sf.label}"?</span>
+                            <button className="btn-danger settings-action-btn" onClick={() => void handleRemoveSubFolder()}>Delete</button>
+                            <button className="btn-secondary settings-action-btn" onClick={() => setConfirmRemoveSubFolder(null)}>Cancel</button>
+                          </>
+                        ) : (
+                          <>
+                            <FolderIcon size={13} />
+                            <span className="settings-subfolder-label">{sf.label}</span>
+                            <button className="btn-secondary settings-action-btn" onClick={() => { setEditingSubFolder({ verticalId: v.id, subFolderId: sf.id }); setEditingSubFolderLabel(sf.label); }}>Rename</button>
+                            <button className="btn-secondary settings-action-btn" onClick={() => { setAddingSubFolderFor({ verticalId: v.id, parentSubFolderId: sf.id }); setNewSubFolderLabel(""); toggleSubFolderNode(sf.id); }} title="Add nested sub-folder">+ Nest</button>
+                            <button className="settings-danger-btn settings-action-btn btn-secondary" onClick={() => setConfirmRemoveSubFolder({ verticalId: v.id, subFolderId: sf.id })}>Remove</button>
+                          </>
+                        )}
+                      </div>
+                      {(nodeExpanded || isAddingUnder) && (
+                        <div>
+                          {(sf.subFolders ?? []).map((child) => renderSubFolderNode(child, depth + 1))}
+                          {isAddingUnder && (
+                            <div className="settings-subfolder-row" style={{ paddingLeft: 16 }}>
                               <input
                                 className="form-input settings-vertical-input"
-                                value={editingSubFolderLabel}
-                                onChange={(e) => setEditingSubFolderLabel(e.target.value)}
+                                placeholder="Sub-folder name"
+                                value={newSubFolderLabel}
+                                onChange={(e) => setNewSubFolderLabel(e.target.value)}
                                 onKeyDown={(e) => {
-                                  if (e.key === "Enter") void handleSaveSubFolderRename();
-                                  if (e.key === "Escape") setEditingSubFolder(null);
+                                  if (e.key === "Enter") void handleAddSubFolder();
+                                  if (e.key === "Escape") { setAddingSubFolderFor(null); setNewSubFolderLabel(""); }
                                 }}
                                 autoFocus
                               />
-                              <button className="btn-primary settings-action-btn" onClick={() => void handleSaveSubFolderRename()}>Save</button>
-                              <button className="btn-secondary settings-action-btn" onClick={() => setEditingSubFolder(null)}>Cancel</button>
-                            </>
-                          ) : confirmRemoveSubFolder?.verticalId === v.id && confirmRemoveSubFolder.subFolderId === sf.id ? (
-                            <>
-                              <span className="settings-subfolder-label">Delete "{sf.label}"?</span>
-                              <button className="btn-danger settings-action-btn" onClick={() => void handleRemoveSubFolder()}>Delete</button>
-                              <button className="btn-secondary settings-action-btn" onClick={() => setConfirmRemoveSubFolder(null)}>Cancel</button>
-                            </>
-                          ) : (
-                            <>
-                              <span className="settings-subfolder-icon">📁</span>
-                              <span className="settings-subfolder-label">{sf.label}</span>
-                              <button className="btn-secondary settings-action-btn" onClick={() => { setEditingSubFolder({ verticalId: v.id, subFolderId: sf.id }); setEditingSubFolderLabel(sf.label); }}>Rename</button>
-                              <button className="settings-danger-btn settings-action-btn btn-secondary" onClick={() => setConfirmRemoveSubFolder({ verticalId: v.id, subFolderId: sf.id })}>Remove</button>
-                            </>
+                              <button className="btn-primary settings-action-btn" onClick={() => void handleAddSubFolder()} disabled={!newSubFolderLabel.trim()}>Add</button>
+                              <button className="btn-secondary settings-action-btn" onClick={() => { setAddingSubFolderFor(null); setNewSubFolderLabel(""); }}>Cancel</button>
+                            </div>
                           )}
                         </div>
-                      ))}
+                      )}
+                    </div>
+                  );
+                }
 
-                      {addingSubFolderFor === v.id ? (
-                        <div className="settings-subfolder-row">
+                return (
+                  <div key={v.id} className="settings-vertical-block">
+                    <div className="settings-vertical-row">
+                      {editingVerticalId === v.id ? (
+                        <>
                           <input
                             className="form-input settings-vertical-input"
-                            placeholder="Sub-folder name"
-                            value={newSubFolderLabel}
-                            onChange={(e) => setNewSubFolderLabel(e.target.value)}
+                            value={editingLabel}
+                            onChange={(e) => setEditingLabel(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") void handleAddSubFolder();
-                              if (e.key === "Escape") { setAddingSubFolderFor(null); setNewSubFolderLabel(""); }
+                              if (e.key === "Enter") saveEditVertical();
+                              if (e.key === "Escape") setEditingVerticalId(null);
                             }}
                             autoFocus
                           />
-                          <button className="btn-primary settings-action-btn" onClick={() => void handleAddSubFolder()} disabled={!newSubFolderLabel.trim()}>Add</button>
-                          <button className="btn-secondary settings-action-btn" onClick={() => { setAddingSubFolderFor(null); setNewSubFolderLabel(""); }}>Cancel</button>
-                        </div>
+                          <button className="btn-primary settings-action-btn" onClick={saveEditVertical}>Save</button>
+                          <button className="btn-secondary settings-action-btn" onClick={() => setEditingVerticalId(null)}>Cancel</button>
+                        </>
+                      ) : confirmDeleteVertical === v.id ? (
+                        <>
+                          <span className="settings-vertical-label">Delete "{v.label}"?</span>
+                          <span className="settings-row-note" style={{ marginLeft: 4 }}>({entryCountForVertical(v.id)} entries)</span>
+                          <button className="btn-danger settings-action-btn" onClick={() => void handleDeleteVertical(v.id)}>Delete</button>
+                          <button className="btn-secondary settings-action-btn" onClick={() => setConfirmDeleteVertical(null)}>Cancel</button>
+                        </>
                       ) : (
-                        <button className="settings-add-subfolder-btn" onClick={() => { setAddingSubFolderFor(v.id); setNewSubFolderLabel(""); }}>
-                          + Add sub-folder
-                        </button>
+                        <>
+                          <span className="settings-vertical-label">{v.label}</span>
+                          <button className="btn-secondary settings-action-btn" onClick={() => startEditVertical(v)}>Rename</button>
+                          <button
+                            className={`btn-secondary settings-action-btn${expandedSubFolderVerticals.has(v.id) ? " active" : ""}`}
+                            onClick={() => toggleSubFolderExpand(v.id)}
+                            title="Manage sub-folders"
+                          >
+                            <FolderIcon size={12} /> {(v.subFolders?.length ?? 0) > 0 ? v.subFolders!.length : "+"}
+                          </button>
+                          <button className="settings-danger-btn settings-action-btn btn-secondary" onClick={() => setConfirmDeleteVertical(v.id)}>Delete</button>
+                        </>
                       )}
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    {expandedSubFolderVerticals.has(v.id) && (
+                      <div className="settings-subfolders">
+                        {(v.subFolders ?? []).map((sf) => renderSubFolderNode(sf, 0))}
+
+                        {addingSubFolderFor?.verticalId === v.id && addingSubFolderFor.parentSubFolderId === null ? (
+                          <div className="settings-subfolder-row">
+                            <input
+                              className="form-input settings-vertical-input"
+                              placeholder="Sub-folder name"
+                              value={newSubFolderLabel}
+                              onChange={(e) => setNewSubFolderLabel(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") void handleAddSubFolder();
+                                if (e.key === "Escape") { setAddingSubFolderFor(null); setNewSubFolderLabel(""); }
+                              }}
+                              autoFocus
+                            />
+                            <button className="btn-primary settings-action-btn" onClick={() => void handleAddSubFolder()} disabled={!newSubFolderLabel.trim()}>Add</button>
+                            <button className="btn-secondary settings-action-btn" onClick={() => { setAddingSubFolderFor(null); setNewSubFolderLabel(""); }}>Cancel</button>
+                          </div>
+                        ) : (
+                          <button className="settings-add-subfolder-btn" onClick={() => { setAddingSubFolderFor({ verticalId: v.id, parentSubFolderId: null }); setNewSubFolderLabel(""); }}>
+                            + Add sub-folder
+                          </button>
+                        )}
+                        <button
+                          className="btn-secondary settings-action-btn"
+                          onClick={() => toggleSubFolderExpand(v.id)}
+                          style={{ alignSelf: "flex-start", marginTop: 6 }}
+                        >
+                          Done
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               {addingVertical ? (
                 <div className="settings-vertical-row">
