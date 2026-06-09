@@ -1,0 +1,11 @@
+{
+  "name": "shortpath-capture",
+  "version": "0.1.0",
+  "description": "ShortPath browser extension for Chrome and Firefox.",
+  "private": true,
+  "scripts": {
+    "setup": "node generate-icons.js",
+    "build:chrome": "node build.js chrome",
+    "build:firefox": "node build.js firefox"
+  }
+}

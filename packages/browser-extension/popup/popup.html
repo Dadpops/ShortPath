@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShortPath Capture</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="header">
+    <img src="../icons/icon32.png" alt="ShortPath" class="logo" onerror="this.style.display='none'" />
+    <span class="app-name">ShortPath Capture</span>
+  </div>
+
+  <div id="status-bar">
+    <span id="status-dot" class="dot"></span>
+    <span id="status-text">Checking...</span>
+  </div>
+
+  <div id="connected-panel" class="panel hidden">
+    <button id="save-page-btn" class="btn-primary">Save current page</button>
+    <div id="queue-row" class="queue-row hidden">
+      <span id="queue-count"></span>
+      <button id="flush-btn" class="btn-secondary">Import now</button>
+    </div>
+  </div>
+
+  <div id="disconnected-panel" class="panel hidden">
+    <div id="queue-row-dc" class="queue-row hidden">
+      <span id="queue-count-dc"></span>
+    </div>
+    <details id="where-details">
+      <summary>Where is ShortPath?</summary>
+      <div class="where-content">
+        <p>ShortPath is a desktop app. Look for it in your system tray (Windows) or menu bar (macOS).</p>
+        <p><strong>Windows:</strong> Press your configured hotkey or find ShortPath in your Start menu.</p>
+        <p><strong>macOS:</strong> Press your configured hotkey or open it from Applications.</p>
+        <p>Not installed? <a id="download-link" href="https://github.com/Dadpops/ShortPath/releases" target="_blank">Download from GitHub</a></p>
+      </div>
+    </details>
+    <button id="view-queue-btn" class="btn-link hidden">View queued items</button>
+    <div id="queue-list" class="queue-list hidden"></div>
+    <button id="clear-queue-btn" class="btn-secondary hidden">Clear queue</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
