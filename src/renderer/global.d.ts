@@ -165,7 +165,7 @@ declare global {
       deleteNote: (id: string) => Promise<void>;
 
       fetchUrlContent: (url: string) => Promise<
-        { title: string; sections: Array<{ heading: string; body: string }> } | { error: string }
+        { html: string; finalUrl: string } | { error: string }
       >;
 
       previewMdImport: (filePath: string) => Promise<

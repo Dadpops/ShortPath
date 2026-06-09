@@ -20,7 +20,7 @@ interface Props {
 }
 
 type HotkeyState = "idle" | "capturing" | "saving" | "error";
-type SectionKey = "appearance" | "behavior" | "organization" | "data";
+type SectionKey = "appearance" | "behavior" | "organization" | "data" | "sync";
 
 const ACCENT_PRESETS = [
   { label: "Ocean",  value: "#2563eb" },
@@ -99,8 +99,14 @@ export default function SettingsScreen({
   type UpdateCheckState = "idle" | "checking" | "up-to-date" | { version: string; url: string };
   const [updateCheck, setUpdateCheck] = useState<UpdateCheckState>("idle");
 
+  // Sync management
+  type SyncStatus = { syncPath: string | null; syncedCount: number; lastRefreshed: string | null } | null;
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>(null);
+  const [syncRefreshing, setSyncRefreshing] = useState(false);
+  const [syncConfiguring, setSyncConfiguring] = useState(false);
+
   const [expanded, setExpanded] = useState<Set<SectionKey>>(
-    new Set(["appearance", "behavior", "organization", "data"])
+    new Set(["appearance", "behavior", "organization", "data", "sync"])
   );
 
   function toggleSection(key: SectionKey) {
@@ -121,6 +127,7 @@ export default function SettingsScreen({
       setWindowSize(ws);
       setDensity(d);
     });
+    window.shortpath.getSyncStatus().then(setSyncStatus);
   }, []);
 
   useEffect(() => {
@@ -371,6 +378,30 @@ export default function SettingsScreen({
         <span className={`settings-chevron${expanded.has(sectionKey) ? " expanded" : ""}`}>›</span>
       </button>
     );
+  }
+
+  async function handleConfigureSync() {
+    setSyncConfiguring(true);
+    const result = await window.shortpath.configureSync();
+    if (result.success) {
+      const status = await window.shortpath.getSyncStatus();
+      setSyncStatus(status);
+    }
+    setSyncConfiguring(false);
+  }
+
+  async function handleRefreshSync() {
+    setSyncRefreshing(true);
+    await window.shortpath.refreshSynced();
+    const status = await window.shortpath.getSyncStatus();
+    setSyncStatus(status);
+    setSyncRefreshing(false);
+  }
+
+  async function handleDisconnectSync() {
+    await window.shortpath.disconnectSync();
+    const status = await window.shortpath.getSyncStatus();
+    setSyncStatus(status);
   }
 
   const dataActions: Array<{ label: string; topicId: string; onClick: () => void; disabled?: boolean }> = [
@@ -800,6 +831,53 @@ export default function SettingsScreen({
 
               {verticals.length === 0 && !addingVertical && (
                 <p className="settings-stub-note">No verticals yet.</p>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* ── Sync ──────────────────────────────────────────────── */}
+        <section className="settings-section">
+          <SectionHeader title="Sync" sectionKey="sync" />
+          {expanded.has("sync") && (
+            <div className="settings-section-body">
+              {syncStatus === null ? (
+                <p className="settings-stub-note">Loading…</p>
+              ) : syncStatus.syncPath ? (
+                <>
+                  <div className="settings-row" style={{ flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
+                    <div className="settings-row-label">Sync file</div>
+                    <div className="settings-sync-path">{syncStatus.syncPath}</div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="settings-row-label">Synced entries</div>
+                    <span className="settings-sync-status-ok">{syncStatus.syncedCount}</span>
+                  </div>
+                  {syncStatus.lastRefreshed && (
+                    <div className="settings-row">
+                      <div className="settings-row-label">Last refreshed</div>
+                      <span className="settings-sync-status-label">{new Date(syncStatus.lastRefreshed).toLocaleTimeString()}</span>
+                    </div>
+                  )}
+                  <div className="settings-sync-row-actions">
+                    <button className="btn-secondary settings-action-btn" onClick={() => void handleRefreshSync()} disabled={syncRefreshing}>
+                      {syncRefreshing ? "Refreshing…" : "Refresh now"}
+                    </button>
+                    <button className="btn-secondary settings-action-btn" onClick={() => void handleConfigureSync()} disabled={syncConfiguring}>
+                      {syncConfiguring ? "Choosing…" : "Change file"}
+                    </button>
+                    <button className="settings-danger-btn settings-action-btn btn-secondary" onClick={() => void handleDisconnectSync()}>
+                      Disconnect sync
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="settings-row-note">Not connected. Point ShortPath at a shared CSV on a cloud-synced drive (Dropbox, Google Drive, OneDrive) to pull in team entries automatically.</p>
+                  <button className="btn-secondary settings-action-btn" onClick={() => void handleConfigureSync()} disabled={syncConfiguring}>
+                    {syncConfiguring ? "Choosing…" : "Configure sync file"}
+                  </button>
+                </>
               )}
             </div>
           )}

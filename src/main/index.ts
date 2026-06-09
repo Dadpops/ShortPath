@@ -19,11 +19,9 @@ import fs from "fs";
 import http from "http";
 import https from "https";
 import chokidar from "chokidar";
-import { Readability } from "@mozilla/readability";
-import { JSDOM } from "jsdom";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require("pdf-parse") as (buf: Buffer, opts?: Record<string, unknown>) => Promise<{ text: string; numpages: number }>;
-import { marked } from "marked";
+
 import { autoUpdater } from "electron-updater";
 import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
@@ -384,31 +382,6 @@ function fetchHtml(url: string): Promise<{ ok: true; html: string; finalUrl: str
   });
 }
 
-interface UrlSection { heading: string; body: string }
-
-function splitByHeadings(doc: Document, fallbackTitle: string): UrlSection[] {
-  const sections: UrlSection[] = [];
-  let currentHeading = fallbackTitle;
-  const bodyParts: string[] = [];
-
-  for (const node of Array.from(doc.body.childNodes)) {
-    const el = node as HTMLElement;
-    const tag = el.tagName?.toUpperCase();
-    if (tag === "H2" || tag === "H3") {
-      const text = bodyParts.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-      if (text) sections.push({ heading: currentHeading, body: text });
-      currentHeading = el.textContent?.trim() ?? "";
-      bodyParts.length = 0;
-    } else {
-      const t = el.textContent?.trim();
-      if (t) bodyParts.push(t);
-    }
-  }
-  const finalText = bodyParts.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-  if (finalText) sections.push({ heading: currentHeading, body: finalText });
-  return sections.length > 0 ? sections : [{ heading: fallbackTitle, body: doc.body.textContent?.trim() ?? "" }];
-}
-
 // ── Markdown import helpers ───────────────────────────────────────────────────
 
 interface ImportSection { title: string; body: string; selected: boolean }
@@ -446,7 +419,7 @@ function splitMarkdownSections(text: string): ImportSection[] {
     const h2 = !h3 && /^##(?!#)\s+(.+)$/.exec(line);
     if (h2 || h3) {
       flush();
-      currentTitle = ((h2 ?? h3)![1]).trim();
+      currentTitle = (h2 ? h2[1] : h3![1]).trim();
     } else {
       bodyLines.push(line);
     }
@@ -1027,6 +1000,9 @@ function registerIpcHandlers() {
   ipcMain.handle("download-update", () => { autoUpdater.downloadUpdate().catch(console.error); });
   ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(); });
 
+  // Fetch the raw HTML in main and return it to the renderer for parsing.
+  // Readability + DOMParser run in the renderer (browser context) — JSDOM is
+  // ESM-only and cannot be required from Electron's CJS main process.
   ipcMain.handle("fetch-url-content", async (_e, url: string) => {
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
       return { error: "URL must start with http:// or https://" };
@@ -1034,13 +1010,7 @@ function registerIpcHandlers() {
     try {
       const result = await fetchHtml(url);
       if (!result.ok) return { error: result.error };
-      const dom = new JSDOM(result.html, { url: result.finalUrl });
-      const reader = new Readability(dom.window.document);
-      const article = reader.parse();
-      if (!article) return { error: "Could not extract readable content from this page." };
-      const contentDom = new JSDOM(article.content);
-      const sections = splitByHeadings(contentDom.window.document, article.title);
-      return { title: article.title, sections };
+      return { html: result.html, finalUrl: result.finalUrl };
     } catch (err) {
       return { error: String(err) };
     }

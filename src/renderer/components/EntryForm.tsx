@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import type { Entry, Vertical, SubFolder, CapturePayload } from "@shared/types";
 import RichTextEditor from "./RichTextEditor";
+import { Readability } from "@mozilla/readability";
 
 interface Props {
   entry?: Entry;
@@ -96,14 +97,51 @@ export default function EntryForm({ entry, verticals, allEntries, onSave, onDele
       if ("error" in result) {
         setUrlImportError(result.error);
         setUrlImportStatus("error");
-      } else {
-        setUrlSections(result.sections);
-        setUrlImportStatus("sections");
+        return;
       }
+      // Parse in the renderer using native DOMParser + Readability
+      const doc = new DOMParser().parseFromString(result.html, "text/html");
+      // Set the base URL so Readability can resolve relative URLs
+      const base = doc.createElement("base");
+      base.href = result.finalUrl;
+      doc.head.appendChild(base);
+      const article = new Readability(doc).parse();
+      if (!article?.content) {
+        setUrlImportError("Could not extract readable content from this page.");
+        setUrlImportStatus("error");
+        return;
+      }
+      const contentDoc = new DOMParser().parseFromString(article.content, "text/html");
+      const sections = splitByHeadings(contentDoc, article.title ?? "");
+      setUrlSections(sections);
+      setUrlImportStatus("sections");
     } catch (err) {
       setUrlImportError(String(err));
       setUrlImportStatus("error");
     }
+  }
+
+  function splitByHeadings(doc: Document, fallbackTitle: string): UrlSection[] {
+    const sections: UrlSection[] = [];
+    let currentHeading = fallbackTitle;
+    const bodyParts: string[] = [];
+
+    for (const node of Array.from(doc.body.childNodes)) {
+      const el = node as HTMLElement;
+      const tag = el.tagName?.toUpperCase();
+      if (tag === "H2" || tag === "H3") {
+        const text = bodyParts.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+        if (text) sections.push({ heading: currentHeading, body: text });
+        currentHeading = el.textContent?.trim() ?? "";
+        bodyParts.length = 0;
+      } else {
+        const t = el.textContent?.trim();
+        if (t) bodyParts.push(t);
+      }
+    }
+    const finalText = bodyParts.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    if (finalText) sections.push({ heading: currentHeading, body: finalText });
+    return sections.length > 0 ? sections : [{ heading: fallbackTitle, body: doc.body.textContent?.trim() ?? "" }];
   }
 
   function applyUrlSection(section: UrlSection) {
