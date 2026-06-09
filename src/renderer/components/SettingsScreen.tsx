@@ -15,6 +15,8 @@ interface Props {
   onVerticalOrderChange: (order: string[]) => void;
   autoHideOnCopy: boolean;
   onAutoHideOnCopyChange: (val: boolean) => void;
+  alwaysOnTop: boolean;
+  onAlwaysOnTopChange: (val: boolean) => void;
 }
 
 type HotkeyState = "idle" | "capturing" | "saving" | "error";
@@ -50,6 +52,7 @@ function buildAccelerator(e: KeyboardEvent): string | null {
 export default function SettingsScreen({
   onClose, onNavigate, verticals, onVerticalRenamed, onVerticalAdded,
   entries, verticalOrder, onVerticalOrderChange, autoHideOnCopy, onAutoHideOnCopyChange,
+  alwaysOnTop, onAlwaysOnTopChange,
 }: Props) {
   const [currentHotkey, setCurrentHotkey] = useState("Loading…");
   const [hotkeyState, setHotkeyState] = useState<HotkeyState>("idle");
@@ -508,6 +511,21 @@ export default function SettingsScreen({
                       key={String(val)}
                       className={`font-size-btn${autoHideOnCopy === val ? " active" : ""}`}
                       onClick={() => onAutoHideOnCopyChange(val)}
+                    >
+                      {val ? "On" : "Off"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-label">Keep window on top</div>
+                <div className="font-size-control">
+                  {([false, true] as const).map((val) => (
+                    <button
+                      key={String(val)}
+                      className={`font-size-btn${alwaysOnTop === val ? " active" : ""}`}
+                      onClick={() => onAlwaysOnTopChange(val)}
                     >
                       {val ? "On" : "Off"}
                     </button>

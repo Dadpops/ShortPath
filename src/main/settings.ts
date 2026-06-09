@@ -23,6 +23,7 @@ export interface AppSettings {
   density?: "compact" | "comfortable";
   verticalOrder?: string[];   // ordered array of vertical IDs
   autoHideOnCopy?: boolean;
+  alwaysOnTop?: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {

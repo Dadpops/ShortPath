@@ -64,6 +64,7 @@ export default function App() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [pendingNoteEntry, setPendingNoteEntry] = useState<{ id: string; title: string } | null>(null);
   const [autoHideOnCopy, setAutoHideOnCopy] = useState(false);
+  const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("relevance");
   const [sessionCopies, setSessionCopies] = useState<string[]>([]);
   const [activeVerticalFilter, setActiveVerticalFilter] = useState<string | null>(null);
@@ -77,7 +78,7 @@ export default function App() {
   useEffect(() => {
     window.shortpath
       .loadEntries()
-      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, fontSize: fs, sourceMode: sm, sourceName: sn, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc }) => {
+      .then(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins, fontSize: fs, sourceMode: sm, sourceName: sn, theme: t, accentColor, density, verticalOrder: vo, autoHideOnCopy: ahoc, alwaysOnTop: aot }) => {
         setEntries(e);
         setVerticals(v);
         setRecents(r);
@@ -86,6 +87,7 @@ export default function App() {
         setExpandedGroups(new Set(v.map((vert) => vert.id)));
         setVerticalOrder(vo ?? []);
         setAutoHideOnCopy(ahoc ?? false);
+        setAlwaysOnTop(aot ?? false);
         document.documentElement.style.setProperty("--font-size-base", `${fs}px`);
         document.documentElement.setAttribute("data-theme", t);
         if (accentColor) applyAccent(accentColor);
@@ -601,6 +603,11 @@ export default function App() {
             setAutoHideOnCopy(val);
             void window.shortpath.setAutoHideOnCopy(val);
           }}
+          alwaysOnTop={alwaysOnTop}
+          onAlwaysOnTopChange={(val) => {
+            setAlwaysOnTop(val);
+            void window.shortpath.setAlwaysOnTop(val);
+          }}
         />
       </div>
     );
@@ -681,6 +688,17 @@ export default function App() {
               ⎘
             </button>
           )}
+          <button
+            className={`header-icon-btn pin-window-btn${alwaysOnTop ? " active" : ""}`}
+            onClick={() => {
+              const next = !alwaysOnTop;
+              setAlwaysOnTop(next);
+              void window.shortpath.setAlwaysOnTop(next);
+            }}
+            title={alwaysOnTop ? "Unpin window (currently always on top)" : "Pin window to stay above other windows"}
+          >
+            {alwaysOnTop ? "📌" : "📍"}
+          </button>
           <button className="header-icon-btn" onClick={() => setMode("notes")} title="Notes">✎</button>
           <button className="header-icon-btn" onClick={() => setMode("favorites")} title="Favorites">☆</button>
           <button className="header-icon-btn" onClick={() => setMode("help")} title="Help">?</button>

@@ -97,7 +97,7 @@ function createWindow() {
     transparent: true,
     backgroundColor: "#00000000",
     skipTaskbar: true,
-    alwaysOnTop: false,
+    alwaysOnTop: settings.alwaysOnTop ?? false,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "../preload/index.js"),
@@ -293,6 +293,7 @@ function registerIpcHandlers() {
     density: settings.density ?? "comfortable",
     verticalOrder: settings.verticalOrder ?? [],
     autoHideOnCopy: settings.autoHideOnCopy ?? false,
+    alwaysOnTop: settings.alwaysOnTop ?? false,
   }));
 
   ipcMain.handle(
@@ -572,6 +573,7 @@ function registerIpcHandlers() {
     density: settings.density ?? "comfortable",
     verticalOrder: settings.verticalOrder ?? [],
     autoHideOnCopy: settings.autoHideOnCopy ?? false,
+    alwaysOnTop: settings.alwaysOnTop ?? false,
   }));
 
   ipcMain.handle("toggle-favorite", (_e, entryId: string) => {
@@ -623,6 +625,12 @@ function registerIpcHandlers() {
   ipcMain.handle("set-auto-hide-on-copy", (_e, value: boolean) => {
     settings = { ...settings, autoHideOnCopy: value };
     saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-always-on-top", (_e, value: boolean) => {
+    settings = { ...settings, alwaysOnTop: value };
+    saveSettings(userDataPath, settings);
+    win?.setAlwaysOnTop(value);
   });
 
   ipcMain.handle("toggle-pin", (_e, entryId: string) => {

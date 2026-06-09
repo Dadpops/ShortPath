@@ -16,6 +16,7 @@ interface LoadEntriesResult {
   density: "compact" | "comfortable";
   verticalOrder: string[];
   autoHideOnCopy: boolean;
+  alwaysOnTop: boolean;
 }
 
 interface CreateEntryResult {
@@ -111,6 +112,7 @@ declare global {
         density: "compact" | "comfortable";
         verticalOrder: string[];
         autoHideOnCopy: boolean;
+        alwaysOnTop: boolean;
       }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
@@ -124,6 +126,7 @@ declare global {
       setDensity: (density: "compact" | "comfortable") => Promise<void>;
       setVerticalOrder: (order: string[]) => Promise<void>;
       setAutoHideOnCopy: (value: boolean) => Promise<void>;
+      setAlwaysOnTop: (value: boolean) => Promise<void>;
       setFontSize: (size: number) => Promise<void>;
       setTheme: (theme: "dark" | "light") => Promise<void>;
       saveSourceMode: (mode: "local" | "sync", name?: string) => Promise<void>;

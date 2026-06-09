@@ -3306,3 +3306,8 @@ body[data-density="compact"] .result-tags {
   font-size: var(--font-size-xs);
   line-height: 1.4;
 }
+
+/* ===== Pin window button ===== */
+.pin-window-btn.active {
+  color: var(--color-accent);
+}

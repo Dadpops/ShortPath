@@ -526,6 +526,18 @@ The brief delay lets you see the "Copied ✓" confirmation before the window dis
 This setting is off by default. Turn it on if you prefer a one-and-done workflow where copying a reply automatically gets ShortPath out of your way.`,
   },
   {
+    id: "pin-window",
+    title: "Pin window (always on top)",
+    tags: ["pin", "always on top", "window", "desktop", "float"],
+    content: `The pin button (📍) in the main header keeps the ShortPath window visible above all other windows on your desktop.
+
+When pinned (📌), the window stays in front even when you click away to another app. This is useful when you need to read a saved reply while typing into a support tool in another window.
+
+Click the button again to unpin. The setting persists between sessions.
+
+The global hotkey still works when pinned — pressing it will hide the window even if it is on top.`,
+  },
+  {
     id: "stream-deck-export",
     title: "Stream Deck profile export",
     tags: ["stream deck", "elgato", "profile", "export", "hardware", "buttons"],
