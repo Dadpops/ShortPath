@@ -336,3 +336,62 @@ Goal: quality-of-life upgrades for power users — always-visible window, rich c
 - [ ] Create dated session file in docs/sessions/
 - [ ] Append to docs/SESSION_LOG.md
 - [ ] Commit and push
+
+---
+
+## Phase 14 — Browser extension, URL import, and file drag-in
+
+Goal: bring content into ShortPath from the browser and from Markdown and PDF files.
+
+### HTTP capture server
+
+- [ ] HTTP server on port 57433 in main process; CORS-enabled; POST /capture brings window to front and sends IPC to renderer; GET /ping returns status and version; OPTIONS preflight handled; server closes on app quit
+- [ ] IPC: `capture-entry` pushed to renderer; `onCaptureEntry` exposed in preload
+- [ ] `sourceUrl?: string` added to Entry type
+- [ ] Renderer: `capture-entry` event switches to add mode, pre-fills title and body, shows read-only "Captured from" field
+
+### URL import in add-entry form
+
+- [ ] Install @mozilla/readability and jsdom
+- [ ] IPC handler: `fetch-url-content` in main; validates URL, fetches page with Node https, parses with Readability; returns sections split by h2/h3
+- [ ] Expose in preload and global.d.ts: `fetchUrlContent`
+- [ ] Add-entry form: "Import from URL" link above body field; inline URL input + Fetch button; section picker (click to use, "Use all"); loading and error states
+
+### Markdown and PDF file drag-in
+
+- [ ] Install marked and pdf-parse
+- [ ] IPC handler: `preview-md-import` — reads .md, splits at ## and ### headings, strips markdown, returns sections
+- [ ] IPC handler: `commit-md-import` — inserts entries into store
+- [ ] Expose both in preload and global.d.ts
+- [ ] ImportScreen: .md files route to MdImportScreen component
+- [ ] MdImportScreen: section checkboxes, vertical picker, subfolder field, Import button
+- [ ] IPC handler: `preview-pdf-import` — reads PDF with pdf-parse, best-effort section split
+- [ ] IPC handler: `commit-pdf-import` — inserts entries into store
+- [ ] Expose both in preload and global.d.ts
+- [ ] ImportScreen: .pdf files route to PdfImportScreen component
+- [ ] PdfImportScreen: same UI as MdImportScreen; note that scanned PDFs will return empty sections
+
+### Browser extension (Chrome + Firefox)
+
+- [ ] Create packages/browser-extension/ with manifest.chrome.json and manifest.firefox.json
+- [ ] background.js: context menu "Save to ShortPath" on selection and page; POST to capture server; notification on success; queue on failure
+- [ ] queue.js: enqueue, getQueue, clearQueue, flushQueue to chrome.storage.local
+- [ ] Popup: connected/disconnected states; save current page button; queue status; "Where is ShortPath?" guidance
+- [ ] GET /ping endpoint added to ShortPath main; used by popup for connection check
+- [ ] Tray menu item: "Import queued browser captures"
+- [ ] packages/browser-extension/package.json with build:chrome and build:firefox scripts
+- [ ] packages/browser-extension/README.md
+
+### Help topics
+
+- [ ] Help topic: importing from a URL
+- [ ] Help topic: importing Markdown files
+- [ ] Help topic: importing PDF files
+- [ ] Help topic: browser extension
+
+### Session wrap
+
+- [ ] Update CURRENT_SESSION.md
+- [ ] Create dated session file in docs/sessions/
+- [ ] Append to docs/SESSION_LOG.md
+- [ ] Commit and push
