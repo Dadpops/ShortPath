@@ -6,6 +6,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
+## [0.3.0] - 2026-06-09
+
+### Added
+
+- **Pin window (always on top)** — 📍 button in the header keeps ShortPath floating above every other window. Useful when you need to reference a saved reply while typing in another app. Persists across sessions. Also in Settings > Behavior.
+- **Rich text editor** — the body field now uses a full rich text editor (Tiptap). Toolbar supports bold, italic, underline, bullet and ordered lists, inline code, code blocks, and hyperlinks. Per-entry "Copy as: Plain text | HTML" toggle: plain strips tags; HTML copies formatted content with a plain-text fallback so pasting into any field works.
+- **Duplicate detection on CSV import** — the preview step now flags rows whose title matches an existing entry in the same vertical. Each flagged row shows a Duplicate badge and a per-row resolution: Skip (default), Overwrite, or Import as new.
+- **Duplicate warning on manual add** — typing a title that already exists in the selected vertical shows an inline amber warning below the field. Non-blocking; you can still save.
+- **Stream Deck profile export** — Settings > Data > Export Stream Deck Profile generates a `.streamDeckProfile` file with one labeled button per entry. Import it by double-clicking the file or via Preferences > Profiles > Import in the Stream Deck app. Button actions (hotkeys, text inserts, etc.) are assigned after import.
+
+### Changed
+
+- CSV import preview now shows all valid rows instead of the first 5, so duplicate detection works across the full file.
+- Default behavior for duplicate CSV rows changed from auto-overwrite to Skip. Set the resolution per row in the preview step.
+
+### Known Limitations
+
+- Code signing (Windows SmartScreen, macOS Gatekeeper) — see [docs/INSTALLING.md](docs/INSTALLING.md).
+
+---
+
 ## [0.2.2] - 2026-06-09
 
 ### Fixed
