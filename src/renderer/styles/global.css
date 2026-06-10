@@ -3331,6 +3331,59 @@ body[data-density="compact"] .result-tags {
   color: var(--color-text-muted);
   padding: 7px 14px;
   background: var(--color-surface);
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.export-row-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.export-subfolder-toggles {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.export-subfolder-toggle-btn {
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  padding: 1px 6px;
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.export-subfolder-toggle-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+.export-subfolder-toggle-btn.active {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.export-subfolder-chevron {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  color: var(--color-text-faint);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .export-row-subfolder {
