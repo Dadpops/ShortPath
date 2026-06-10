@@ -256,7 +256,9 @@ async function handleExportFromTray() {
 function loadSyncedFile(sourceId: string, filePath: string): { ok: boolean; errors: string[] } {
   try {
     const csvString = fs.readFileSync(filePath, "utf-8");
-    const { entries: syncedEntries, errors } = parseSyncedCsv(csvString);
+    const { entries: syncedEntries, verticals: updatedVerticals, errors } = parseSyncedCsv(csvString, store.verticals);
+    // Apply subfolder upserts to store verticals before replacing entries.
+    store = { ...store, verticals: updatedVerticals };
     store = replaceEntriesFromSource(store, sourceId, syncedEntries);
     saveStore(userDataPath, store);
     syncLastRefreshed[sourceId] = new Date().toISOString();

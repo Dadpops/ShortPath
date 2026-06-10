@@ -442,16 +442,19 @@ export function importCsv(
 
 export interface SyncParseResult {
   entries: Entry[];
+  verticals: Vertical[];
   errors: string[];
   skipped: number;
 }
 
 // Parse a shared CSV file into synced entries. Uses stable IDs (vertical:title) so
 // recents survive a re-sync even when the CSV has no id column.
-export function parseSyncedCsv(csvString: string): SyncParseResult {
+// Accepts existing verticals so subfolder paths in the CSV are upserted into them.
+export function parseSyncedCsv(csvString: string, existingVerticals: Vertical[] = []): SyncParseResult {
   const { data, parseErrors } = parseRows(csvString);
   const errors: string[] = [...parseErrors];
   const entries: Entry[] = [];
+  let verticals = [...existingVerticals];
   let skipped = 0;
 
   for (let i = 0; i < data.length; i++) {
@@ -476,6 +479,26 @@ export function parseSyncedCsv(csvString: string): SyncParseResult {
     const title = row.title!.trim();
     const now = new Date().toISOString();
 
+    // Ensure the vertical exists before attempting subfolder upsert.
+    if (!verticals.find((v) => v.id === vertical)) {
+      verticals = [...verticals, { id: vertical, label: vertical, builtIn: false }];
+    }
+
+    // Resolve subfolder path, creating missing subfolders in the vertical.
+    let subFolderId: string | undefined;
+    const sfLabel = row.subfolder?.trim();
+    if (sfLabel) {
+      const segments = parseSubFolderSegments(sfLabel);
+      if (segments.length > 0) {
+        const vertIdx = verticals.findIndex((v) => v.id === vertical);
+        if (vertIdx !== -1) {
+          const sfResult = upsertSubFolderPath(verticals[vertIdx], segments);
+          verticals = verticals.map((v, i) => (i === vertIdx ? sfResult.vertical : v));
+          subFolderId = sfResult.subFolderId;
+        }
+      }
+    }
+
     // Prefer the id from the CSV (round-trip stable); fall back to a deterministic slug.
     const id = row.id?.trim() || `synced:${vertical}:${title}`;
 
@@ -488,12 +511,13 @@ export function parseSyncedCsv(csvString: string): SyncParseResult {
       tags: row.tags?.trim() || "",
       type,
       source: "synced",
+      subFolderId,
       createdAt: row.createdAt?.trim() || now,
       updatedAt: row.updatedAt?.trim() || now,
     });
   }
 
-  return { entries, errors, skipped };
+  return { entries, verticals, errors, skipped };
 }
 
 export function exportCsv(entries: Entry[], verticals: Vertical[]): string {
