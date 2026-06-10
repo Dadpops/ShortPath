@@ -27,17 +27,42 @@ const FIXED_SHORTCUTS = [
   { keys: ["↑ in empty search"], description: "Cycle recent search queries" },
 ];
 
+type HotkeyState = "idle" | "capturing" | "saving" | "error";
+
 interface Props {
   onClose: () => void;
   hotkey: string;
   customShortcuts: Record<string, string | null>;
   onCustomShortcutsChange: (s: Record<string, string | null>) => void;
+  onHotkeyChange: (h: string) => void;
 }
 
-export default function KeyboardPanel({ onClose, hotkey, customShortcuts, onCustomShortcutsChange }: Props) {
+function buildGlobalAccelerator(e: KeyboardEvent): string | null {
+  if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return null;
+  const parts: string[] = [];
+  if (e.ctrlKey || e.metaKey) parts.push("CommandOrControl");
+  if (e.shiftKey) parts.push("Shift");
+  if (e.altKey) parts.push("Alt");
+  const key = e.code.startsWith("Key")
+    ? e.code.slice(3)
+    : e.code.startsWith("Digit")
+    ? e.code.slice(5)
+    : e.key === " " ? "Space"
+    : e.key.length === 1 ? e.key.toUpperCase()
+    : e.key;
+  if (!key) return null;
+  parts.push(key);
+  return parts.join("+");
+}
+
+export default function KeyboardPanel({ onClose, hotkey, customShortcuts, onCustomShortcutsChange, onHotkeyChange }: Props) {
   const backRef = useRef<HTMLButtonElement>(null);
   const [capturingAction, setCapturingAction] = useState<string | null>(null);
   const [capturedShortcut, setCapturedShortcut] = useState<string | null>(null);
+
+  const [hotkeyState, setHotkeyState] = useState<HotkeyState>("idle");
+  const [capturedHotkey, setCapturedHotkey] = useState<string | null>(null);
+  const [hotkeyError, setHotkeyError] = useState("");
 
   useEffect(() => {
     backRef.current?.focus();
@@ -45,15 +70,15 @@ export default function KeyboardPanel({ onClose, hotkey, customShortcuts, onCust
 
   // Esc closes panel when not capturing
   useEffect(() => {
-    if (capturingAction !== null) return;
+    if (capturingAction !== null || hotkeyState === "capturing") return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, capturingAction]);
+  }, [onClose, capturingAction, hotkeyState]);
 
-  // Shortcut capture
+  // In-app shortcut capture
   useEffect(() => {
     if (capturingAction === null) return;
     function onKeyDown(e: KeyboardEvent) {
@@ -94,6 +119,42 @@ export default function KeyboardPanel({ onClose, hotkey, customShortcuts, onCust
     };
   }, [capturingAction, capturedShortcut, customShortcuts, onCustomShortcutsChange]);
 
+  // Global hotkey capture
+  useEffect(() => {
+    if (hotkeyState !== "capturing") return;
+    function onKeyDown(e: KeyboardEvent) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === "Escape") { setHotkeyState("idle"); setCapturedHotkey(null); return; }
+      const acc = buildGlobalAccelerator(e);
+      if (acc) setCapturedHotkey(acc);
+    }
+    function onKeyUp(e: KeyboardEvent) {
+      if (e.key === "Escape") return;
+      if (capturedHotkey) void saveHotkey(capturedHotkey);
+    }
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    window.addEventListener("keyup", onKeyUp, { capture: true });
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, { capture: true });
+      window.removeEventListener("keyup", onKeyUp, { capture: true });
+    };
+  }, [hotkeyState, capturedHotkey]);
+
+  async function saveHotkey(accelerator: string) {
+    setHotkeyState("saving");
+    const result = await window.shortpath.changeHotkey(accelerator);
+    if (result.ok) {
+      onHotkeyChange(accelerator);
+      setHotkeyState("idle");
+      setCapturedHotkey(null);
+    } else {
+      setHotkeyError(`"${formatAccelerator(accelerator, window.shortpath.platform)}" is already in use by another app.`);
+      setHotkeyState("error");
+      setCapturedHotkey(null);
+    }
+  }
+
   const formattedHotkey = formatAccelerator(hotkey, window.shortpath.platform);
 
   return (
@@ -106,10 +167,41 @@ export default function KeyboardPanel({ onClose, hotkey, customShortcuts, onCust
       <div className="keyboard-panel-body">
 
         {/* Global summon hotkey */}
-        <div className="keyboard-hotkey-row">
-          <span className="keyboard-hotkey-label">Global summon hotkey</span>
-          <kbd className="keyboard-key">{formattedHotkey}</kbd>
-          <span className="keyboard-hotkey-note">Change in Settings → Behavior</span>
+        <div className="keyboard-group">
+          <div className="keyboard-group-label">Global summon hotkey</div>
+          <div className="keyboard-row keyboard-row-editable">
+            <span className="keyboard-row-desc">Open ShortPath from any app</span>
+            <div className="keyboard-row-controls">
+              {hotkeyState === "capturing" ? (
+                <>
+                  <span className="keyboard-capture-display">
+                    {capturedHotkey ? formatAccelerator(capturedHotkey, window.shortpath.platform) : "Press keys…"}
+                  </span>
+                  <button className="keyboard-shortcut-btn" onClick={() => { setHotkeyState("idle"); setCapturedHotkey(null); }}>Cancel</button>
+                </>
+              ) : (
+                <>
+                  <kbd className="keyboard-key">{formattedHotkey}</kbd>
+                  <button
+                    className="keyboard-shortcut-btn"
+                    onClick={() => { setHotkeyState("capturing"); setCapturedHotkey(null); setHotkeyError(""); }}
+                    disabled={hotkeyState === "saving"}
+                  >
+                    {hotkeyState === "saving" ? "Saving…" : "Change"}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+          {hotkeyState === "capturing" && (
+            <p className="keyboard-capture-hint">Hold a combination, then release. Esc to cancel.</p>
+          )}
+          {hotkeyState === "error" && (
+            <>
+              <p className="form-error keyboard-hotkey-error">{hotkeyError}</p>
+              <button className="keyboard-shortcut-btn" onClick={() => { setHotkeyState("capturing"); setHotkeyError(""); setCapturedHotkey(null); }}>Try again</button>
+            </>
+          )}
         </div>
 
         {/* Customizable in-app shortcuts */}

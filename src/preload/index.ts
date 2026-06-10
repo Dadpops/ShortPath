@@ -151,4 +151,6 @@ contextBridge.exposeInMainWorld("shortpath", {
   setFontFamily: (f: string) => ipcRenderer.invoke("set-font-family", f),
   setCustomShortcuts: (s: Record<string, string | null>) => ipcRenderer.invoke("set-custom-shortcuts", s),
   openHelpWindow: () => ipcRenderer.invoke("open-help-window"),
+  setOnboarded: () => ipcRenderer.invoke("set-onboarded"),
+  installSampleData: () => ipcRenderer.invoke("install-sample-data"),
 });

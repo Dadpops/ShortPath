@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import type { Entry, Vertical, SubFolder } from "@shared/types";
-import { formatAccelerator } from "@shared/platform";
 import { HELP_TOPICS } from "../features/help/topics";
 import FolderIcon from "./FolderIcon";
 
@@ -17,9 +16,9 @@ interface Props {
   onAutoHideOnCopyChange: (val: boolean) => void;
   alwaysOnTop: boolean;
   onAlwaysOnTopChange: (val: boolean) => void;
+  onReplayOnboarding?: () => void;
 }
 
-type HotkeyState = "idle" | "capturing" | "saving" | "error";
 type SectionKey = "appearance" | "behavior" | "organization" | "data" | "sync";
 
 const ACCENT_PRESETS = [
@@ -31,33 +30,11 @@ const ACCENT_PRESETS = [
   { label: "Slate",  value: "#475569" },
 ] as const;
 
-function buildAccelerator(e: KeyboardEvent): string | null {
-  if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return null;
-  const parts: string[] = [];
-  if (e.ctrlKey || e.metaKey) parts.push("CommandOrControl");
-  if (e.shiftKey) parts.push("Shift");
-  if (e.altKey) parts.push("Alt");
-  const key = e.code.startsWith("Key")
-    ? e.code.slice(3)
-    : e.code.startsWith("Digit")
-    ? e.code.slice(5)
-    : e.key === " " ? "Space"
-    : e.key.length === 1 ? e.key.toUpperCase()
-    : e.key;
-  if (!key) return null;
-  parts.push(key);
-  return parts.join("+");
-}
-
 export default function SettingsScreen({
   onClose, onNavigate, verticals, onVerticalRenamed, onVerticalAdded,
   entries, verticalOrder, onVerticalOrderChange, autoHideOnCopy, onAutoHideOnCopyChange,
-  alwaysOnTop, onAlwaysOnTopChange,
+  alwaysOnTop, onAlwaysOnTopChange, onReplayOnboarding,
 }: Props) {
-  const [currentHotkey, setCurrentHotkey] = useState("Loading…");
-  const [hotkeyState, setHotkeyState] = useState<HotkeyState>("idle");
-  const [capturedAccelerator, setCapturedAccelerator] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState("");
   const [positionReset, setPositionReset] = useState(false);
   const [fontSize, setFontSize] = useState<number>(13);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -123,9 +100,11 @@ export default function SettingsScreen({
     rounded: '"Trebuchet MS", "Gill Sans", Optima, sans-serif',
   };
 
+  const [confirmRemoveSample, setConfirmRemoveSample] = useState(false);
+  const [clearingSample, setClearingSample] = useState(false);
+
   useEffect(() => {
-    window.shortpath.getSettings().then(({ hotkey, fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d, lastStreamDeckExport: lsd, fontFamily: ff }) => {
-      setCurrentHotkey(hotkey);
+    window.shortpath.getSettings().then(({ fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d, lastStreamDeckExport: lsd, fontFamily: ff }) => {
       setFontSize(fs);
       setTheme(t);
       setAccentColor(ac);
@@ -137,41 +116,6 @@ export default function SettingsScreen({
     });
     window.shortpath.getSyncStatus().then(setSyncStatus);
   }, []);
-
-  useEffect(() => {
-    if (hotkeyState !== "capturing") return;
-    function onKeyDown(e: KeyboardEvent) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.key === "Escape") { setHotkeyState("idle"); setCapturedAccelerator(null); return; }
-      const acc = buildAccelerator(e);
-      if (acc) setCapturedAccelerator(acc);
-    }
-    function onKeyUp(e: KeyboardEvent) {
-      if (e.key === "Escape") return;
-      if (capturedAccelerator) void saveHotkey(capturedAccelerator);
-    }
-    window.addEventListener("keydown", onKeyDown, { capture: true });
-    window.addEventListener("keyup", onKeyUp, { capture: true });
-    return () => {
-      window.removeEventListener("keydown", onKeyDown, { capture: true });
-      window.removeEventListener("keyup", onKeyUp, { capture: true });
-    };
-  }, [hotkeyState, capturedAccelerator]);
-
-  async function saveHotkey(accelerator: string) {
-    setHotkeyState("saving");
-    const result = await window.shortpath.changeHotkey(accelerator);
-    if (result.ok) {
-      setCurrentHotkey(accelerator);
-      setHotkeyState("idle");
-      setCapturedAccelerator(null);
-    } else {
-      setErrorMsg(`"${formatAccelerator(accelerator, window.shortpath.platform)}" is already in use by another app.`);
-      setHotkeyState("error");
-      setCapturedAccelerator(null);
-    }
-  }
 
   async function handleResetPosition() {
     await window.shortpath.resetWindowPosition();
@@ -606,35 +550,25 @@ export default function SettingsScreen({
                 </div>
               </div>
 
-              <div className="settings-row">
-                <div className="settings-row-label">Summon hotkey</div>
-                <div className="settings-hotkey-display">
-                  {hotkeyState === "capturing"
-                    ? capturedAccelerator ? formatAccelerator(capturedAccelerator, window.shortpath.platform) : "Press shortcut…"
-                    : formatAccelerator(currentHotkey, window.shortpath.platform)}
-                </div>
-              </div>
-              {hotkeyState === "idle" && (
-                <button className="btn-secondary settings-action-btn"
-                  onClick={() => { setHotkeyState("capturing"); setCapturedAccelerator(null); }}>
-                  Change hotkey
-                </button>
-              )}
-              {hotkeyState === "capturing" && (
-                <div className="settings-capture-hint">Hold a key combination, then release. Press Esc to cancel.</div>
-              )}
-              {hotkeyState === "saving" && <div className="settings-capture-hint">Registering…</div>}
-              {hotkeyState === "error" && (
+              <p className="settings-row-note">
+                Keyboard shortcuts (including the global summon hotkey) are managed in the Keyboard shortcuts panel.
+              </p>
+              <button className="btn-secondary settings-action-btn" onClick={() => { onClose(); }}>
+                Open keyboard shortcuts (Alt+K)
+              </button>
+
+              {onReplayOnboarding && (
                 <>
-                  <p className="form-error">{errorMsg}</p>
-                  <button className="btn-secondary settings-action-btn"
-                    onClick={() => { setHotkeyState("capturing"); setErrorMsg(""); setCapturedAccelerator(null); }}>
-                    Try again
+                  <div className="settings-row" style={{ marginTop: 8 }}>
+                    <div className="settings-row-label">Onboarding</div>
+                  </div>
+                  <button className="btn-secondary settings-action-btn" onClick={onReplayOnboarding}>
+                    Replay onboarding walkthrough
                   </button>
                 </>
               )}
 
-              <div className="settings-row">
+              <div className="settings-row" style={{ marginTop: 8 }}>
                 <div className="settings-row-label">Position and size are saved automatically.</div>
               </div>
               <button className="btn-secondary settings-action-btn" onClick={handleResetPosition}>
@@ -1121,6 +1055,38 @@ export default function SettingsScreen({
               )}
 
               <div className="settings-danger-zone">
+                {(() => {
+                  const sampleCount = entries.filter((e) => e.source === "sample").length;
+                  if (sampleCount === 0) return null;
+                  return confirmRemoveSample ? (
+                    <div className="settings-danger-confirm">
+                      <p className="settings-danger-warning">
+                        Remove all {sampleCount} sample {sampleCount === 1 ? "entry" : "entries"}? This cannot be undone.
+                      </p>
+                      <div className="settings-danger-actions">
+                        <button
+                          className="btn-danger-lg"
+                          disabled={clearingSample}
+                          onClick={async () => {
+                            setClearingSample(true);
+                            await window.shortpath.clearSampleData();
+                            setClearingSample(false);
+                            setConfirmRemoveSample(false);
+                          }}
+                        >
+                          {clearingSample ? "Removing…" : "Remove sample data"}
+                        </button>
+                        <button className="btn-secondary settings-action-btn" onClick={() => setConfirmRemoveSample(false)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button className="btn-danger-outline" onClick={() => setConfirmRemoveSample(true)}>
+                      Remove sample data ({sampleCount} {sampleCount === 1 ? "entry" : "entries"})
+                    </button>
+                  );
+                })()}
                 {confirmClear ? (
                   <div className="settings-danger-confirm">
                     <p className="settings-danger-warning">

@@ -15,6 +15,7 @@ import NotesView from "./components/NotesView";
 import RecentsDropdown from "./components/RecentsDropdown";
 import ResultItem from "./components/ResultItem";
 import ExportSelectScreen from "./components/ExportSelectScreen";
+import OnboardingOverlay from "./components/OnboardingOverlay";
 
 type AppStatus = "loading" | "ready" | "error";
 type AppMode = "browse" | "add" | "edit" | "import" | "split" | "settings" | "keyboard" | "favorites" | "notes" | "export-select";
@@ -99,7 +100,14 @@ export default function App() {
   const [syncSources, setSyncSources] = useState<Array<{ id: string; path: string; label: string }>>([]);
   const [easterEgg, setEasterEgg] = useState(false);
   const [collapsedSources, setCollapsedSources] = useState<Set<string>>(new Set());
+  const [sampleBannerDismissed, setSampleBannerDismissed] = useState(false);
   const [customShortcuts, setCustomShortcuts] = useState<Record<string, string | null>>({});
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const isFirstOnboarding = useRef(false);
+  const [searchMode, setSearchMode] = useState<"keyword" | "full">(() => {
+    const saved = localStorage.getItem("sp_search_mode");
+    return saved === "full" ? "full" : "keyword";
+  });
 
   const debouncedQuery = useDebounce(query, 120);
 
@@ -134,6 +142,10 @@ export default function App() {
       setCurrentHotkey(s.hotkey);
       applyFontFamily(s.fontFamily ?? "system");
       setCustomShortcuts(s.customShortcuts ?? {});
+      if (!s.hasOnboarded) {
+        setShowOnboarding(true);
+        isFirstOnboarding.current = true;
+      }
     });
 
     const unsubscribe = window.shortpath.onStoreUpdated(({ entries: e, verticals: v, recents: r, favorites: favs, pinned: pins }) => {
@@ -243,6 +255,19 @@ export default function App() {
     return src ? getSourceLabel(src) : "Local";
   }
 
+  function handleOnboardingComplete() {
+    setShowOnboarding(false);
+    if (isFirstOnboarding.current) {
+      isFirstOnboarding.current = false;
+      setTimeout(() => void window.shortpath.openHelpWindow(), 400);
+    }
+  }
+
+  function handleSearchMode(mode: "keyword" | "full") {
+    setSearchMode(mode);
+    localStorage.setItem("sp_search_mode", mode);
+  }
+
   function handleSetActiveSource(src: string) {
     setActiveSource(src);
     localStorage.setItem("sp_active_source", src);
@@ -251,17 +276,11 @@ export default function App() {
 
   const fuse = useMemo(() => {
     if (!entries.length) return null;
-    return new Fuse(entries, {
-      keys: [
-        { name: "title", weight: 3 },
-        { name: "tags", weight: 2 },
-        { name: "body", weight: 1 },
-      ],
-      threshold: 0.3,
-      includeMatches: true,
-      minMatchCharLength: 2,
-    });
-  }, [entries]);
+    const keys = searchMode === "full"
+      ? [{ name: "title", weight: 3 }, { name: "tags", weight: 2 }, { name: "body", weight: 0.5 }]
+      : [{ name: "title", weight: 3 }, { name: "tags", weight: 2 }];
+    return new Fuse(entries, { keys, threshold: 0.3, includeMatches: true, minMatchCharLength: 2 });
+  }, [entries, searchMode]);
 
   const rawGroups = useMemo(() => {
     const verticalMap = new Map(verticals.map((v) => [v.id, v]));
@@ -385,7 +404,7 @@ export default function App() {
     }
 
     return result;
-  }, [entries, verticals, debouncedQuery, fuse, sortMode, activeVerticalFilter, verticalOrder, activeSource, syncSources]);
+  }, [entries, verticals, debouncedQuery, fuse, sortMode, activeVerticalFilter, verticalOrder, activeSource, syncSources, searchMode]);
 
   const groups = useMemo((): VerticalGroup[] => {
     return rawGroups.map((g) => {
@@ -790,6 +809,10 @@ export default function App() {
             setAlwaysOnTop(val);
             void window.shortpath.setAlwaysOnTop(val);
           }}
+          onReplayOnboarding={() => {
+            setShowOnboarding(true);
+            setMode("browse");
+          }}
         />
       </div>
     );
@@ -802,9 +825,8 @@ export default function App() {
           onClose={() => setMode("browse")}
           hotkey={currentHotkey}
           customShortcuts={customShortcuts}
-          onCustomShortcutsChange={(s) => {
-            setCustomShortcuts(s);
-          }}
+          onCustomShortcutsChange={(s) => { setCustomShortcuts(s); }}
+          onHotkeyChange={(h) => setCurrentHotkey(h)}
         />
       </div>
     );
@@ -816,6 +838,7 @@ export default function App() {
         <FavoritesView
           entries={entries}
           favorites={favorites}
+          verticals={verticals}
           onBack={handleGoHome}
           onEdit={handleEditEntry}
           onCopy={handleCopy}
@@ -939,15 +962,23 @@ export default function App() {
         </div>
       </header>
 
-      {hasSampleData && (
+      {hasSampleData && !sampleBannerDismissed && (
         <div className="sample-data-banner">
-          <span>Sample data loaded — replace with your own entries</span>
+          <span>Sample data loaded — replace with your own entries via CSV import or the + button</span>
           <button
             className="sample-data-clear"
             onClick={() => void window.shortpath.clearSampleData()}
             title="Remove all sample entries"
           >
-            Clear sample data
+            Remove
+          </button>
+          <button
+            className="sample-data-dismiss"
+            onClick={() => setSampleBannerDismissed(true)}
+            title="Dismiss"
+            aria-label="Dismiss"
+          >
+            ✕
           </button>
         </div>
       )}
@@ -984,6 +1015,22 @@ export default function App() {
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
           />
+          <div className="search-mode-toggle">
+            <button
+              className={`smt-btn${searchMode === "keyword" ? " active" : ""}`}
+              onClick={() => handleSearchMode("keyword")}
+              title="Search titles and tags only"
+            >
+              Keyword
+            </button>
+            <button
+              className={`smt-btn${searchMode === "full" ? " active" : ""}`}
+              onClick={() => handleSearchMode("full")}
+              title="Search titles, tags, and body text"
+            >
+              Full text
+            </button>
+          </div>
         </div>
         {isSearchFocused && !isSearching && recentEntries.length > 0 && (
           <RecentsDropdown
@@ -1252,6 +1299,13 @@ export default function App() {
             setOverlayEntry(null);
             setMode("notes");
           }}
+        />
+      )}
+
+      {showOnboarding && (
+        <OnboardingOverlay
+          hotkey={currentHotkey}
+          onComplete={handleOnboardingComplete}
         />
       )}
     </div>

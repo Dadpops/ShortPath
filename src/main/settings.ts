@@ -36,6 +36,7 @@ export interface AppSettings {
   lastStreamDeckExport?: string; // ISO 8601 timestamp of last Stream Deck profile export
   fontFamily?: string;           // font family key: "system" | "serif" | "mono" | "rounded"
   customShortcuts?: Record<string, string | null>; // null = disabled, undefined key = use default
+  hasOnboarded?: boolean;        // true once the onboarding overlay has been completed or skipped
 }
 
 const DEFAULT_SETTINGS: AppSettings = {

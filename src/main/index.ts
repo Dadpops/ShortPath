@@ -22,7 +22,7 @@ import chokidar from "chokidar";
 import { autoUpdater } from "electron-updater";
 import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, replaceEntriesFromSource, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, clearSampleData, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
-import { applySeed } from "../store/seed";
+import { applySeed, installSeedData } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseCsvPreviewWithMapping, importCsvWithMapping, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
 import { loadSettings, saveSettings, type AppSettings, type SyncSourceConfig } from "./settings";
 import type { StoreData } from "../store/schema";
@@ -776,7 +776,19 @@ function registerIpcHandlers() {
     lastStreamDeckExport: settings.lastStreamDeckExport ?? null,
     fontFamily: settings.fontFamily ?? "system",
     customShortcuts: settings.customShortcuts ?? {},
+    hasOnboarded: settings.hasOnboarded ?? false,
   }));
+
+  ipcMain.handle("set-onboarded", () => {
+    settings = { ...settings, hasOnboarded: true };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("install-sample-data", () => {
+    store = installSeedData(store);
+    saveStore(userDataPath, store);
+    pushStoreUpdate();
+  });
 
   ipcMain.handle("set-font-family", (_e, f: string) => {
     settings = { ...settings, fontFamily: f };

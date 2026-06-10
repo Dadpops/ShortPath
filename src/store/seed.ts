@@ -8,7 +8,7 @@ function entry(fields: Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">)
 }
 
 const SEED_ENTRIES: Entry[] = [
-  // Saved Replies
+  // ── Saved Replies (18) ──────────────────────────────────────────────────────
   entry({
     vertical: "saved-replies",
     title: "Billing inquiry — general",
@@ -38,7 +38,7 @@ const SEED_ENTRIES: Entry[] = [
     title: "Refund confirmation",
     body: "Hi [Name],\n\nYour refund of [AMOUNT] has been approved and processed. Depending on your bank, it typically takes 3–5 business days to appear on your statement.\n\nIf you don't see it after 5 business days, please get back to us with your bank's reference number and we'll look into it right away.\n\nSorry again for the inconvenience — thanks for your patience.",
     link: null,
-    tags: "refund|approved|payment",
+    tags: "refund|approved|payment|confirmation",
     type: "reply",
   }),
   entry({
@@ -49,8 +49,112 @@ const SEED_ENTRIES: Entry[] = [
     tags: "cancellation|cancel|account|offboarding",
     type: "reply",
   }),
+  entry({
+    vertical: "saved-replies",
+    title: "Escalation acknowledgement",
+    body: "Hi [Name],\n\nThank you for your patience — I've escalated this to our specialist team and someone will follow up with you within 4 business hours.\n\nFor your reference, your ticket number is [TICKET ID]. You don't need to do anything else at this stage; we'll reach out directly as soon as we have an update.",
+    link: null,
+    tags: "escalation|escalate|tier 2|specialist",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Cannot reproduce — more info needed",
+    body: "Hi [Name],\n\nThank you for the report. I've tried to reproduce the issue on our end but haven't been able to replicate it yet.\n\nTo help me investigate further, could you share:\n- The browser and version you're using\n- A screenshot or screen recording of the issue\n- The exact steps to reproduce it\n\nOnce I have those details I can dig in properly.",
+    link: null,
+    tags: "bug|reproduce|investigation|troubleshoot",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Feature request received",
+    body: "Hi [Name],\n\nThank you for the suggestion — I've logged it with our product team as a feature request.\n\nI can't make any promises about timelines or whether it will be built, but customer feedback does directly influence what we prioritise. We'll update the changelog if it ships.\n\nIs there anything else I can help with?",
+    link: null,
+    tags: "feature|request|feedback|roadmap|product",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Password reset — account not found",
+    body: "Hi [Name],\n\nI've searched for your account and I'm not finding a match for the email address you provided.\n\nCould you check:\n- Is the email address spelled correctly?\n- Did you sign up under a different email (a work alias, for example)?\n\nIf you're still stuck, reply here and I'll search by name or order number instead.",
+    link: null,
+    tags: "password|reset|account|login|not found",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Order not received — follow-up",
+    body: "Hi [Name],\n\nI'm following up on your missing order. I've checked the tracking and the carrier shows [STATUS].\n\nIf your package hasn't arrived by [DATE], please reply and I'll open a formal investigation with the carrier or arrange a replacement straight away.",
+    link: null,
+    tags: "order|missing|delivery|shipping|follow-up",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Refund request received",
+    body: "Hi [Name],\n\nI've received your refund request and I'm looking into it now.\n\nI'll come back to you within [TIMEFRAME] with either a confirmation or any questions I need to process it. In the meantime, feel free to reply if anything changes.",
+    link: null,
+    tags: "refund|request|received|processing",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Account suspension warning",
+    body: "Hi [Name],\n\nWe've identified activity on your account that may violate our terms of service. If we don't hear from you within 24 hours, we may need to suspend access while we review the situation.\n\nIf you believe this message is in error or you have questions, please reply immediately and we'll hold any action while we investigate together.",
+    link: null,
+    tags: "suspension|warning|account|policy|terms",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Plan upgrade confirmation",
+    body: "Hi [Name],\n\nYour account has been upgraded to [PLAN NAME]. The change is effective immediately and you now have access to [KEY FEATURES].\n\nYour next billing date is [DATE] and you'll be charged [AMOUNT]. Let me know if you have any questions about your new plan.",
+    link: null,
+    tags: "upgrade|plan|billing|subscription|confirmation",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Closing — escalation resolved",
+    body: "Hi [Name],\n\nI'm glad we were able to get this sorted out for you. As a quick summary of what was resolved: [SUMMARY].\n\nI'll go ahead and close this ticket. If the issue comes back or anything else comes up, just open a new one and we'll be right here.\n\nThanks for your patience throughout.",
+    link: null,
+    tags: "escalation|resolved|closing|follow-up|summary",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Welcome — new customer",
+    body: "Hi [Name],\n\nWelcome to [COMPANY]! We're really glad to have you.\n\nTo help you get started, here are a few useful links:\n- Getting started guide: [LINK]\n- Help center: [LINK]\n- Billing and account settings: [LINK]\n\nIf you ever need anything, our support team is here Monday–Friday [HOURS]. Don't hesitate to reach out.",
+    link: null,
+    tags: "welcome|new user|onboarding|getting started",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Chargeback — dispute notice",
+    body: "Hi [Name],\n\nWe've received a chargeback dispute from your bank for a transaction of [AMOUNT] on [DATE].\n\nBefore this proceeds, I'd like to understand what happened and see if we can resolve this directly. Chargebacks can affect your account standing, so reaching out now is the fastest way to sort it out.\n\nPlease reply with any details you can share and I'll look into it straight away.",
+    link: null,
+    tags: "chargeback|dispute|billing|fraud",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Downgrade confirmation",
+    body: "Hi [Name],\n\nI've downgraded your account to [PLAN NAME] effective at the end of your current billing period on [DATE]. You'll continue to have access to your current features until then.\n\nAfter that date, [FEATURES REMOVED] will no longer be available. Let me know if you have any questions.",
+    link: null,
+    tags: "downgrade|plan|billing|subscription",
+    type: "reply",
+  }),
+  entry({
+    vertical: "saved-replies",
+    title: "Bug report acknowledged",
+    body: "Hi [Name],\n\nThank you for the detailed report — I've passed this to our engineering team with all the information you provided. I've tagged it as [PRIORITY] based on the impact you described.\n\nWe'll update you when there's a fix or workaround available. If you run into anything else in the meantime, let me know.",
+    link: null,
+    tags: "bug|report|engineering|investigation|acknowledged",
+    type: "reply",
+  }),
 
-  // Documentation
+  // ── Documentation (12) ──────────────────────────────────────────────────────
   entry({
     vertical: "documentation",
     title: "Refund policy",
@@ -83,8 +187,72 @@ const SEED_ENTRIES: Entry[] = [
     tags: "onboarding|setup|getting started|new user",
     type: "link",
   }),
+  entry({
+    vertical: "documentation",
+    title: "Password requirements",
+    body: "Passwords must be at least 10 characters and include at least one uppercase letter, one number, and one special character. Passwords cannot be reused from the last 5 rotations. Password expiry is set to 90 days for enterprise accounts.",
+    link: null,
+    tags: "password|requirements|security|policy",
+    type: "doc",
+  }),
+  entry({
+    vertical: "documentation",
+    title: "Data retention and deletion policy",
+    body: "Customer data is retained for the duration of the subscription plus 30 days after cancellation. Data deletion requests are processed within 14 business days. Backups are purged within 60 days of a deletion request. Users can export their data at any time from account settings.",
+    link: null,
+    tags: "data|retention|deletion|GDPR|privacy",
+    type: "doc",
+  }),
+  entry({
+    vertical: "documentation",
+    title: "Two-factor authentication setup",
+    body: null,
+    link: "https://example.com/docs/2fa",
+    tags: "2FA|two-factor|authentication|security|login",
+    type: "link",
+  }),
+  entry({
+    vertical: "documentation",
+    title: "CSV import format",
+    body: "The CSV import format requires the following columns: title (required), vertical (required), body, link, tags, type. Tags should be pipe-separated (e.g. billing|refund). The 'type' column accepts: reply, doc, sop, link, tool. Rows with missing required fields are skipped during import.",
+    link: null,
+    tags: "CSV|import|format|columns|template",
+    type: "doc",
+  }),
+  entry({
+    vertical: "documentation",
+    title: "Account limits and quotas",
+    body: "Free plan: up to 3 team members, 500 entries. Pro plan: up to 20 team members, unlimited entries. Enterprise: unlimited members and entries, plus SSO and audit logs. Storage limit: 10 MB per account for attachments.",
+    link: null,
+    tags: "limits|quotas|plan|storage|members",
+    type: "doc",
+  }),
+  entry({
+    vertical: "documentation",
+    title: "Billing and cancellation FAQ",
+    body: "Q: When am I billed? A: On the same date each month (or year for annual plans). Q: Can I get a refund? A: Yes, within 30 days for annual plans. Q: What happens when I cancel? A: Access continues until the end of the billing period. Q: Are there overage charges? A: No — we notify you before any limit is reached.",
+    link: null,
+    tags: "billing|cancellation|FAQ|refund|subscription",
+    type: "doc",
+  }),
+  entry({
+    vertical: "documentation",
+    title: "Escalation contacts and matrix",
+    body: "Tier 1 (general): standard support queue. Tier 2 (technical): internal escalation channel. Tier 3 (critical / data breach): security@example.com, on-call engineer page. VIP escalation: account manager + Tier 2 simultaneously. Finance escalation: refunds >$500, finance@example.com.",
+    link: null,
+    tags: "escalation|contacts|tier 2|matrix|emergency",
+    type: "doc",
+  }),
+  entry({
+    vertical: "documentation",
+    title: "Service level agreement (SLA)",
+    body: "Response time targets: Critical (P1): 1 hour. High (P2): 4 hours. Normal (P3): 1 business day. Low (P4): 3 business days. VIP accounts: P1–P2 response times apply to all tickets. SLA clock starts from ticket submission, not assignment.",
+    link: null,
+    tags: "SLA|response time|priority|P1|P2|P3",
+    type: "doc",
+  }),
 
-  // Internal SOPs
+  // ── Internal SOPs (12) ──────────────────────────────────────────────────────
   entry({
     vertical: "sops",
     title: "Escalation process",
@@ -117,8 +285,72 @@ const SEED_ENTRIES: Entry[] = [
     tags: "suspension|suspend|account|policy",
     type: "sop",
   }),
+  entry({
+    vertical: "sops",
+    title: "Password reset — manual override",
+    body: "Use manual override when the customer cannot receive the automated reset email (e.g. email address no longer active).\n\n1. Verify identity: ask for the last 4 digits of the payment method on file OR the billing address.\n2. Log the verification step in the ticket.\n3. In the admin panel, use User > Reset password > Manual.\n4. Generate a temporary password and send it via the support channel.\n5. Advise the customer to change it immediately after logging in.",
+    link: null,
+    tags: "password|reset|manual|override|account",
+    type: "sop",
+  }),
+  entry({
+    vertical: "sops",
+    title: "Communicating a refund denial",
+    body: "When a refund request does not qualify:\n1. Acknowledge the customer's frustration first.\n2. State the reason clearly, citing the relevant policy (link in Documentation).\n3. Offer an alternative where possible: account credit, plan adjustment, or extended trial.\n4. If the customer escalates, pass to Team Lead before making any exception.\n\nDo not say 'no refunds' — say 'outside our refund window' and offer the next best option.",
+    link: null,
+    tags: "refund|denial|communication|policy|alternatives",
+    type: "sop",
+  }),
+  entry({
+    vertical: "sops",
+    title: "New account setup checklist",
+    body: "When onboarding a new enterprise account:\n1. Confirm billing contact and billing email.\n2. Set up SSO if included in plan — send SSO setup guide.\n3. Assign Account Manager and introduce by email.\n4. Create the onboarding ticket in the helpdesk under the customer's org.\n5. Schedule a 30-minute kickoff call.\n6. Send the welcome email with help center link.",
+    link: null,
+    tags: "onboarding|account|setup|checklist|enterprise",
+    type: "sop",
+  }),
+  entry({
+    vertical: "sops",
+    title: "Outage communication procedure",
+    body: "When a service outage is confirmed:\n1. Post initial status update on status.example.com within 15 minutes.\n2. Notify the #incidents Slack channel with severity level.\n3. For P1 outages: notify all VIP account managers by direct message.\n4. Update the status page every 30 minutes until resolved.\n5. After resolution: post a post-mortem summary within 48 hours.\n\nDo not speculate on root cause in customer-facing communications.",
+    link: null,
+    tags: "outage|incident|communication|status|P1",
+    type: "sop",
+  }),
+  entry({
+    vertical: "sops",
+    title: "Data deletion request — GDPR",
+    body: "When a customer requests account and data deletion:\n1. Verify identity (email match + billing record).\n2. Log the request with timestamp in the privacy ticket queue.\n3. Initiate deletion in the admin panel under User > Delete account.\n4. Confirm via email that deletion is in progress; data will be purged within 14 business days.\n5. Note: backups are cleared within 60 days — inform the customer if asked.\n6. Escalate to legal@example.com for any disputes.",
+    link: null,
+    tags: "data|deletion|GDPR|privacy|request",
+    type: "sop",
+  }),
+  entry({
+    vertical: "sops",
+    title: "Fraudulent account investigation",
+    body: "Signs of fraud: multiple failed payment attempts, mismatched billing address, unusually high usage spike, chargebacks.\n\nSteps:\n1. Do not alert the account holder until investigation is complete.\n2. Flag the account as 'Under Review' in the admin panel.\n3. Document all evidence in the internal ticket.\n4. Escalate to security@example.com.\n5. If fraud is confirmed: suspend the account and initiate refund to affected parties.",
+    link: null,
+    tags: "fraud|account|investigation|chargeback|security",
+    type: "sop",
+  }),
+  entry({
+    vertical: "sops",
+    title: "Chargeback dispute response",
+    body: "When a chargeback is filed:\n1. Retrieve the original transaction record from Stripe.\n2. Compile evidence: order confirmation, delivery record, support ticket history, customer communications.\n3. Submit the dispute response in Stripe within 7 days of notification.\n4. Send the customer the 'Chargeback dispute notice' saved reply.\n5. If the chargeback is upheld and the customer re-engages, require prepayment for future orders.",
+    link: null,
+    tags: "chargeback|dispute|billing|fraud|Stripe",
+    type: "sop",
+  }),
+  entry({
+    vertical: "sops",
+    title: "After-hours escalation contacts",
+    body: "Outside business hours (Mon–Fri, 9am–6pm [TIMEZONE]):\n\nP1 incidents (service down): page the on-call engineer via [PAGER TOOL].\nP1 security events: email security@example.com AND call the on-call number.\nVIP customer emergencies: contact the assigned Account Manager via mobile (numbers in the internal directory).\n\nDo not attempt to resolve P1 issues without engineering involvement after hours.",
+    link: null,
+    tags: "escalation|after hours|emergency|on-call|contact",
+    type: "sop",
+  }),
 
-  // Support Tools
+  // ── Support Tools (8) ───────────────────────────────────────────────────────
   entry({
     vertical: "support-tools",
     title: "Admin panel",
@@ -148,7 +380,7 @@ const SEED_ENTRIES: Entry[] = [
     title: "Stripe dashboard",
     body: null,
     link: "https://dashboard.stripe.com",
-    tags: "stripe|billing|payments|charges",
+    tags: "stripe|billing|payments|charges|chargeback",
     type: "tool",
   }),
   entry({
@@ -159,8 +391,37 @@ const SEED_ENTRIES: Entry[] = [
     tags: "refund|form|request",
     type: "tool",
   }),
+  entry({
+    vertical: "support-tools",
+    title: "Internal knowledge base",
+    body: null,
+    link: "https://wiki.example.com",
+    tags: "knowledge base|wiki|internal|documentation",
+    type: "tool",
+  }),
+  entry({
+    vertical: "support-tools",
+    title: "Billing tool",
+    body: null,
+    link: "https://billing.example.com",
+    tags: "billing|invoices|subscriptions|refund",
+    type: "tool",
+  }),
+  entry({
+    vertical: "support-tools",
+    title: "Escalation tracker",
+    body: null,
+    link: "https://escalations.example.com",
+    tags: "escalation|tracker|tier 2|open tickets",
+    type: "tool",
+  }),
 ];
 
 export function applySeed(store: StoreData): StoreData {
   return { ...store, entries: SEED_ENTRIES };
+}
+
+export function installSeedData(store: StoreData): StoreData {
+  const others = store.entries.filter((e) => e.source !== "sample");
+  return { ...store, entries: [...SEED_ENTRIES, ...others] };
 }

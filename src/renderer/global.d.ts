@@ -119,6 +119,7 @@ declare global {
         lastStreamDeckExport: string | null;
         fontFamily: string;
         customShortcuts: Record<string, string | null>;
+        hasOnboarded: boolean;
       }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
@@ -198,6 +199,8 @@ declare global {
       setFontFamily: (f: string) => Promise<void>;
       setCustomShortcuts: (s: Record<string, string | null>) => Promise<void>;
       openHelpWindow: () => Promise<void>;
+      setOnboarded: () => Promise<void>;
+      installSampleData: () => Promise<void>;
     };
   }
 }
