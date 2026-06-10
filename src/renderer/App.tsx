@@ -1251,6 +1251,7 @@ export default function App() {
                             pinned={pinned}
                             onTogglePin={(id) => void handleTogglePin(id)}
                             subExpandSignal={subExpandSignal}
+                            isSearching={isSearching}
                           />
                         );
                       })}
@@ -1292,6 +1293,8 @@ export default function App() {
                 onToggleFavorite={handleToggleFavorite}
                 pinned={pinned}
                 onTogglePin={(id) => void handleTogglePin(id)}
+                subExpandSignal={subExpandSignal}
+                isSearching={isSearching}
               />
             );
           })

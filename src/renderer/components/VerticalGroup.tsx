@@ -17,6 +17,7 @@ interface Props {
   onTogglePin?: (id: string) => void;
   // Signal from parent to expand or collapse all subfolders. Version increment triggers the effect.
   subExpandSignal?: { expand: boolean; version: number } | null;
+  isSearching?: boolean;
 }
 
 function getAllIds(subFolders: SubFolder[]): string[] {
@@ -30,7 +31,7 @@ function countInSubtree(sf: SubFolder, results: SearchResult[]): number {
 
 export default function VerticalGroupComponent({
   group, subFolders, onToggle, onEdit, onCopy, onOpen,
-  focusedEntryId, favorites, onToggleFavorite, pinned, onTogglePin, subExpandSignal,
+  focusedEntryId, favorites, onToggleFavorite, pinned, onTogglePin, subExpandSignal, isSearching,
 }: Props) {
   const hasSubs = (subFolders?.length ?? 0) > 0;
 
@@ -62,6 +63,8 @@ export default function VerticalGroupComponent({
     const childSubs = sf.subFolders ?? [];
     const total = countInSubtree(sf, group.results);
     const isOpen = expandedSubs.has(sf.id);
+
+    if (isSearching && total === 0) return null;
 
     return (
       <div key={sf.id} className="subfolder-group" style={depth > 0 ? { marginLeft: 14 } : undefined}>
