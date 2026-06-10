@@ -4,6 +4,8 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-10 — run-shortpath project skill](sessions/2026-06-10-run-skill.md) — Project skill written at .claude/skills/run-shortpath/SKILL.md; documents build step, onboarding dismiss, settings nav, help panel second-window capture, and cleanup.
+
 - [2026-06-10 — Complete help topic coverage](sessions/2026-06-10-help-topics.md) — New topics: paste-and-split, export-selected. Updated: settings (6 pages), accent-and-appearance (font family), importing-csv (duplicate detection), recent-copies (24h persistence). App boot verified via Playwright driver.
 
 - [2026-06-10 — Compact Mode settings page; MacroOverlay CI fix](sessions/2026-06-10-compact-mode-settings.md) — Compact Mode settings section added (pin to top, icon size S/M/L, icon color, auto-restore); pin bug fixed (compactAlwaysOnTop now independent of main-window alwaysOnTop, defaults true); MacroOverlay stripHtml → htmlToPlain CI fix.

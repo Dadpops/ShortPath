@@ -1,8 +1,8 @@
 # Current Session State
 
-**Status:** 2026-06-10 — Help topics completed for all features; app boot verified.
+**Status:** 2026-06-10 — Run-shortpath project skill saved; all help topics complete.
 
-**Last session:** [2026-06-10 — Complete help topic coverage](docs/sessions/2026-06-10-help-topics.md)
+**Last session:** [2026-06-10 — run-shortpath project skill](docs/sessions/2026-06-10-run-skill.md)
 
 **Open items:**
 - Help topics not yet updated for v0.6.0 features (onboarding, search mode toggle, sample data removal, favorites card view). CLAUDE.md standing rule applies.
