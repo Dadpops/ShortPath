@@ -757,7 +757,23 @@ function registerIpcHandlers() {
 
   ipcMain.handle("read-clipboard", () => clipboard.readText());
 
-  ipcMain.handle("open-external", (_e, url: string) => shell.openExternal(url));
+  ipcMain.handle("open-external", (_e, url: string) => {
+    if (settings.linkOpenMode === "window") {
+      const w = new BrowserWindow({
+        width: 1200,
+        height: 800,
+        webPreferences: { nodeIntegration: false, contextIsolation: true },
+      });
+      void w.loadURL(url);
+    } else {
+      return shell.openExternal(url);
+    }
+  });
+
+  ipcMain.handle("set-link-open-mode", (_e, mode: "browser" | "window") => {
+    settings = { ...settings, linkOpenMode: mode };
+    saveSettings(userDataPath, settings);
+  });
 
   ipcMain.handle("hide-window", () => win?.hide());
 
@@ -777,6 +793,7 @@ function registerIpcHandlers() {
     fontFamily: settings.fontFamily ?? "system",
     customShortcuts: settings.customShortcuts ?? {},
     hasOnboarded: settings.hasOnboarded ?? false,
+    linkOpenMode: settings.linkOpenMode ?? "browser",
   }));
 
   ipcMain.handle("set-onboarded", () => {

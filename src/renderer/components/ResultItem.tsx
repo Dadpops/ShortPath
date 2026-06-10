@@ -33,7 +33,7 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
   const [copied, setCopied] = useState(false);
   const { entry } = result;
 
-  const isOpenable = !!entry.link && (entry.type === "link" || entry.type === "tool");
+  const isOpenable = !!entry.link;
   const hasActiveState = isPinned || isFavorite;
 
   function handleCopy(e: React.MouseEvent) {

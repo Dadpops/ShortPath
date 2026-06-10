@@ -37,6 +37,7 @@ export interface AppSettings {
   fontFamily?: string;           // font family key: "system" | "serif" | "mono" | "rounded"
   customShortcuts?: Record<string, string | null>; // null = disabled, undefined key = use default
   hasOnboarded?: boolean;        // true once the onboarding overlay has been completed or skipped
+  linkOpenMode?: "browser" | "window"; // how external URLs are opened; default "browser"
 }
 
 const DEFAULT_SETTINGS: AppSettings = {

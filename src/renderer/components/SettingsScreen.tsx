@@ -16,6 +16,8 @@ interface Props {
   onAutoHideOnCopyChange: (val: boolean) => void;
   alwaysOnTop: boolean;
   onAlwaysOnTopChange: (val: boolean) => void;
+  linkOpenMode: "browser" | "window";
+  onLinkOpenModeChange: (val: "browser" | "window") => void;
   onReplayOnboarding?: () => void;
 }
 
@@ -33,7 +35,7 @@ const ACCENT_PRESETS = [
 export default function SettingsScreen({
   onClose, onNavigate, verticals, onVerticalRenamed, onVerticalAdded,
   entries, verticalOrder, onVerticalOrderChange, autoHideOnCopy, onAutoHideOnCopyChange,
-  alwaysOnTop, onAlwaysOnTopChange, onReplayOnboarding,
+  alwaysOnTop, onAlwaysOnTopChange, linkOpenMode, onLinkOpenModeChange, onReplayOnboarding,
 }: Props) {
   const [positionReset, setPositionReset] = useState(false);
   const [fontSize, setFontSize] = useState<number>(13);
@@ -545,6 +547,21 @@ export default function SettingsScreen({
                       onClick={() => onAlwaysOnTopChange(val)}
                     >
                       {val ? "On" : "Off"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-label">Open links in</div>
+                <div className="font-size-control">
+                  {(["browser", "window"] as const).map((val) => (
+                    <button
+                      key={val}
+                      className={`font-size-btn${linkOpenMode === val ? " active" : ""}`}
+                      onClick={() => onLinkOpenModeChange(val)}
+                    >
+                      {val === "browser" ? "New tab" : "New window"}
                     </button>
                   ))}
                 </div>

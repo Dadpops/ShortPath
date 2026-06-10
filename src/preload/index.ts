@@ -153,4 +153,5 @@ contextBridge.exposeInMainWorld("shortpath", {
   openHelpWindow: () => ipcRenderer.invoke("open-help-window"),
   setOnboarded: () => ipcRenderer.invoke("set-onboarded"),
   installSampleData: () => ipcRenderer.invoke("install-sample-data"),
+  setLinkOpenMode: (mode: "browser" | "window") => ipcRenderer.invoke("set-link-open-mode", mode),
 });

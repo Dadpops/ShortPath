@@ -120,6 +120,7 @@ declare global {
         fontFamily: string;
         customShortcuts: Record<string, string | null>;
         hasOnboarded: boolean;
+        linkOpenMode: "browser" | "window";
       }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
@@ -201,6 +202,7 @@ declare global {
       openHelpWindow: () => Promise<void>;
       setOnboarded: () => Promise<void>;
       installSampleData: () => Promise<void>;
+      setLinkOpenMode: (mode: "browser" | "window") => Promise<void>;
     };
   }
 }
