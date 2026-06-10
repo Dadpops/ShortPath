@@ -108,6 +108,7 @@ export default function App() {
   const [linkOpenMode, setLinkOpenMode] = useState<"browser" | "window">("browser");
   const [isCompact, setIsCompact] = useState(false);
   const [autoRestoreOnCompactAction, setAutoRestoreOnCompactAction] = useState(true);
+  const [compactHotkey, setCompactHotkey] = useState("CommandOrControl+Shift+.");
   const compactDragRef = useRef<{ startX: number; startY: number; moved: boolean } | null>(null);
   const [searchMode, setSearchMode] = useState<"keyword" | "full">(() => {
     const saved = localStorage.getItem("sp_search_mode");
@@ -146,6 +147,7 @@ export default function App() {
     });
     void window.shortpath.getSettings().then((s) => {
       setCurrentHotkey(s.hotkey);
+      setCompactHotkey(s.compactHotkey ?? "CommandOrControl+Shift+.");
       applyFontFamily(s.fontFamily ?? "system");
       setCustomShortcuts(s.customShortcuts ?? {});
       setLinkOpenMode(s.linkOpenMode ?? "browser");
@@ -212,6 +214,10 @@ export default function App() {
     const unsubSync = window.shortpath.onSyncRefreshed(() => {
       void window.shortpath.getSyncStatus().then((status) => setSyncSources(status.sources));
     });
+    const unsubCompact = window.shortpath.onCompactModeChanged((compact) => {
+      setIsCompact(compact);
+      if (!compact) setFocusTrigger((n) => n + 1);
+    });
     return () => {
       unsubFocus();
       unsubHotkey();
@@ -220,6 +226,7 @@ export default function App() {
       unsubDownloaded();
       unsubCapture();
       unsubSync();
+      unsubCompact();
     };
   }, []);
 
@@ -503,7 +510,7 @@ export default function App() {
       return;
     }
     if (autoHideOnCopy) {
-      setTimeout(() => void window.shortpath.hideWindow(), 300);
+      setTimeout(() => handleEnterCompact(), 300);
     }
   }
 
@@ -916,9 +923,11 @@ export default function App() {
         <KeyboardPanel
           onClose={() => setMode("browse")}
           hotkey={currentHotkey}
+          compactHotkey={compactHotkey}
           customShortcuts={customShortcuts}
           onCustomShortcutsChange={(s) => { setCustomShortcuts(s); }}
           onHotkeyChange={(h) => setCurrentHotkey(h)}
+          onCompactHotkeyChange={(h) => setCompactHotkey(h)}
         />
       </div>
     );
@@ -990,16 +999,12 @@ export default function App() {
     <div className={shellClass}>
       <header className="app-header">
         <div className="app-path-group">
-          <button
-            className={`header-icon-btn pin-window-btn${alwaysOnTop ? " active" : ""}`}
-            onClick={() => {
-              const next = !alwaysOnTop;
-              setAlwaysOnTop(next);
-              void window.shortpath.setAlwaysOnTop(next);
-            }}
-            title={alwaysOnTop ? "Window stays on top" : "Keep window on top"}
-          >
-            <span className="pin-circle" />
+          <button className="header-icon-btn compact-toggle-btn" onClick={handleEnterCompact} title="Compact mode">
+            <svg viewBox="0 0 512 512" width="13" height="13" aria-hidden="true">
+              <rect x="0" y="0" width="512" height="512" rx="112" fill="var(--color-accent)"/>
+              <path d="M150 176 L246 256 L150 336" fill="none" stroke="#fff" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M278 176 L374 256 L278 336" fill="none" stroke="#fff" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
+            </svg>
           </button>
           <button className="app-path-btn" onClick={handleGoHome} title="Go home">
             shortpath

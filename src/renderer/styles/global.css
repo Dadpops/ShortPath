@@ -3759,26 +3759,9 @@ body[data-density="compact"] .result-tags {
   line-height: 1.4;
 }
 
-/* ===== Pin window button ===== */
-.pin-circle {
+/* ===== Compact toggle button in header ===== */
+.compact-toggle-btn svg {
   display: block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1.5px solid var(--color-text-muted);
-  background: transparent;
-  transition: background 0.12s, border-color 0.12s;
-  flex-shrink: 0;
-}
-
-.pin-window-btn:hover .pin-circle {
-  background: color-mix(in srgb, var(--color-accent) 35%, transparent);
-  border-color: var(--color-accent);
-}
-
-.pin-window-btn.active .pin-circle {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
 }
 
 /* Letter-style header icon buttons (N, K) */
