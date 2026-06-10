@@ -21,6 +21,7 @@ interface Props {
   autoRestoreOnCompactAction: boolean;
   onAutoRestoreOnCompactActionChange: (val: boolean) => void;
   onReplayOnboarding?: () => void;
+  initialSection?: SectionKey;
 }
 
 type SectionKey = "appearance" | "behavior" | "organization" | "data" | "sync";
@@ -39,6 +40,7 @@ export default function SettingsScreen({
   entries, verticalOrder, onVerticalOrderChange, autoHideOnCopy, onAutoHideOnCopyChange,
   alwaysOnTop, onAlwaysOnTopChange, linkOpenMode, onLinkOpenModeChange,
   autoRestoreOnCompactAction, onAutoRestoreOnCompactActionChange, onReplayOnboarding,
+  initialSection,
 }: Props) {
   const [positionReset, setPositionReset] = useState(false);
   const [fontSize, setFontSize] = useState<number>(13);
@@ -82,7 +84,7 @@ export default function SettingsScreen({
   const [updateCheck, setUpdateCheck] = useState<UpdateCheckState>("idle");
 
   // Page navigation — null shows the main settings menu
-  const [activePage, setActivePage] = useState<SectionKey | null>(null);
+  const [activePage, setActivePage] = useState<SectionKey | null>(initialSection ?? null);
 
   // Sync management
   type SyncSource = { id: string; path: string; label: string; syncedCount: number; lastRefreshed: string | null };

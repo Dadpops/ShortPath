@@ -148,6 +148,8 @@ function createWindow() {
     height: startHeight,
     x: startX,
     y: startY,
+    minWidth: startCompact ? 0 : 380,
+    minHeight: startCompact ? 0 : 300,
     opacity: settings.opacity !== undefined ? settings.opacity / 100 : 1,
     resizable: !startCompact,
     frame: false,
@@ -570,6 +572,7 @@ function restoreFromCompact() {
   const bounds = settings.preCompactBounds;
   isCompact = false;
   win.setResizable(true);
+  win.setMinimumSize(380, 300);
   if (bounds) {
     const { x, y } = clampToDisplays(bounds.x, bounds.y, bounds.width, bounds.height);
     win.setBounds({ x, y, width: bounds.width, height: bounds.height });

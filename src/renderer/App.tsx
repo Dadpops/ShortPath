@@ -110,6 +110,11 @@ export default function App() {
   const [autoRestoreOnCompactAction, setAutoRestoreOnCompactAction] = useState(true);
   const [compactHotkey, setCompactHotkey] = useState("CommandOrControl+Shift+.");
   const compactDragRef = useRef<{ startX: number; startY: number; moved: boolean } | null>(null);
+  const [settingsSection, setSettingsSection] = useState<"appearance" | "behavior" | "organization" | "data" | "sync" | null>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerNarrow, setHeaderNarrow] = useState(false);
+  const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
+  const overflowMenuRef = useRef<HTMLDivElement>(null);
   const [searchMode, setSearchMode] = useState<"keyword" | "full">(() => {
     const saved = localStorage.getItem("sp_search_mode");
     return saved === "full" ? "full" : "keyword";
@@ -280,6 +285,27 @@ export default function App() {
   useEffect(() => {
     document.body.classList.toggle("is-compact", isCompact);
   }, [isCompact]);
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setHeaderNarrow(entry.contentRect.width < 420);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!overflowMenuOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (overflowMenuRef.current && !overflowMenuRef.current.contains(e.target as Node)) {
+        setOverflowMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [overflowMenuOpen]);
 
   function handleEnterCompact() {
     setIsCompact(true);
@@ -795,9 +821,9 @@ export default function App() {
           }}
         >
           <svg viewBox="0 0 512 512" className="compact-logo" aria-label="ShortPath">
-            <rect x="0" y="0" width="512" height="512" rx="112" fill="#2563eb"/>
+            <rect x="0" y="0" width="512" height="512" rx="112" fill="var(--color-accent)"/>
             <path d="M150 176 L246 256 L150 336" fill="none" stroke="#ffffff" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M278 176 L374 256 L278 336" fill="none" stroke="#93c5fd" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M278 176 L374 256 L278 336" fill="none" stroke="#ffffff" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
             <rect x="206" y="370" width="160" height="40" rx="20" fill="#ffffff"/>
           </svg>
         </div>
@@ -872,7 +898,8 @@ export default function App() {
     return (
       <div className={shellClass}>
         <SettingsScreen
-          onClose={() => setMode("browse")}
+          initialSection={settingsSection ?? undefined}
+          onClose={() => { setSettingsSection(null); setMode("browse"); }}
           onNavigate={(target) => { setMode(target as AppMode); }}
           verticals={verticals}
           onVerticalRenamed={(id, newLabel) => {
@@ -997,7 +1024,7 @@ export default function App() {
 
   return (
     <div className={shellClass}>
-      <header className="app-header">
+      <header className="app-header" ref={headerRef}>
         <div className="app-path-group">
           <button className="header-icon-btn compact-toggle-btn" onClick={handleEnterCompact} title="Compact mode">
             <svg viewBox="0 0 512 512" width="13" height="13" aria-hidden="true">
@@ -1052,17 +1079,36 @@ export default function App() {
               ⎘
             </button>
           )}
-          <button className="header-icon-btn header-icon-letter" onClick={() => setMode("keyboard")} title="Keyboard shortcuts (Alt+K)">K</button>
-          <button className="header-icon-btn header-icon-letter" onClick={() => setMode("notes")} title="Notes (Alt+N)">N</button>
-          <button className="header-icon-btn" onClick={() => setMode("favorites")} title="Favorites">☆</button>
-          <button className="header-icon-btn" onClick={() => void window.shortpath.openHelpWindow()} title="Help (Alt+H)">?</button>
-          <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings (Alt+S)">⚙</button>
-          <button className="header-icon-btn" onClick={handleEnterCompact} title="Compact mode">
-            <svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
-              <path d="M1 4V1H4M6 1H9V4M9 6V9H6M4 9H1V6"/>
-            </svg>
-          </button>
-          <button className="header-icon-btn" onClick={() => void window.shortpath.minimizeWindow()} title="Minimize">−</button>
+          {headerNarrow ? (
+            <div className="header-overflow-wrap" ref={overflowMenuRef}>
+              <button
+                className="header-icon-btn header-overflow-btn"
+                onClick={() => setOverflowMenuOpen((p) => !p)}
+                title="More"
+              >···</button>
+              {overflowMenuOpen && (
+                <div className="header-overflow-dropdown">
+                  <button onClick={() => { setMode("keyboard"); setOverflowMenuOpen(false); }}>Keyboard shortcuts</button>
+                  <button onClick={() => { setMode("notes"); setOverflowMenuOpen(false); }}>Notes</button>
+                  <button onClick={() => { setSettingsSection("sync"); setMode("settings"); setOverflowMenuOpen(false); }}>Sync</button>
+                  <button onClick={() => { setMode("favorites"); setOverflowMenuOpen(false); }}>Favorites</button>
+                  <button onClick={() => { void window.shortpath.openHelpWindow(); setOverflowMenuOpen(false); }}>Help</button>
+                  <button onClick={() => { setSettingsSection(null); setMode("settings"); setOverflowMenuOpen(false); }}>Settings</button>
+                  <button onClick={() => { void window.shortpath.minimizeWindow(); setOverflowMenuOpen(false); }}>Minimize</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <button className="header-icon-btn header-icon-letter" onClick={() => setMode("keyboard")} title="Keyboard shortcuts (Alt+K)">K</button>
+              <button className="header-icon-btn header-icon-letter" onClick={() => setMode("notes")} title="Notes (Alt+N)">N</button>
+              <button className="header-icon-btn header-icon-letter" onClick={() => { setSettingsSection("sync"); setMode("settings"); }} title="Sync">S</button>
+              <button className="header-icon-btn" onClick={() => setMode("favorites")} title="Favorites">☆</button>
+              <button className="header-icon-btn" onClick={() => void window.shortpath.openHelpWindow()} title="Help (Alt+H)">?</button>
+              <button className="header-icon-btn" onClick={() => { setSettingsSection(null); setMode("settings"); }} title="Settings (Alt+S)">⚙</button>
+              <button className="header-icon-btn" onClick={() => void window.shortpath.minimizeWindow()} title="Minimize">−</button>
+            </>
+          )}
         </div>
       </header>
 
