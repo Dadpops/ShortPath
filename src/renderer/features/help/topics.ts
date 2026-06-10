@@ -12,12 +12,15 @@ export const HELP_TOPICS: HelpTopic[] = [
   {
     id: "getting-started",
     title: "Getting started",
-    tags: ["intro", "overview", "install", "launch"],
+    tags: ["intro", "overview", "install", "launch", "onboarding", "sample data"],
     content: `ShortPath is a local desktop app that puts your support library — saved replies, documentation, SOPs, and quick-launch tools — in one fast, searchable surface.
 
 Press the hotkey (default: Ctrl+Shift+Space) from anywhere on your desktop. The window opens with focus already in the search box. Type a keyword to search every category at once. Click a result to read it in full, or use the copy button to copy it straight to your clipboard.
 
 Everything is stored on your machine. Nothing is sent to a server. No login required.
+
+First run
+When you launch ShortPath for the first time, a 4-step onboarding overlay walks you through the key features. You can skip it at any time or step through it at your own pace. On the second step you can load 50 sample entries to explore the app before adding your own data.
 
 First steps
 1. Press the hotkey: Ctrl+Shift+Space (Cmd+Shift+Space on Mac).
@@ -44,7 +47,7 @@ Quitting
 Right-click the tray icon and choose Quit to stop the app completely.
 
 Changing the hotkey
-Open Settings (⚙ in the header), go to Behavior, then use the "Change hotkey" button. If the combination is already taken by another app, you will see an error — try a different one.`,
+Click the K button in the main header to open the Keyboard Shortcuts panel. The first row shows the global summon hotkey with a Change button next to it. Click Change, press your new key combination, and it saves automatically. If the combination is already taken by another app you will see an error — try a different one.`,
   },
   {
     id: "searching",
@@ -54,10 +57,19 @@ Open Settings (⚙ in the header), go to Behavior, then use the "Change hotkey" 
 
 The search is fuzzy — it finds close matches even with minor typos. Title is weighted most heavily, then tags, then body text.
 
+Search mode
+Two buttons sit to the right of the search bar: Keyword and Full text.
+
+Keyword (default): searches titles and tags only. Fast and precise — best for day-to-day lookups.
+
+Full text: also searches the body of every entry. Slower but useful when you remember a phrase from the body but not the title or tags. Body matches are weighted lower than title and tag matches so the most relevant results still rise to the top.
+
+Your mode choice is saved automatically and persists across sessions.
+
 Tips for better results
 - Short, specific keywords work better than long phrases ("billing" not "customer has a billing question").
 - Tag keywords give the most precise results — tags like "refund", "escalation", "VIP" are designed for quick lookup.
-- If nothing comes up, check the spelling or try a synonym.
+- If nothing comes up, try switching to Full text mode, then check spelling or try a synonym.
 - Entries with no body (link-only) can still be found by title or tags.
 
 Keyboard navigation
@@ -313,7 +325,7 @@ Appearance
 Text size, theme (dark/light), accent color, opacity, window size, and density.
 
 Behavior
-Hide window after copying, keep window on top, summon hotkey, window position reset, and update check.
+Hide window after copying, keep window on top, window position reset, and update check. Also contains a "Replay onboarding" button if you want to walk through the first-run onboarding overlay again.
 
 Organization
 Tab order (drag to reorder), vertical management (rename, delete), and sub-folder management.
@@ -322,7 +334,10 @@ Sync
 Connect CSV files from cloud-synced folders. See the "Shared file sync" help topic for full setup instructions.
 
 Data
-Add entry, Import CSV, Paste and split, Download template, Export all, Export mine, Export selected, Export Stream Deck profile, and Clear all entries.`,
+Add entry, Import CSV, Paste and split, Download template, Export all, Export mine, Export selected, Export Stream Deck profile, Remove sample data, and Clear all entries.
+
+Keyboard shortcuts
+The summon hotkey and all in-app shortcuts are configured in the Keyboard Shortcuts panel — click the K button in the main header. This is separate from Settings.`,
   },
   {
     id: "text-size",
@@ -365,7 +380,7 @@ Support Tools
 Tool cards in the Support Tools grid also support starring. Hover a card and click ☆ to add it to Favorites.
 
 Opening Favorites
-Click the ☆ icon in the main header (next to ? Help). This opens the Favorites view, which lists all your starred entries. Every entry in the list supports the same copy, edit, and open actions as the main search.
+Click the ☆ icon in the main header (next to ? Help). This opens the Favorites view, which shows each starred entry as a card. Each card displays the entry's vertical category label above the title so you can tell at a glance where the entry came from. Every entry in the list supports the same copy, edit, and open actions as the main search.
 
 Click ← Back (or the header path) to return to the main list.
 
@@ -671,6 +686,109 @@ Installing in Firefox
 
 Troubleshooting
 If the extension shows "not running" when ShortPath is open, check that nothing else is using port 57433 and try reloading the extension.`,
+  },
+  {
+    id: "onboarding",
+    title: "First-run onboarding",
+    tags: ["onboarding", "first run", "welcome", "setup", "tour", "walkthrough", "replay"],
+    content: `When you launch ShortPath for the first time, a 4-step onboarding overlay appears on top of the main window.
+
+Step 1 — Welcome
+Shows the app name, a one-line description, and your global summon hotkey so you know how to open ShortPath from anywhere.
+
+Step 2 — Get your data in
+Two options: Download CSV template (saves a blank template to get your team's data into the right format) and Start with sample data (loads 50 pre-written entries across Saved Replies, Documentation, SOPs, and Support Tools so you can explore every feature immediately).
+
+Step 3 — Help center
+Opens the Help window (this window) and shows the most useful keyboard shortcuts at a glance.
+
+Step 4 — Quick tips
+A short list of the most useful things to know: how to search, how to copy, and how to add entries.
+
+Skipping and completing
+Press Skip at any step to close the overlay without finishing. Press Done on the last step to complete it. Either way, the overlay does not reappear on future launches.
+
+After completing the onboarding (Done on step 4), the Help center opens automatically so you can explore topics at your own pace.
+
+Replaying the onboarding
+Open Settings > Behavior and click "Replay onboarding". The overlay opens again from step 1. Replaying does not re-open the Help center automatically.`,
+  },
+  {
+    id: "sample-data",
+    title: "Sample data",
+    tags: ["sample", "demo", "test data", "example entries", "remove", "clear"],
+    content: `Sample data is a set of 50 pre-written entries that cover common support scenarios across four categories: Saved Replies, Documentation, Internal SOPs, and Support Tools.
+
+Loading sample data
+During the first-run onboarding, click "Start with sample data (50 entries)" on step 2. You can also load it at any time from Settings > Data > Install sample data.
+
+What it includes
+The entries are realistic enough to demonstrate every feature — search, filtering, copy, favorites, pinning, and more. They cover scenarios like billing inquiries, refunds, escalations, password resets, and shipping delays. Cross-vertical tags (refund, escalation, password) mean that a single search returns hits from multiple categories at once, which shows how the grouped results view works.
+
+Sample data banner
+After loading sample data, a blue banner appears at the top of the window: "Sample data loaded — replace with your own entries via CSV import or the + button." Click the X on the right to dismiss the banner. It does not reappear once dismissed.
+
+Removing sample data
+Go to Settings > Data and click "Remove sample data". A confirmation prompt shows how many sample entries will be deleted. Confirm to remove them all in one action. Your own entries (added manually or imported via CSV) are not affected.
+
+Sample entries are tracked with source: "sample" internally so removal is always precise — the app never accidentally deletes your own work.`,
+  },
+  {
+    id: "search-mode",
+    title: "Search mode: Keyword vs Full text",
+    tags: ["search mode", "keyword", "full text", "body search", "toggle"],
+    content: `Two search mode buttons sit to the right of the search bar.
+
+Keyword mode (default)
+Searches entry titles and tags only. This is the fastest and most precise mode. Because tags are designed for lookup terms ("refund", "escalation", "VIP"), Keyword mode almost always finds what you need in 1–2 words.
+
+Full text mode
+Also searches the body of every entry. Useful when you remember a phrase or sentence from the content but cannot recall the title or the right tag. Body matches are weighted lower than title and tag matches, so a title match will still rank above a body-only match.
+
+Switching modes
+Click Keyword or Full text next to the search bar. The active button is highlighted. Your choice is saved to local storage and persists across sessions and app restarts.
+
+When to use Full text
+- You are looking for a specific policy clause or procedure step buried in a long doc.
+- You know the entry exists but the title is generic and you don't remember the tags.
+- You are exploring what's in your library.
+
+When to stay on Keyword
+- Normal day-to-day support work — faster and less noisy.
+- Your team has consistent tagging — the right entry almost always comes up on tags alone.`,
+  },
+  {
+    id: "keyboard-shortcuts-panel",
+    title: "Keyboard shortcuts panel",
+    tags: ["keyboard", "shortcuts", "hotkey", "remap", "customize", "K button", "panel"],
+    content: `The Keyboard Shortcuts panel is opened with the K button in the main header. It shows every configurable shortcut in one place.
+
+Global summon hotkey
+The first section shows the current global hotkey (default: Ctrl+Shift+Space). This is the system-wide shortcut that opens ShortPath from any app.
+
+To change it: click Change, press the new key combination, and it saves automatically. The combination must include at least one modifier key (Ctrl, Alt, or Shift) and a letter, number, or function key. If the combination is already registered by another app, an error appears — try a different one.
+
+In-app shortcuts
+The second section lists actions that work while ShortPath is focused. Each row shows the action name, the current shortcut, and Change and Off buttons.
+
+- Change: click it, press the new key combination, and it saves.
+- Off: removes the shortcut entirely (the action is still available by clicking).
+
+Default in-app shortcuts
+- Notes: Alt+N
+- Keyboard shortcuts panel: Alt+K
+- Help: Alt+H
+- Settings: Alt+S
+- New entry: Ctrl+N
+- Cycle vertical tab: Tab
+
+Fixed shortcuts
+The third section lists shortcuts that cannot be remapped. These are built into the app's navigation model:
+- Arrow Up / Down: move between results
+- Enter: open focused entry
+- Esc: close detail / clear search / hide window
+- Shift+Tab: cycle vertical tab backwards
+- Up arrow in empty search: cycle recent search queries`,
   },
   {
     id: "troubleshooting",
