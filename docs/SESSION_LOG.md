@@ -4,6 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-09 — v0.6.0: onboarding, sample data, search mode toggle, README landing page](sessions/2026-06-09-v0.6.0.md) -- 4-step first-run onboarding overlay; 50-entry sample data with installSeedData; search mode toggle (Keyword/Full text); keyboard shortcut editing consolidated into KeyboardPanel; Notes and Favorites card treatment; README revamped with 8 screenshots, gallery, and inline pitch images; v0.6.0.
 - [2026-06-09 — Keyboard panel, UX fixes, full keyboard nav](sessions/2026-06-09-ux-fixes.md) — Keyboard shortcuts panel (K button); N letter button for notes; pin moved left; clipboard strip moved to top; pin limit removed; sample data filter bug fixed; sync friendly name refresh fixed; Alt+K/N/H/S shortcuts; Check for updates info note; v0.4.0.
 - [2026-06-09 — Friction-point UX improvements](sessions/2026-06-09-friction-points.md) — Sample data onboarding banner; recent copies persist 24h in store; "recently used" sort mode; hotkey in tray tooltip and menu; first-launch notification; configurable pin cap (4/8/12); Stream Deck re-export timestamp; Ctrl+N; search history via up-arrow; empty search state with save-as-entry button.
 - [2026-06-09 — Polish and bug fixes: app crash, sync UI, styling](sessions/2026-06-09-polish.md) — Fixed ESM crash (jsdom removed from main process, parsing moved to renderer); 4 TS build errors; Sync management added to SettingsScreen; URL import button styled; btn-link and --color-error added.
