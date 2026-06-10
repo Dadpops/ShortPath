@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Entry, Note, Vertical } from "@shared/types";
-import { copyEntry } from "@renderer/utils/htmlToPlain";
+import { copyEntry, htmlToPlain } from "@renderer/utils/htmlToPlain";
 
 interface Props {
   entry: Entry;
@@ -106,7 +106,7 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFa
           {entry.body ? (
             entry.copyMode === "html"
               ? <div className="macro-body-rich" dangerouslySetInnerHTML={{ __html: entry.body }} />
-              : <pre className="macro-body-text">{stripHtml(entry.body)}</pre>
+              : <pre className="macro-body-text">{htmlToPlain(entry.body)}</pre>
           ) : (
             <p className="macro-body-empty">No body text.</p>
           )}
