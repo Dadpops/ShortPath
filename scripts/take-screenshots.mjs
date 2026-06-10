@@ -1,6 +1,7 @@
 /**
- * Takes 8 feature screenshots and saves them to docs/screenshots/.
+ * Takes feature screenshots and saves them to docs/screenshots/.
  * Run with: node scripts/take-screenshots.mjs
+ * Requires a production build: npm run build
  */
 
 import { _electron as electron } from "playwright-core";
@@ -124,23 +125,48 @@ await page.evaluate(() => {
 });
 await sleep(400);
 
-// ── 5. Settings panel ────────────────────────────────────────────────────────
-console.log("5. Settings");
+// ── 5. Support Tools grid ─────────────────────────────────────────────────────
+console.log("5. Support Tools");
+await page.evaluate(() => {
+  // Click the Support Tools vertical tab if visible, otherwise filter via select
+  const tabs = [...document.querySelectorAll(".vtab")];
+  const toolsTab = tabs.find((t) => t.textContent?.includes("Support"));
+  if (toolsTab) {
+    toolsTab.click();
+  } else {
+    const sel = document.querySelector(".vertical-filter-select");
+    if (sel) {
+      const opt = [...sel.options].find((o) => o.text.includes("Support"));
+      if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("change", { bubbles: true })); }
+    }
+  }
+});
+await sleep(600);
+await shot(page, "tools.png");
+// Clear filter
+await page.evaluate(() => {
+  const tabs = [...document.querySelectorAll(".vtab")];
+  const allTab = tabs.find((t) => t.textContent?.trim() === "All");
+  if (allTab) allTab.click();
+});
+await sleep(300);
+
+// ── 6. Settings panel ────────────────────────────────────────────────────────
+console.log("6. Settings");
 await clickByTitle(page, "Settings (Alt+S)");
 await sleep(700);
 await shot(page, "settings.png");
 await goBack(page);
 
-// ── 6. Keyboard shortcuts panel ──────────────────────────────────────────────
-console.log("6. Keyboard shortcuts");
+// ── 7. Keyboard shortcuts panel ──────────────────────────────────────────────
+console.log("7. Keyboard shortcuts");
 await clickByTitle(page, "Keyboard shortcuts (Alt+K)");
 await sleep(700);
 await shot(page, "keyboard-shortcuts.png");
 await goBack(page);
 
-// ── 7. Favorites view ────────────────────────────────────────────────────────
-console.log("7. Favorites — starring 3 entries first");
-// Star the first 3 "Add to favorites" buttons visible on the main browse view
+// ── 8. Favorites view ────────────────────────────────────────────────────────
+console.log("8. Favorites — starring 3 entries first");
 await page.evaluate(() => {
   const btns = [...document.querySelectorAll('[title="Add to favorites"]')].slice(0, 3);
   btns.forEach((b) => b.click());
@@ -151,10 +177,22 @@ await sleep(700);
 await shot(page, "favorites.png");
 await goBack(page);
 
-// ── 8. Help window ────────────────────────────────────────────────────────────
-console.log("8. Help window");
+// ── 9. Compact mode ───────────────────────────────────────────────────────────
+console.log("9. Compact mode");
+await clickByTitle(page, "Compact mode");
+await sleep(800);
+await shot(page, "compact.png");
+// Restore
+await page.evaluate(() => {
+  const logo = document.querySelector(".compact-view");
+  if (logo) logo.click();
+});
+await sleep(600);
+
+// ── 10. Help window ───────────────────────────────────────────────────────────
+console.log("10. Help window");
 await clickByTitle(page, "Help (Alt+H)");
-await sleep(1500); // help window takes a moment to open
+await sleep(1500);
 const allWindows = app.windows();
 const helpPage = allWindows.find(
   (w) => !w.url().startsWith("devtools://") && w !== page
