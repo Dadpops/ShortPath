@@ -108,6 +108,7 @@ export default function App() {
   const [linkOpenMode, setLinkOpenMode] = useState<"browser" | "window">("browser");
   const [isCompact, setIsCompact] = useState(false);
   const [autoRestoreOnCompactAction, setAutoRestoreOnCompactAction] = useState(true);
+  const compactPressRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const [searchMode, setSearchMode] = useState<"keyword" | "full">(() => {
     const saved = localStorage.getItem("sp_search_mode");
     return saved === "full" ? "full" : "keyword";
@@ -278,9 +279,9 @@ export default function App() {
     void window.shortpath.setCompactMode(true);
   }
 
-  function handleRestoreCompact() {
+  async function handleRestoreCompact() {
+    await window.shortpath.setCompactMode(false);
     setIsCompact(false);
-    void window.shortpath.setCompactMode(false);
   }
 
   function handleOnboardingComplete() {
@@ -764,8 +765,22 @@ export default function App() {
   if (isCompact) {
     return (
       <div className="app-shell compact-mode">
-        <div className="compact-view" onClick={handleRestoreCompact} title="Click to restore">
-          <svg viewBox="0 0 512 512" className="compact-logo" aria-label="ShortPath — click to restore">
+        <div
+          className="compact-view"
+          title="Drag to move — click to restore"
+          onMouseDown={(e) => {
+            compactPressRef.current = { x: e.screenX, y: e.screenY, t: Date.now() };
+          }}
+          onMouseUp={(e) => {
+            const p = compactPressRef.current;
+            compactPressRef.current = null;
+            if (!p) return;
+            const moved = Math.abs(e.screenX - p.x) > 4 || Math.abs(e.screenY - p.y) > 4;
+            const slow  = Date.now() - p.t > 400;
+            if (!moved && !slow) void handleRestoreCompact();
+          }}
+        >
+          <svg viewBox="0 0 512 512" className="compact-logo" aria-label="ShortPath">
             <rect x="0" y="0" width="512" height="512" rx="112" fill="#2563eb"/>
             <path d="M150 176 L246 256 L150 336" fill="none" stroke="#ffffff" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M278 176 L374 256 L278 336" fill="none" stroke="#93c5fd" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round"/>

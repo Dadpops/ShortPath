@@ -124,7 +124,7 @@ function createWindow() {
     transparent: true,
     backgroundColor: "#00000000",
     skipTaskbar: true,
-    alwaysOnTop: settings.alwaysOnTop ?? false,
+    alwaysOnTop: startCompact ? true : (settings.alwaysOnTop ?? false),
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "../preload/index.js"),
@@ -806,24 +806,27 @@ function registerIpcHandlers() {
       settings = { ...settings, preCompactBounds: { x, y, width, height }, compactMode: true };
       saveSettings(userDataPath, settings);
       isCompact = true;
-      win.setResizable(false);
+      // Resize BEFORE locking: setResizable(false) on Windows can prevent subsequent programmatic resizes.
+      win.setMinimumSize(0, 0);
       const cx = x + Math.floor(width  / 2);
       const cy = y + Math.floor(height / 2);
-      win.setSize(64, 64);
-      win.setPosition(cx - 32, cy - 32);
+      win.setBounds({ x: cx - 32, y: cy - 32, width: 64, height: 64 });
+      win.setResizable(false);
+      // Auto-pin when compact so the floating icon stays on top.
+      win.setAlwaysOnTop(true);
     } else {
       const bounds = settings.preCompactBounds;
       // Clear compact flag BEFORE resizing so scheduleSaveBounds can save restored bounds.
       isCompact = false;
       win.setResizable(true);
       if (bounds) {
-        win.setSize(bounds.width, bounds.height);
-        win.setPosition(bounds.x, bounds.y);
+        win.setBounds({ x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height });
       } else {
         const p = getBottomLeftPosition();
-        win.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-        win.setPosition(p.x, p.y);
+        win.setBounds({ x: p.x, y: p.y, width: WINDOW_WIDTH, height: WINDOW_HEIGHT });
       }
+      // Restore alwaysOnTop to the user's saved preference.
+      win.setAlwaysOnTop(settings.alwaysOnTop ?? false);
       settings = { ...settings, compactMode: false };
       saveSettings(userDataPath, settings);
     }

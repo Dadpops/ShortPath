@@ -112,11 +112,11 @@ body.is-compact #root {
 .compact-logo {
   width: 44px;
   height: 44px;
-  -webkit-app-region: no-drag;
-  cursor: pointer;
+  -webkit-app-region: drag;
+  cursor: grab;
   opacity: 0.88;
   transition: opacity 0.12s, transform 0.12s;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .compact-view:hover .compact-logo {
