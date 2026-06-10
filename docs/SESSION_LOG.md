@@ -4,6 +4,8 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-10 — Compact Mode settings page; MacroOverlay CI fix](sessions/2026-06-10-compact-mode-settings.md) — Compact Mode settings section added (pin to top, icon size S/M/L, icon color, auto-restore); pin bug fixed (compactAlwaysOnTop now independent of main-window alwaysOnTop, defaults true); MacroOverlay stripHtml → htmlToPlain CI fix.
+
 - [2026-06-10 — Compact mode v2; Stream Deck removal; crash recovery; v0.6.7](sessions/2026-06-10-compact-mode-v2.md) — Stream Deck removed; CSV duplicate folder fix; crash recovery (render-process-gone/unresponsive); compact mode rebuilt: position memory, compact hotkey (Ctrl+Shift+.), summon hotkey restores from compact, toggle button in header, no longer forces always-on-top, close-after-copy enters compact; v0.6.7.
 
 - [2026-06-10 — Compact mode; file share sync folder fix; v0.6.3 release](sessions/2026-06-10-compact-mode.md) — Compact mode (64x64 logo square, restore on click/Esc, persisted across restarts); file share sync now creates folders from subfolder column; shipped as v0.6.3.

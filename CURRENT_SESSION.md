@@ -1,8 +1,8 @@
 # Current Session State
 
-**Status:** 2026-06-10 — Compact mode v2 implementation complete, pending build and release as v0.6.8.
+**Status:** 2026-06-10 — Compact Mode settings page added (pin, size, color); MacroOverlay CI fix applied and pushed.
 
-**Last session:** [2026-06-10 — Compact mode v2; Stream Deck removal; crash recovery; v0.6.7](docs/sessions/2026-06-10-compact-mode-v2.md)
+**Last session:** [2026-06-10 — Compact Mode settings page; MacroOverlay CI fix](docs/sessions/2026-06-10-compact-mode-settings.md)
 
 **Open items:**
 - Help topics not yet updated for v0.6.0 features (onboarding, search mode toggle, sample data removal, favorites card view). CLAUDE.md standing rule applies.
