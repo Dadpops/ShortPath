@@ -14,6 +14,8 @@ interface Props {
   onVerticalOrderChange: (order: string[]) => void;
   autoHideOnCopy: boolean;
   onAutoHideOnCopyChange: (val: boolean) => void;
+  showRecents: boolean;
+  onShowRecentsChange: (val: boolean) => void;
   alwaysOnTop: boolean;
   onAlwaysOnTopChange: (val: boolean) => void;
   linkOpenMode: "browser" | "window";
@@ -44,6 +46,7 @@ const ACCENT_PRESETS = [
 export default function SettingsScreen({
   onClose, onNavigate, verticals, onVerticalRenamed, onVerticalAdded,
   entries, verticalOrder, onVerticalOrderChange, autoHideOnCopy, onAutoHideOnCopyChange,
+  showRecents, onShowRecentsChange,
   alwaysOnTop, onAlwaysOnTopChange, linkOpenMode, onLinkOpenModeChange,
   autoRestoreOnCompactAction, onAutoRestoreOnCompactActionChange,
   compactAlwaysOnTop, onCompactAlwaysOnTopChange,
@@ -523,6 +526,21 @@ export default function SettingsScreen({
                       key={String(val)}
                       className={`font-size-btn${autoHideOnCopy === val ? " active" : ""}`}
                       onClick={() => onAutoHideOnCopyChange(val)}
+                    >
+                      {val ? "On" : "Off"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-label">Show recent entries on focus</div>
+                <div className="font-size-control">
+                  {([true, false] as const).map((val) => (
+                    <button
+                      key={String(val)}
+                      className={`font-size-btn${showRecents === val ? " active" : ""}`}
+                      onClick={() => onShowRecentsChange(val)}
                     >
                       {val ? "On" : "Off"}
                     </button>

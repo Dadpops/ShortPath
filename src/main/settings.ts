@@ -45,6 +45,7 @@ export interface AppSettings {
   compactAlwaysOnTop?: boolean; // pin the compact icon above all other windows; default true
   compactSize?: number;          // compact window size in px; options: 48 | 64 | 80; default 64
   compactAccentColor?: string | null; // null = follow app theme; hex string = custom icon color
+  showRecents?: boolean;              // show recent entries dropdown when search bar is focused but empty; default true
 }
 
 const DEFAULT_SETTINGS: AppSettings = {

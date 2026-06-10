@@ -147,9 +147,15 @@ body.is-compact #root {
   user-select: none;
 }
 
-.app-hit-summary {
+.results-status-bar {
+  flex-shrink: 0;
+  padding: 4px 10px;
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+  background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  user-select: none;
 }
 
 /* Search */

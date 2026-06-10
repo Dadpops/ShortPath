@@ -86,6 +86,7 @@ export default function App() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [pendingNoteEntry, setPendingNoteEntry] = useState<{ id: string; title: string } | null>(null);
   const [autoHideOnCopy, setAutoHideOnCopy] = useState(false);
+  const [showRecents, setShowRecents] = useState(true);
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("relevance");
   const [currentHotkey, setCurrentHotkey] = useState("CommandOrControl+Shift+Space");
@@ -157,6 +158,7 @@ export default function App() {
       applyFontFamily(s.fontFamily ?? "system");
       setCustomShortcuts(s.customShortcuts ?? {});
       setLinkOpenMode(s.linkOpenMode ?? "browser");
+      setShowRecents(s.showRecents ?? true);
       setIsCompact(s.compactMode ?? false);
       setAutoRestoreOnCompactAction(s.autoRestoreOnCompactAction ?? true);
       setCompactAlwaysOnTop(s.compactAlwaysOnTop ?? true);
@@ -917,6 +919,11 @@ export default function App() {
             setAutoHideOnCopy(val);
             void window.shortpath.setAutoHideOnCopy(val);
           }}
+          showRecents={showRecents}
+          onShowRecentsChange={(val) => {
+            setShowRecents(val);
+            void window.shortpath.setShowRecents(val);
+          }}
           alwaysOnTop={alwaysOnTop}
           onAlwaysOnTopChange={(val) => {
             setAlwaysOnTop(val);
@@ -1079,9 +1086,6 @@ export default function App() {
           </div>
         </div>
         <div className="header-actions">
-          {isSearching && totalHits > 0 && (
-            <span className="app-hit-summary">{totalHits} result{totalHits !== 1 ? "s" : ""}</span>
-          )}
           {hasClipboard && (
             <button
               className="header-icon-btn clipboard-indicator"
@@ -1183,7 +1187,7 @@ export default function App() {
             </button>
           </div>
         </div>
-        {isSearchFocused && !isSearching && recentEntries.length > 0 && (
+        {showRecents && isSearchFocused && !isSearching && recentEntries.length > 0 && (
           <RecentsDropdown
             entries={recentEntries}
             focusedEntryId={focusedEntryId}
@@ -1430,6 +1434,14 @@ export default function App() {
           })
         )}
       </main>
+
+      {isSearching && (
+        <div className="results-status-bar">
+          {totalHits > 0
+            ? `${totalHits} result${totalHits !== 1 ? "s" : ""}`
+            : `No results for "${debouncedQuery}"`}
+        </div>
+      )}
 
       <button
         className="fab-add"

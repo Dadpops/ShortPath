@@ -907,6 +907,7 @@ function registerIpcHandlers() {
     compactAlwaysOnTop: settings.compactAlwaysOnTop ?? true,
     compactSize: settings.compactSize ?? 64,
     compactAccentColor: settings.compactAccentColor ?? null,
+    showRecents: settings.showRecents ?? true,
   }));
 
   ipcMain.handle("set-onboarded", () => {
@@ -1002,6 +1003,11 @@ function registerIpcHandlers() {
 
   ipcMain.handle("set-auto-hide-on-copy", (_e, value: boolean) => {
     settings = { ...settings, autoHideOnCopy: value };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-show-recents", (_e, value: boolean) => {
+    settings = { ...settings, showRecents: value };
     saveSettings(userDataPath, settings);
   });
 

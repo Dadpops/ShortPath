@@ -4,7 +4,7 @@
 
 Press a hotkey. Type a word. Copy your reply. Back to the ticket in under five seconds.
 
-[![Version](https://img.shields.io/badge/version-0.6.8-blue)](https://github.com/Dadpops/ShortPath/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/Dadpops/ShortPath/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-lightgrey)](https://github.com/Dadpops/ShortPath/releases)
 
@@ -220,10 +220,12 @@ Download the latest installer from the **[Releases page](https://github.com/Dadp
 
 | Platform | File | Notes |
 |---|---|---|
-| Windows | `ShortPath Setup 0.6.8.exe` | SmartScreen warning on first run. Click "More info -> Run anyway". |
+| Windows | `ShortPath Setup 1.0.0.exe` | SmartScreen warning on first run. Click "More info -> Run anyway". |
 | macOS | `ShortPath-x.y.z.dmg` | Gatekeeper will block unsigned builds. See [docs/INSTALLING.md](docs/INSTALLING.md). |
 
 Your data lives in `%APPDATA%\ShortPath` (Windows) or `~/Library/Application Support/ShortPath` (macOS). Reinstalling or updating does not affect your entries.
+
+**Security note:** ShortPath is open source and unsigned. The OS warnings (SmartScreen on Windows, Gatekeeper on macOS) appear because the installer has no code-signing certificate, not because the app is malicious. You can read every line of source code in this repo before running it. Nothing is obfuscated, nothing phones home.
 
 ---
 
@@ -275,6 +277,14 @@ npm run electron
 Feature branches off `master`, PRs to `master`.
 
 See [CLAUDE.md](CLAUDE.md) for coding conventions, commit style, and session workflow.
+
+---
+
+## Known issues
+
+| Issue | Workaround |
+|---|---|
+| Compact mode icon grows continuously when held | Click the icon briefly instead of holding it. Switching back to the regular window and then returning to compact mode resets the size. |
 
 ---
 

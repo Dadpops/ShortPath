@@ -63,6 +63,7 @@ contextBridge.exposeInMainWorld("shortpath", {
   setDensity: (density: "compact" | "comfortable") => ipcRenderer.invoke("set-density", density),
   setVerticalOrder: (order: string[]) => ipcRenderer.invoke("set-vertical-order", order),
   setAutoHideOnCopy: (value: boolean) => ipcRenderer.invoke("set-auto-hide-on-copy", value),
+  setShowRecents: (value: boolean) => ipcRenderer.invoke("set-show-recents", value),
   setAlwaysOnTop: (value: boolean) => ipcRenderer.invoke("set-always-on-top", value),
   clearSampleData: () => ipcRenderer.invoke("clear-sample-data"),
   setPinCap: (cap: number) => ipcRenderer.invoke("set-pin-cap", cap),

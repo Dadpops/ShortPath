@@ -193,13 +193,15 @@ Tab order can be customized in Settings > Organization > Tab order.`,
     id: "recents",
     title: "Recents",
     tags: ["recents", "recently used", "history", "recent"],
-    content: `When the search box is empty, ShortPath shows your 10 most recently accessed entries.
+    content: `When the search box is focused and empty, ShortPath shows your 10 most recently accessed entries.
 
 An entry moves to the top of Recents when you:
 - Copy it (via the copy button or the Copy button in the detail panel)
 - Open its link in the browser
 
-Recents give fast access to the replies and tools you use most. They are stored locally and not synced to other devices.`,
+Recents give fast access to the replies and tools you use most. They are stored locally and not synced to other devices.
+
+To turn the Recents dropdown off, go to Settings > Behavior and set "Show recent entries on focus" to Off.`,
   },
   {
     id: "adding-entries",

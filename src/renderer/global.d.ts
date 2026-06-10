@@ -124,6 +124,7 @@ declare global {
         compactAlwaysOnTop: boolean;
         compactSize: number;
         compactAccentColor: string | null;
+        showRecents: boolean;
       }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
@@ -137,6 +138,7 @@ declare global {
       setDensity: (density: "compact" | "comfortable") => Promise<void>;
       setVerticalOrder: (order: string[]) => Promise<void>;
       setAutoHideOnCopy: (value: boolean) => Promise<void>;
+      setShowRecents: (value: boolean) => Promise<void>;
       setAlwaysOnTop: (value: boolean) => Promise<void>;
       setFontSize: (size: number) => Promise<void>;
       setTheme: (theme: "dark" | "light") => Promise<void>;
