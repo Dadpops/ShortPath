@@ -264,7 +264,7 @@ Click Remove next to the sub-folder name and confirm. Any entries assigned to th
   {
     id: "importing-csv",
     title: "Importing a CSV",
-    tags: ["import", "csv", "template", "upload", "bulk", "file", "subfolder", "folder", "column mapping", "drag", "nested", "comma"],
+    tags: ["import", "csv", "template", "upload", "bulk", "file", "subfolder", "folder", "column mapping", "drag", "nested", "comma", "duplicate", "overwrite", "skip"],
     content: `Go to Settings > Data > Import CSV to add entries in bulk from a spreadsheet.
 
 How to import
@@ -297,8 +297,17 @@ Double quotes inside a quoted field are escaped by doubling them: "He said ""hel
 Download a template
 Use Settings > Data > Download template to get an example file. It includes rows demonstrating nested sub-folders and quoted fields with commas.
 
-Update behavior
-If a row's title + vertical matches an existing entry, that entry is updated. Otherwise a new entry is created.`,
+Duplicate detection
+Before importing, ShortPath checks every row against your existing entries. A row is a duplicate if its title + vertical combination already exists (case-insensitive). Duplicates are flagged in the preview with a yellow "Duplicate" badge, and you choose how to handle each one:
+
+- Skip (default): the row is not imported. The existing entry is unchanged.
+- Overwrite: the existing entry's body, type, tags, and other fields are replaced with the values from the CSV row.
+- Import as new: a second entry with the same title is created alongside the existing one.
+
+The preview summary shows how many rows are flagged and how many will be skipped or imported given your current choices.
+
+Update behavior for non-duplicates
+Rows that are not flagged as duplicates are always imported as new entries.`,
   },
   {
     id: "exporting-csv",
@@ -374,13 +383,16 @@ Click ✎ on any tool card to open the edit form. You can change the title, URL,
     tags: ["settings", "hotkey", "config", "window", "position", "sync", "navigation", "pages"],
     content: `Open Settings from the ⚙ button in the header, or from the tray menu.
 
-Settings are organized into five pages. Click any page from the main Settings menu to open it. Click "← Settings" in the page header to return to the menu.
+Settings are organized into six pages. Click any page from the main Settings menu to open it. Click "← Settings" in the page header to return to the menu.
 
 Appearance
-Text size, theme (dark/light), accent color, opacity, window size, and density.
+Text size, font family, theme (dark/light), accent color, opacity, window size, and density.
 
 Behavior
-Hide window after copying, keep window on top, window position reset, and update check. Also contains a "Replay onboarding" button if you want to walk through the first-run onboarding overlay again.
+Hide window after copying, keep window on top, open-link mode, window position reset, and update check. Also contains a "Replay onboarding" button if you want to walk through the first-run onboarding overlay again.
+
+Compact Mode
+Pin the compact icon above all windows, icon size, icon color, and restore-after-copy behavior. See the "Compact mode" help topic for details.
 
 Organization
 Tab order (drag to reorder), vertical management (rename, delete), and sub-folder management.
@@ -504,7 +516,7 @@ Notes are stored in notes.json in your app data folder, separate from store.json
   {
     id: "accent-and-appearance",
     title: "Accent color and appearance",
-    tags: ["accent", "color", "theme", "opacity", "density", "window size", "customization"],
+    tags: ["accent", "color", "theme", "opacity", "density", "window size", "customization", "font", "family"],
     content: `The Appearance section in Settings lets you personalize how ShortPath looks and fits on your screen.
 
 Accent color
@@ -517,7 +529,13 @@ Window size
 Choose Small (380×520), Medium (480×640, default), or Large (580×760). Clicking a size button resizes the window immediately and saves the choice.
 
 Density
-Comfortable (default) shows entries at their standard spacing. Compact reduces padding and font size slightly, fitting 2–3 more results on screen without scrolling.`,
+Comfortable (default) shows entries at their standard spacing. Compact reduces padding and font size slightly, fitting 2–3 more results on screen without scrolling.
+
+Font family
+Four options: System (default, uses your OS sans-serif font), Serif (Georgia / Times New Roman), Mono (JetBrains Mono / Fira Code / Cascadia Code), and Rounded (Trebuchet MS / Gill Sans). The choice applies to all text in the app and is saved between sessions.
+
+Text size
+Drag the slider to pick a size between 11px and 16px (default 13px). The change applies immediately everywhere — search input, result titles, body text, form fields, and help content.`,
   },
   {
     id: "pinned-entries",
@@ -562,11 +580,11 @@ Every time you copy a local entry's body to clipboard, its copy count increments
     id: "recent-copies",
     title: "Recent copies",
     tags: ["recent", "copies", "history", "session"],
-    content: `The "Recent" section shows the last 5 entries you copied this session.
+    content: `The "Recent" section shows the entries you copied in the last 24 hours.
 
-It appears at the top of the results list (below any pinned entries) when the search bar is empty. If you have not copied anything yet during the current session, the section does not appear.
+It appears at the top of the results list (below any pinned entries) when the search bar is empty. If you have not copied anything in the last 24 hours, the section does not appear.
 
-Recent copies are stored in memory only — they reset every time you restart the app. They are not saved to disk and do not appear in exports.`,
+Recent copies are stored in the local data file and persist across app restarts, but entries older than 24 hours are automatically removed. They do not appear in exports.`,
   },
   {
     id: "vertical-tabs",
@@ -819,6 +837,50 @@ The third section lists shortcuts that cannot be remapped. These are built into 
 - Esc: close detail / clear search / hide window
 - Shift+Tab: cycle vertical tab backwards
 - Up arrow in empty search: cycle recent search queries`,
+  },
+  {
+    id: "paste-and-split",
+    title: "Paste and split",
+    tags: ["paste", "split", "bulk add", "headings", "markdown", "multiple entries", "quick import"],
+    content: `Paste and split lets you turn a structured block of text into multiple entries in one step — no CSV file needed.
+
+When to use it
+Use it when you have text already written (in a doc, a wiki, a notes app) that uses headings to separate sections. Each heading becomes one entry.
+
+How to use it
+1. Go to Settings > Data > Paste and split, or click the "✂ Paste and split" option in the Settings data section.
+2. Paste your text into the text area. The text should use # headings (any level: #, ##, ###, ####) to mark each section.
+3. Click Parse. ShortPath splits the text at every heading line and shows a preview of the entries it will create — each heading becomes a title and the text below becomes the body.
+4. Choose a vertical from the dropdown (required). Optionally create a new vertical by toggling "New vertical" and typing a name.
+5. Review the preview. Each section is shown with its title and a snippet of body text.
+6. Click Import. ShortPath creates one entry per section with type "doc".
+
+Heading rules
+Any line starting with one or more # characters (up to ####) is treated as a section boundary. The # characters and any leading/trailing spaces are stripped from the title. Text before the first heading is ignored. If no headings are found, nothing will be imported — add at least one # heading to your text first.
+
+After importing
+The entries appear immediately in search results. You can edit any of them individually to adjust the vertical, type, tags, or body.`,
+  },
+  {
+    id: "export-selected",
+    title: "Export selected entries",
+    tags: ["export", "selected", "subset", "pick", "choose", "csv", "partial export"],
+    content: `Export Selected lets you hand-pick which entries to include in the exported CSV file instead of exporting everything.
+
+How to use it
+1. Go to Settings > Data and click "Export selected".
+2. The export screen shows your full library organized as a tree: verticals at the top level, sub-folders nested inside, and entries inside each folder.
+3. Use the checkboxes to select what to export:
+   - Check a vertical row to select all entries in that vertical (including all sub-folders).
+   - Check a sub-folder row to select all entries in that folder and its nested folders.
+   - Sub-folders can be expanded to reveal individual entries for fine-grained selection.
+4. Click Export. ShortPath writes only the checked entries to a CSV file in the standard format.
+
+Select all / none
+To start from scratch, uncheck the top-level vertical rows to deselect everything, then add back only what you need.
+
+Output format
+The exported file uses the same column format as the import template (title, vertical, type, body, url, subfolder, tags) and can be re-imported into any ShortPath instance.`,
   },
   {
     id: "troubleshooting",
