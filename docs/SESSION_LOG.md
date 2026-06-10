@@ -4,6 +4,8 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-10 — Complete help topic coverage](sessions/2026-06-10-help-topics.md) — New topics: paste-and-split, export-selected. Updated: settings (6 pages), accent-and-appearance (font family), importing-csv (duplicate detection), recent-copies (24h persistence). App boot verified via Playwright driver.
+
 - [2026-06-10 — Compact Mode settings page; MacroOverlay CI fix](sessions/2026-06-10-compact-mode-settings.md) — Compact Mode settings section added (pin to top, icon size S/M/L, icon color, auto-restore); pin bug fixed (compactAlwaysOnTop now independent of main-window alwaysOnTop, defaults true); MacroOverlay stripHtml → htmlToPlain CI fix.
 
 - [2026-06-10 — Compact mode v2; Stream Deck removal; crash recovery; v0.6.7](sessions/2026-06-10-compact-mode-v2.md) — Stream Deck removed; CSV duplicate folder fix; crash recovery (render-process-gone/unresponsive); compact mode rebuilt: position memory, compact hotkey (Ctrl+Shift+.), summon hotkey restores from compact, toggle button in header, no longer forces always-on-top, close-after-copy enters compact; v0.6.7.

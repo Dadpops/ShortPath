@@ -1,8 +1,8 @@
 # Current Session State
 
-**Status:** 2026-06-10 — Compact Mode settings page added (pin, size, color); MacroOverlay CI fix applied and pushed.
+**Status:** 2026-06-10 — Help topics completed for all features; app boot verified.
 
-**Last session:** [2026-06-10 — Compact Mode settings page; MacroOverlay CI fix](docs/sessions/2026-06-10-compact-mode-settings.md)
+**Last session:** [2026-06-10 — Complete help topic coverage](docs/sessions/2026-06-10-help-topics.md)
 
 **Open items:**
 - Help topics not yet updated for v0.6.0 features (onboarding, search mode toggle, sample data removal, favorites card view). CLAUDE.md standing rule applies.
