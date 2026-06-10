@@ -281,61 +281,47 @@ Goal: smoother first-run experience and flexible CSV import for non-standard fil
 
 ---
 
-## Phase 13 — Pin window, rich text, duplicate detection, Stream Deck export
+## Phase 13 — Pin window, rich text, duplicate detection
 
-Goal: quality-of-life upgrades for power users — always-visible window, rich content, cleaner imports, and hardware integration.
+Goal: quality-of-life upgrades for power users — always-visible window, rich content, and cleaner imports.
 
 ### Window pin
 
-- [ ] Always-on-top toggle: pin icon (or button) in the main window header; calls win.setAlwaysOnTop via IPC; persists preference to settings store
-- [ ] Visual indicator: pinned state shows filled/highlighted pin icon; unpinned shows outline pin icon
-- [ ] Help topic: explain pin behavior and how it interacts with the global hotkey
+- [x] Always-on-top toggle: Settings > Behavior; calls win.setAlwaysOnTop via IPC; persists preference to settings store
+- [x] Help topic: explain behavior and how it interacts with compact mode
 
 ### Rich text editor
 
-- [ ] Install Tiptap: @tiptap/react, @tiptap/pm, @tiptap/starter-kit, @tiptap/extension-link, @tiptap/extension-code-block, @tiptap/extension-underline
-- [ ] Replace <textarea> in add/edit entry forms with Tiptap editor
-- [ ] Toolbar: Bold, Italic, Underline, | , Bullet list, Ordered list, | , Inline code, Code block, | , Hyperlink
-- [ ] Active toolbar state uses --color-accent
-- [ ] Add copyMode?: "plain" | "html" to Entry type (default "plain" for backward compat)
-- [ ] Copy-mode toggle below editor: "Copy as: Plain text | HTML"; persists with entry
-- [ ] Copy logic: plain strips HTML tags; html writes text/html + text/plain fallback in same clipboard write
-- [ ] Existing plain-text entries render safely in Tiptap
-- [ ] Write Help topic for rich text and copy modes
+- [x] Install Tiptap: @tiptap/react, @tiptap/pm, @tiptap/starter-kit, @tiptap/extension-link, @tiptap/extension-code-block, @tiptap/extension-underline
+- [x] Replace textarea in add/edit entry forms with Tiptap editor
+- [x] Toolbar: Bold, Italic, Underline, Bullet list, Ordered list, Inline code, Code block, Hyperlink
+- [x] Active toolbar state uses --color-accent
+- [x] copyMode "plain" | "html" per entry; Copy-mode toggle below editor
+- [x] Copy logic: plain strips HTML tags; html writes text/html + text/plain fallback
+- [x] Write Help topic for rich text and copy modes
 
 ### Duplicate detection on CSV import
 
-- [ ] During preview step, flag rows whose title (trimmed, lowercased) matches an existing entry in the same vertical with a "Duplicate" badge
-- [ ] Per-row resolution choice: Skip (default), Overwrite, Import as new
-- [ ] commitCsvImport accepts and applies per-row resolution decisions
-- [ ] Write Help topic update for import duplicate handling
+- [x] During preview step, flag rows whose title matches an existing entry in the same vertical
+- [x] Per-row resolution choice: Skip, Overwrite, Import as new
+- [x] Write Help topic update for import duplicate handling
 
 ### Duplicate detection on manual add
 
-- [ ] On blur of title input in add entry form, check for case-insensitive title match within selected vertical
-- [ ] Show inline warning below field: "An entry with this title already exists in [vertical name]."
-- [ ] Style with color: var(--color-warning) (amber); non-blocking
+- [x] On blur of title input, check for case-insensitive title match within selected vertical
+- [x] Show inline warning below field
 
-### Stream Deck profile export
+---
 
-- [ ] Install jszip
-- [ ] Add "Export Stream Deck Profile" to Settings export section
-- [ ] export-streamdeck-profile IPC handler: generates valid .streamDeckProfile ZIP (outer manifest + page manifest + button layout); uses crypto.randomUUID() for profile/page UUIDs; caps at 32 buttons; shows save dialog
-- [ ] Expose in preload and global.d.ts: exportStreamDeckProfile(): Promise<{ success: boolean; capped?: boolean }>
-- [ ] Show toast in SettingsScreen if capped: true
-- [ ] Write Help topic: what the export contains, how to import into Stream Deck app, note that button actions need manual wiring
+## Phase 14 — Browser extension, URL import, and file drag-in
 
-### Open source cleanup
+Goal: bring content into ShortPath from the browser and from Markdown and PDF files.
 
-- [ ] Confirm no license/activation code present; remove if found
-- [ ] README overhaul: features list, install, Stream Deck section, contributing, MIT license
-
-### Session wrap
-
-- [ ] Update CURRENT_SESSION.md
-- [ ] Create dated session file in docs/sessions/
-- [ ] Append to docs/SESSION_LOG.md
-- [ ] Commit and push
+- [x] HTTP capture server on port 57433; POST /capture; GET /ping
+- [x] URL import in add-entry form (Readability + section picker)
+- [x] Markdown and PDF drag-in import screens
+- [x] Chrome/Firefox browser extension (MV3, context menu, offline queue, popup)
+- [x] Help topics for all Phase 14 features
 
 ---
 
@@ -391,7 +377,20 @@ Goal: bring content into ShortPath from the browser and from Markdown and PDF fi
 
 ### Session wrap
 
-- [ ] Update CURRENT_SESSION.md
-- [ ] Create dated session file in docs/sessions/
-- [ ] Append to docs/SESSION_LOG.md
-- [ ] Commit and push
+- [x] Update CURRENT_SESSION.md
+- [x] Create dated session file in docs/sessions/
+- [x] Append to docs/SESSION_LOG.md
+- [x] Commit and push
+
+---
+
+## Post-phase features (v0.6.x)
+
+Implemented outside the phase plan based on user request.
+
+- [x] v0.6.0: 4-step first-run onboarding overlay; 50-entry sample data; search mode toggle (Keyword / Full text); keyboard shortcut panel (K button); Notes letter button (N button); favorites card view
+- [x] v0.6.1–0.6.2: subfolder search filtering and collapse/expand fixes; nested subfolder CSV paths; expand-all fix; quick-link button on entries with URLs; "Open links in" preference; vitest + 7 CSV import tests
+- [x] v0.6.3: Compact mode (64x64 logo icon, restore on click/Esc, persisted across restarts); file share sync now creates folders from subfolder CSV column
+- [x] v0.6.6: Stream Deck export removed (feature was non-functional)
+- [x] v0.6.7: CSV import no longer creates duplicate folders when vertical already exists (case-insensitive label match); compact drag uses main-process cursor polling for reliable fast movement; crash recovery — renderer-process-gone and unresponsive handlers reload or recreate the window
+- [x] v0.6.8: Compact mode v2 — position memory (icon reopens where you last dragged it); compact hotkey default Ctrl+Shift+. (remappable from Keyboard panel); summon hotkey while compact restores window and focuses search; compact toggle button in top-left header (ShortPath logo); always-on-top no longer forced in compact, follows Settings; off-screen clamping on restore; close-after-copy enters compact instead of hiding; S button in header for direct access to Settings > Sync; header collapses to ... overflow menu below 420px width; minimum window size 380x300; help window matches theme and accent color; compact icon uses accent color
