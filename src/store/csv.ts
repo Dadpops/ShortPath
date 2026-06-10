@@ -294,10 +294,14 @@ export function importCsvWithMapping(
       continue;
     }
 
-    const vertical = row.vertical!.trim();
+    const verticalLabel = row.vertical!.trim();
     const title = row.title!.trim();
 
-    if (!verticals.find((v) => v.id === vertical)) {
+    const existingVert = verticals.find(
+      (v) => v.id === verticalLabel || v.label.toLowerCase() === verticalLabel.toLowerCase()
+    );
+    const vertical = existingVert ? existingVert.id : verticalLabel;
+    if (!existingVert) {
       verticals = [...verticals, { id: vertical, label: vertical, builtIn: false }];
     }
 
@@ -374,10 +378,14 @@ export function importCsv(
       continue;
     }
 
-    const vertical = row.vertical!.trim();
+    const verticalLabel = row.vertical!.trim();
     const title = row.title!.trim();
 
-    if (!verticals.find((v) => v.id === vertical)) {
+    const existingVert = verticals.find(
+      (v) => v.id === verticalLabel || v.label.toLowerCase() === verticalLabel.toLowerCase()
+    );
+    const vertical = existingVert ? existingVert.id : verticalLabel;
+    if (!existingVert) {
       verticals = [...verticals, { id: vertical, label: vertical, builtIn: false }];
     }
 
@@ -475,12 +483,18 @@ export function parseSyncedCsv(csvString: string, existingVerticals: Vertical[] 
       continue;
     }
 
-    const vertical = row.vertical!.trim();
+    const verticalLabel = row.vertical!.trim();
     const title = row.title!.trim();
     const now = new Date().toISOString();
 
-    // Ensure the vertical exists before attempting subfolder upsert.
-    if (!verticals.find((v) => v.id === vertical)) {
+    // Match by id first, then by label (case-insensitive) so re-importing a CSV that uses
+    // the display label (e.g. "Saved Replies") maps onto the existing vertical ("saved-replies")
+    // instead of creating a duplicate.
+    const existingVert = verticals.find(
+      (v) => v.id === verticalLabel || v.label.toLowerCase() === verticalLabel.toLowerCase()
+    );
+    const vertical = existingVert ? existingVert.id : verticalLabel;
+    if (!existingVert) {
       verticals = [...verticals, { id: vertical, label: vertical, builtIn: false }];
     }
 
