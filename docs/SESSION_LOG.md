@@ -4,6 +4,8 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-10 — v1.0.0 release](sessions/2026-06-10-v1.0.md) — Duplicate Phase 14 removed from roadmap; SetupScreen deleted; entry preview on hover (250ms, portal, below-item); duplicate detection across sync sources; check-for-updates removed; version bumped to 1.0.0.
+
 - [2026-06-10 — run-shortpath project skill](sessions/2026-06-10-run-skill.md) — Project skill written at .claude/skills/run-shortpath/SKILL.md; documents build step, onboarding dismiss, settings nav, help panel second-window capture, and cleanup.
 
 - [2026-06-10 — Complete help topic coverage](sessions/2026-06-10-help-topics.md) — New topics: paste-and-split, export-selected. Updated: settings (6 pages), accent-and-appearance (font family), importing-csv (duplicate detection), recent-copies (24h persistence). App boot verified via Playwright driver.
