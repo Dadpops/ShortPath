@@ -18,6 +18,8 @@ interface Props {
   onAlwaysOnTopChange: (val: boolean) => void;
   linkOpenMode: "browser" | "window";
   onLinkOpenModeChange: (val: "browser" | "window") => void;
+  autoRestoreOnCompactAction: boolean;
+  onAutoRestoreOnCompactActionChange: (val: boolean) => void;
   onReplayOnboarding?: () => void;
 }
 
@@ -35,7 +37,8 @@ const ACCENT_PRESETS = [
 export default function SettingsScreen({
   onClose, onNavigate, verticals, onVerticalRenamed, onVerticalAdded,
   entries, verticalOrder, onVerticalOrderChange, autoHideOnCopy, onAutoHideOnCopyChange,
-  alwaysOnTop, onAlwaysOnTopChange, linkOpenMode, onLinkOpenModeChange, onReplayOnboarding,
+  alwaysOnTop, onAlwaysOnTopChange, linkOpenMode, onLinkOpenModeChange,
+  autoRestoreOnCompactAction, onAutoRestoreOnCompactActionChange, onReplayOnboarding,
 }: Props) {
   const [positionReset, setPositionReset] = useState(false);
   const [fontSize, setFontSize] = useState<number>(13);
@@ -562,6 +565,21 @@ export default function SettingsScreen({
                       onClick={() => onLinkOpenModeChange(val)}
                     >
                       {val === "browser" ? "New tab" : "New window"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-label">Auto-restore window after action in compact mode</div>
+                <div className="font-size-control">
+                  {([true, false] as const).map((val) => (
+                    <button
+                      key={String(val)}
+                      className={`font-size-btn${autoRestoreOnCompactAction === val ? " active" : ""}`}
+                      onClick={() => onAutoRestoreOnCompactActionChange(val)}
+                    >
+                      {val ? "On" : "Off"}
                     </button>
                   ))}
                 </div>

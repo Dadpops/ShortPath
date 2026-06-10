@@ -121,6 +121,8 @@ declare global {
         customShortcuts: Record<string, string | null>;
         hasOnboarded: boolean;
         linkOpenMode: "browser" | "window";
+        compactMode: boolean;
+        autoRestoreOnCompactAction: boolean;
       }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
@@ -203,6 +205,8 @@ declare global {
       setOnboarded: () => Promise<void>;
       installSampleData: () => Promise<void>;
       setLinkOpenMode: (mode: "browser" | "window") => Promise<void>;
+      setCompactMode: (compact: boolean) => Promise<void>;
+      setAutoRestoreOnCompactAction: (value: boolean) => Promise<void>;
     };
   }
 }

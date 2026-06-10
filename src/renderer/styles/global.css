@@ -88,6 +88,42 @@ body {
   animation: shortpath-appear 200ms ease-out both;
 }
 
+/* Compact mode */
+body.is-compact #root {
+  padding: 0;
+}
+
+.app-shell.compact-mode {
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.compact-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-app-region: drag;
+  cursor: grab;
+}
+
+.compact-logo {
+  width: 44px;
+  height: 44px;
+  -webkit-app-region: no-drag;
+  cursor: pointer;
+  opacity: 0.88;
+  transition: opacity 0.12s, transform 0.12s;
+  pointer-events: auto;
+}
+
+.compact-view:hover .compact-logo {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
 /* Header */
 .app-header {
   display: flex;

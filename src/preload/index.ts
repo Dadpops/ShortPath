@@ -154,4 +154,6 @@ contextBridge.exposeInMainWorld("shortpath", {
   setOnboarded: () => ipcRenderer.invoke("set-onboarded"),
   installSampleData: () => ipcRenderer.invoke("install-sample-data"),
   setLinkOpenMode: (mode: "browser" | "window") => ipcRenderer.invoke("set-link-open-mode", mode),
+  setCompactMode: (compact: boolean) => ipcRenderer.invoke("set-compact-mode", compact),
+  setAutoRestoreOnCompactAction: (value: boolean) => ipcRenderer.invoke("set-auto-restore-on-compact-action", value),
 });

@@ -106,6 +106,8 @@ export default function App() {
   const isFirstOnboarding = useRef(false);
   const [subExpandSignal, setSubExpandSignal] = useState<{ expand: boolean; version: number } | null>(null);
   const [linkOpenMode, setLinkOpenMode] = useState<"browser" | "window">("browser");
+  const [isCompact, setIsCompact] = useState(false);
+  const [autoRestoreOnCompactAction, setAutoRestoreOnCompactAction] = useState(true);
   const [searchMode, setSearchMode] = useState<"keyword" | "full">(() => {
     const saved = localStorage.getItem("sp_search_mode");
     return saved === "full" ? "full" : "keyword";
@@ -146,6 +148,8 @@ export default function App() {
       applyFontFamily(s.fontFamily ?? "system");
       setCustomShortcuts(s.customShortcuts ?? {});
       setLinkOpenMode(s.linkOpenMode ?? "browser");
+      setIsCompact(s.compactMode ?? false);
+      setAutoRestoreOnCompactAction(s.autoRestoreOnCompactAction ?? true);
       if (!s.hasOnboarded) {
         setShowOnboarding(true);
         isFirstOnboarding.current = true;
@@ -262,6 +266,21 @@ export default function App() {
     if (activeSource === "sample") return "Sample Data";
     const src = syncSources.find(s => s.id === activeSource);
     return src ? getSourceLabel(src) : "Local";
+  }
+
+  // Toggle body class so CSS can remove #root padding in compact mode.
+  useEffect(() => {
+    document.body.classList.toggle("is-compact", isCompact);
+  }, [isCompact]);
+
+  function handleEnterCompact() {
+    setIsCompact(true);
+    void window.shortpath.setCompactMode(true);
+  }
+
+  function handleRestoreCompact() {
+    setIsCompact(false);
+    void window.shortpath.setCompactMode(false);
   }
 
   function handleOnboardingComplete() {
@@ -478,6 +497,10 @@ export default function App() {
   function handleCopy(entryId: string) {
     setRecents((prev) => [entryId, ...prev.filter((id) => id !== entryId)].slice(0, 10));
     void window.shortpath.incrementCopyCount(entryId);
+    if (isCompact && autoRestoreOnCompactAction) {
+      setTimeout(() => handleRestoreCompact(), 300);
+      return;
+    }
     if (autoHideOnCopy) {
       setTimeout(() => void window.shortpath.hideWindow(), 300);
     }
@@ -624,6 +647,10 @@ export default function App() {
   }
 
   function handleEscape() {
+    if (isCompact) {
+      handleRestoreCompact();
+      return;
+    }
     if (overlayEntry) {
       setOverlayEntry(null);
     } else if (focusedEntryId) {
@@ -642,6 +669,10 @@ export default function App() {
       const inInput = active?.tagName === "INPUT" || active?.tagName === "TEXTAREA";
 
       if (e.key === "Escape") {
+        if (isCompact) {
+          handleRestoreCompact();
+          return;
+        }
         if (inInput) return;
         if (overlayEntry) {
           setOverlayEntry(null);
@@ -729,6 +760,21 @@ export default function App() {
   const isSearching = debouncedQuery.trim().length >= 2;
 
   const shellClass = `app-shell${animating ? " animate-in" : ""}`;
+
+  if (isCompact) {
+    return (
+      <div className="app-shell compact-mode">
+        <div className="compact-view" onClick={handleRestoreCompact} title="Click to restore">
+          <svg viewBox="0 0 512 512" className="compact-logo" aria-label="ShortPath — click to restore">
+            <rect x="0" y="0" width="512" height="512" rx="112" fill="#2563eb"/>
+            <path d="M150 176 L246 256 L150 336" fill="none" stroke="#ffffff" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M278 176 L374 256 L278 336" fill="none" stroke="#93c5fd" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round"/>
+            <rect x="206" y="370" width="160" height="40" rx="20" fill="#ffffff"/>
+          </svg>
+        </div>
+      </div>
+    );
+  }
 
   if (status === "loading") {
     return <div className={shellClass}><div className="status-message">Loading...</div></div>;
@@ -827,6 +873,11 @@ export default function App() {
           onLinkOpenModeChange={(val) => {
             setLinkOpenMode(val);
             void window.shortpath.setLinkOpenMode(val);
+          }}
+          autoRestoreOnCompactAction={autoRestoreOnCompactAction}
+          onAutoRestoreOnCompactActionChange={(val) => {
+            setAutoRestoreOnCompactAction(val);
+            void window.shortpath.setAutoRestoreOnCompactAction(val);
           }}
           onReplayOnboarding={() => {
             setShowOnboarding(true);
@@ -979,6 +1030,11 @@ export default function App() {
           <button className="header-icon-btn" onClick={() => setMode("favorites")} title="Favorites">☆</button>
           <button className="header-icon-btn" onClick={() => void window.shortpath.openHelpWindow()} title="Help (Alt+H)">?</button>
           <button className="header-icon-btn" onClick={() => setMode("settings")} title="Settings (Alt+S)">⚙</button>
+          <button className="header-icon-btn" onClick={handleEnterCompact} title="Compact mode">
+            <svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+              <path d="M1 4V1H4M6 1H9V4M9 6V9H6M4 9H1V6"/>
+            </svg>
+          </button>
           <button className="header-icon-btn" onClick={() => void window.shortpath.minimizeWindow()} title="Minimize">−</button>
         </div>
       </header>

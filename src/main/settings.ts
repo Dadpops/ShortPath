@@ -38,6 +38,9 @@ export interface AppSettings {
   customShortcuts?: Record<string, string | null>; // null = disabled, undefined key = use default
   hasOnboarded?: boolean;        // true once the onboarding overlay has been completed or skipped
   linkOpenMode?: "browser" | "window"; // how external URLs are opened; default "browser"
+  compactMode?: boolean;          // true when the window is in 64x64 compact mode
+  preCompactBounds?: WindowBounds; // window size/position saved before entering compact mode
+  autoRestoreOnCompactAction?: boolean; // restore from compact after a copy/action; default true
 }
 
 const DEFAULT_SETTINGS: AppSettings = {

@@ -72,6 +72,10 @@ let pendingColumnMapping: ColumnMapping | null = null;
 // Debounce timer for saving window bounds after move/resize.
 let saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
 
+// True while the window is in compact (64x64) mode. Guards scheduleSaveBounds so the
+// compact size never overwrites the pre-compact window bounds in settings.
+let isCompact = false;
+
 // Sync state — multiple sources supported via syncWatchers map
 const syncWatchers = new Map<string, chokidar.FSWatcher>();
 const syncDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -90,16 +94,32 @@ function createWindow() {
   const saved = settings.windowBounds;
   const pos = saved ?? getBottomLeftPosition();
   const preset = settings.windowSize ? SIZE_PRESETS[settings.windowSize] : null;
-  const width = preset ? preset.width : (saved?.width ?? WINDOW_WIDTH);
-  const height = preset ? preset.height : (saved?.height ?? WINDOW_HEIGHT);
+  const normalWidth  = preset ? preset.width  : (saved?.width  ?? WINDOW_WIDTH);
+  const normalHeight = preset ? preset.height : (saved?.height ?? WINDOW_HEIGHT);
+
+  // Start at compact dimensions if compact mode was saved, to avoid a visible resize flash.
+  const startCompact = isCompact;
+  let startWidth  = normalWidth;
+  let startHeight = normalHeight;
+  let startX = pos.x;
+  let startY = pos.y;
+  if (startCompact) {
+    startWidth  = 64;
+    startHeight = 64;
+    const b = settings.preCompactBounds;
+    if (b) {
+      startX = b.x + Math.floor(b.width  / 2) - 32;
+      startY = b.y + Math.floor(b.height / 2) - 32;
+    }
+  }
 
   win = new BrowserWindow({
-    width,
-    height,
-    x: pos.x,
-    y: pos.y,
+    width:  startWidth,
+    height: startHeight,
+    x: startX,
+    y: startY,
     opacity: settings.opacity !== undefined ? settings.opacity / 100 : 1,
-    resizable: true,
+    resizable: !startCompact,
     frame: false,
     transparent: true,
     backgroundColor: "#00000000",
@@ -135,7 +155,7 @@ function createWindow() {
   function scheduleSaveBounds() {
     if (saveBoundsTimer) clearTimeout(saveBoundsTimer);
     saveBoundsTimer = setTimeout(() => {
-      if (!win) return;
+      if (!win || isCompact) return;
       const [width, height] = win.getSize();
       const [x, y] = win.getPosition();
       settings = { ...settings, windowBounds: { x, y, width, height } };
@@ -777,6 +797,43 @@ function registerIpcHandlers() {
     saveSettings(userDataPath, settings);
   });
 
+  ipcMain.handle("set-compact-mode", (_e, compact: boolean) => {
+    if (!win) return;
+    if (compact) {
+      const [width, height] = win.getSize();
+      const [x, y] = win.getPosition();
+      // Save pre-compact bounds and mark compact BEFORE resizing so scheduleSaveBounds is guarded.
+      settings = { ...settings, preCompactBounds: { x, y, width, height }, compactMode: true };
+      saveSettings(userDataPath, settings);
+      isCompact = true;
+      win.setResizable(false);
+      const cx = x + Math.floor(width  / 2);
+      const cy = y + Math.floor(height / 2);
+      win.setSize(64, 64);
+      win.setPosition(cx - 32, cy - 32);
+    } else {
+      const bounds = settings.preCompactBounds;
+      // Clear compact flag BEFORE resizing so scheduleSaveBounds can save restored bounds.
+      isCompact = false;
+      win.setResizable(true);
+      if (bounds) {
+        win.setSize(bounds.width, bounds.height);
+        win.setPosition(bounds.x, bounds.y);
+      } else {
+        const p = getBottomLeftPosition();
+        win.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+        win.setPosition(p.x, p.y);
+      }
+      settings = { ...settings, compactMode: false };
+      saveSettings(userDataPath, settings);
+    }
+  });
+
+  ipcMain.handle("set-auto-restore-on-compact-action", (_e, value: boolean) => {
+    settings = { ...settings, autoRestoreOnCompactAction: value };
+    saveSettings(userDataPath, settings);
+  });
+
   ipcMain.handle("hide-window", () => win?.hide());
 
   ipcMain.handle("get-settings", () => ({
@@ -796,6 +853,8 @@ function registerIpcHandlers() {
     customShortcuts: settings.customShortcuts ?? {},
     hasOnboarded: settings.hasOnboarded ?? false,
     linkOpenMode: settings.linkOpenMode ?? "browser",
+    compactMode: settings.compactMode ?? false,
+    autoRestoreOnCompactAction: settings.autoRestoreOnCompactAction ?? true,
   }));
 
   ipcMain.handle("set-onboarded", () => {
@@ -1190,6 +1249,7 @@ app.whenReady().then(() => {
   userDataPath = app.getPath("userData");
   store = openStore(userDataPath);
   settings = loadSettings(userDataPath);
+  isCompact = settings.compactMode ?? false;
   notesData = openNotes(userDataPath);
 
   if (store.entries.length === 0) {

@@ -10,6 +10,30 @@ export interface HelpTopic {
 
 export const HELP_TOPICS: HelpTopic[] = [
   {
+    id: "compact-mode",
+    title: "Compact mode",
+    tags: ["compact", "mini", "shrink", "restore", "small window"],
+    content: `Compact mode shrinks the window to a 64x64 icon so it stays out of your way while remaining on screen.
+
+Entering compact mode
+Click the compact button in the toolbar (the inward-arrow icon, to the left of Minimize). The window shrinks to a small square showing the ShortPath logo.
+
+If the window is pinned (always on top) it stays pinned in compact mode.
+
+Restoring
+Click the ShortPath logo in the compact window to restore the window to its previous size and position.
+
+You can also press Esc while compact to restore.
+
+The window returns to exactly where it was before you compacted — size and position are both saved.
+
+Restart behavior
+If you close the app while compact, it reopens compact. Restore it normally when you are ready.
+
+Auto-restore after action
+Settings > Behavior > "Auto-restore window after action in compact mode" (on by default). When on, the window automatically restores to full size after a copy or similar action is triggered while compact.`,
+  },
+  {
     id: "getting-started",
     title: "Getting started",
     tags: ["intro", "overview", "install", "launch", "onboarding", "sample data"],
