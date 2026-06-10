@@ -18,8 +18,7 @@ import fs from "fs";
 import http from "http";
 import https from "https";
 import chokidar from "chokidar";
-import { autoUpdater } from "electron-updater";
-import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, replaceEntriesFromSource, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, clearSampleData, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
+import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, replaceEntriesFromSource, detectSyncDuplicates, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, clearSampleData, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
 import { installSeedData } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseCsvPreviewWithMapping, importCsvWithMapping, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
@@ -31,18 +30,6 @@ const WINDOW_WIDTH = 480;
 const WINDOW_HEIGHT = 640;
 const MARGIN = 12;
 
-autoUpdater.autoDownload = false;
-autoUpdater.autoInstallOnAppQuit = true;
-autoUpdater.on("update-available", (info) => {
-  if (win && !win.isDestroyed()) {
-    const url = `https://github.com/Dadpops/ShortPath/releases/tag/v${info.version}`;
-    win.webContents.send("update-available", { version: info.version, url });
-  }
-});
-autoUpdater.on("update-downloaded", () => {
-  if (win && !win.isDestroyed()) win.webContents.send("update-downloaded");
-});
-autoUpdater.on("error", (err) => console.error("Updater:", err.message));
 
 const SIZE_PRESETS = {
   small:  { width: 380, height: 520 },
@@ -328,10 +315,11 @@ async function handleExportFromTray() {
   }
 }
 
-function loadSyncedFile(sourceId: string, filePath: string): { ok: boolean; errors: string[] } {
+function loadSyncedFile(sourceId: string, filePath: string): { ok: boolean; errors: string[]; duplicates: Array<{ title: string; vertical: string }> } {
   try {
     const csvString = fs.readFileSync(filePath, "utf-8");
     const { entries: syncedEntries, verticals: updatedVerticals, errors } = parseSyncedCsv(csvString, store.verticals);
+    const duplicates = detectSyncDuplicates(store, syncedEntries);
     // Apply subfolder upserts to store verticals before replacing entries.
     store = { ...store, verticals: updatedVerticals };
     store = replaceEntriesFromSource(store, sourceId, syncedEntries);
@@ -339,10 +327,10 @@ function loadSyncedFile(sourceId: string, filePath: string): { ok: boolean; erro
     syncLastRefreshed[sourceId] = new Date().toISOString();
     pushStoreUpdate();
     win?.webContents.send("sync-refreshed");
-    return { ok: true, errors };
+    return { ok: true, errors, duplicates };
   } catch (err) {
     console.error("Sync file load failed:", err);
-    return { ok: false, errors: [String(err)] };
+    return { ok: false, errors: [String(err)], duplicates: [] };
   }
 }
 
@@ -1115,17 +1103,19 @@ function registerIpcHandlers() {
     const sources = settings.syncSources ?? [];
     if (sourceId) {
       const source = sources.find((s) => s.id === sourceId);
-      if (!source) return { success: false, errors: ["Source not found."] };
+      if (!source) return { success: false, errors: ["Source not found."], duplicates: [] };
       const result = loadSyncedFile(source.id, source.path);
-      return { success: result.ok, errors: result.errors };
+      return { success: result.ok, errors: result.errors, duplicates: result.duplicates };
     }
     // Refresh all sources
     const errors: string[] = [];
+    const duplicates: Array<{ title: string; vertical: string }> = [];
     for (const source of sources) {
       const result = loadSyncedFile(source.id, source.path);
       errors.push(...result.errors);
+      duplicates.push(...result.duplicates);
     }
-    return { success: true, errors };
+    return { success: true, errors, duplicates };
   });
 
   ipcMain.handle("clear-synced", () => {
@@ -1235,21 +1225,6 @@ function registerIpcHandlers() {
     saveNotes(userDataPath, notesData);
   });
 
-  ipcMain.handle("check-for-updates", async () => {
-    if (!app.isPackaged) return null;
-    try {
-      const result = await autoUpdater.checkForUpdates();
-      if (!result?.updateInfo) return null;
-      const { version } = result.updateInfo;
-      if (version === app.getVersion()) return null;
-      return { version, url: `https://github.com/Dadpops/ShortPath/releases/tag/v${version}` };
-    } catch {
-      return null;
-    }
-  });
-
-  ipcMain.handle("download-update", () => { autoUpdater.downloadUpdate().catch(console.error); });
-  ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(); });
 
   // Fetch the raw HTML in main and return it to the renderer for parsing.
   // Readability + DOMParser run in the renderer (browser context) — JSDOM is
@@ -1387,10 +1362,7 @@ app.whenReady().then(() => {
     }
   }
 
-  // Auto-check for updates after renderer has had time to load (packaged builds only).
-  if (app.isPackaged) {
-    setTimeout(() => { autoUpdater.checkForUpdates().catch(console.error); }, 5000);
-  }
+
 });
 
 let currentHotkey: string | null = null;

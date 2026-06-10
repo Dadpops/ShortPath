@@ -152,7 +152,7 @@ declare global {
       deleteVertical: (verticalId: string) => Promise<void>;
 
       configureSync: () => Promise<{ success: boolean; source?: { id: string; path: string; label: string }; errors?: string[] }>;
-      refreshSynced: (sourceId?: string) => Promise<{ success: boolean; errors?: string[] }>;
+      refreshSynced: (sourceId?: string) => Promise<{ success: boolean; errors?: string[]; duplicates?: Array<{ title: string; vertical: string }> }>;
       clearSynced: () => Promise<void>;
       disconnectSync: (sourceId: string) => Promise<void>;
       renameSyncSource: (sourceId: string, newLabel: string) => Promise<{ success: boolean }>;
@@ -169,11 +169,6 @@ declare global {
         callback: (data: { entries: Entry[]; verticals: Vertical[]; recents: string[]; favorites: string[]; pinned: string[] }) => void
       ) => () => void;
 
-      checkForUpdates: () => Promise<{ version: string; url: string } | null>;
-      downloadUpdate: () => Promise<void>;
-      installUpdate: () => Promise<void>;
-      onUpdateAvailable: (callback: (update: { version: string; url: string }) => void) => () => void;
-      onUpdateDownloaded: (callback: () => void) => () => void;
 
       loadNotes: () => Promise<Note[]>;
       createNote: (fields: { title?: string; body: string; entryId?: string; entryTitle?: string }) => Promise<Note>;

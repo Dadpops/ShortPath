@@ -90,9 +90,6 @@ export default function SettingsScreen({
   const [tabOrderDragOverIdx, setTabOrderDragOverIdx] = useState<number | null>(null);
 
   // Update check
-  type UpdateCheckState = "idle" | "checking" | "up-to-date" | { version: string; url: string };
-  const [updateCheck, setUpdateCheck] = useState<UpdateCheckState>("idle");
-
   // Page navigation — null shows the main settings menu
   const [activePage, setActivePage] = useState<SectionKey | null>(initialSection ?? null);
 
@@ -103,6 +100,7 @@ export default function SettingsScreen({
   const [syncRefreshingId, setSyncRefreshingId] = useState<string | null>(null);
   const [syncConfiguring, setSyncConfiguring] = useState(false);
   const [renamingSourceId, setRenamingSourceId] = useState<string | null>(null);
+  const [syncDuplicates, setSyncDuplicates] = useState<Array<{ title: string; vertical: string; sourceId: string }>>([]);
   const [renameValue, setRenameValue] = useState("");
 
   const FONT_FAMILIES_MAP: Record<string, string> = {
@@ -273,17 +271,6 @@ export default function SettingsScreen({
     setConfirmRemoveSubFolder(null);
   }
 
-  async function handleCheckForUpdates() {
-    setUpdateCheck("checking");
-    const result = await window.shortpath.checkForUpdates();
-    if (result) {
-      setUpdateCheck(result);
-    } else {
-      setUpdateCheck("up-to-date");
-      setTimeout(() => setUpdateCheck("idle"), 3000);
-    }
-  }
-
   async function handleClearEntries() {
     setClearing(true);
     await window.shortpath.clearLocalEntries();
@@ -361,10 +348,17 @@ export default function SettingsScreen({
 
   async function handleRefreshSync(sourceId: string) {
     setSyncRefreshingId(sourceId);
-    await window.shortpath.refreshSynced(sourceId);
+    const result = await window.shortpath.refreshSynced(sourceId);
     const status = await window.shortpath.getSyncStatus();
     setSyncStatus(status);
     setSyncRefreshingId(null);
+    setSyncDuplicates((prev) => {
+      const kept = prev.filter((d) => d.sourceId !== sourceId);
+      if (result.duplicates && result.duplicates.length > 0) {
+        return [...kept, ...result.duplicates.map((d) => ({ ...d, sourceId }))];
+      }
+      return kept;
+    });
   }
 
   async function handleDisconnectSync(sourceId: string) {
@@ -591,32 +585,6 @@ export default function SettingsScreen({
                 {positionReset ? "Reset ✓" : "Reset to default position"}
               </button>
 
-              <div className="settings-row" style={{ marginTop: 8 }}>
-                <div className="settings-row-label">Updates</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    className="btn-secondary settings-action-btn"
-                    onClick={() => void handleCheckForUpdates()}
-                    disabled={updateCheck === "checking"}
-                  >
-                    {updateCheck === "checking" ? "Checking…" : "Check for updates"}
-                  </button>
-                  {updateCheck === "up-to-date" && (
-                    <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Up to date</span>
-                  )}
-                  {typeof updateCheck === "object" && (
-                    <button
-                      className="update-banner-link"
-                      onClick={() => void window.shortpath.openExternal(updateCheck.url)}
-                    >
-                      v{updateCheck.version} available — Download
-                    </button>
-                  )}
-                </div>
-              </div>
-              <p className="settings-row-note" style={{ marginTop: 2 }}>
-                Checks GitHub for a newer release. If a newer version is found, a download link appears. After downloading, restart the app to install.
-              </p>
 
               <p className="settings-row-note" style={{ marginTop: 8 }}>
                 To customize in-app keyboard shortcuts, open the Keyboard shortcuts panel (Alt+K).
@@ -1034,6 +1002,16 @@ export default function SettingsScreen({
                               Disconnect
                             </button>
                           </div>
+                          {syncDuplicates.filter((d) => d.sourceId === src.id).length > 0 && (
+                            <div className="sync-duplicate-warning">
+                              <strong>{syncDuplicates.filter((d) => d.sourceId === src.id).length} duplicate{syncDuplicates.filter((d) => d.sourceId === src.id).length !== 1 ? "s" : ""} found</strong> — these synced entries share a title and category with one of your local entries:
+                              <ul className="sync-duplicate-list">
+                                {syncDuplicates.filter((d) => d.sourceId === src.id).map((d, i) => (
+                                  <li key={i}>{d.title} <span className="sync-duplicate-vertical">({d.vertical})</span></li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

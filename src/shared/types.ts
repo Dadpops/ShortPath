@@ -129,8 +129,6 @@ export const IPC = {
   SET_DENSITY: "set-density",
   SET_VERTICAL_ORDER: "set-vertical-order",
   SET_AUTO_HIDE_ON_COPY: "set-auto-hide-on-copy",
-  CHECK_FOR_UPDATES: "check-for-updates",
-  UPDATE_AVAILABLE: "update-available",
   DELETE_VERTICAL: "delete-vertical",
   STAGE_CSV_FILE: "stage-csv-file",
   PREVIEW_CSV_WITH_MAPPING: "preview-csv-with-mapping",
