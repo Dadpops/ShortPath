@@ -12,26 +12,40 @@ export const HELP_TOPICS: HelpTopic[] = [
   {
     id: "compact-mode",
     title: "Compact mode",
-    tags: ["compact", "mini", "shrink", "restore", "small window"],
+    tags: ["compact", "mini", "shrink", "restore", "small window", "hotkey", "position", "drag"],
     content: `Compact mode shrinks the window to a 64x64 icon so it stays out of your way while remaining on screen.
 
 Entering compact mode
-Click the compact button in the toolbar (the inward-arrow icon, to the left of Minimize). The window shrinks to a small square showing the ShortPath logo.
-
-If the window is pinned (always on top) it stays pinned in compact mode.
+Click the compact button (ShortPath logo icon) in the top-left of the toolbar, or press the compact hotkey (default: Ctrl+Shift+. on Windows, Cmd+Shift+. on Mac) from anywhere on your desktop.
 
 Restoring
-Click the ShortPath logo in the compact window to restore the window to its previous size and position.
+Click the ShortPath logo in the compact window, press Esc while compact, press the compact hotkey again, or press the summon hotkey (Ctrl+Shift+Space). Pressing the summon hotkey also focuses the search bar automatically.
 
-You can also press Esc while compact to restore.
+The window returns to exactly where it was before you entered compact mode, at the same size.
 
-The window returns to exactly where it was before you compacted — size and position are both saved.
+Off-screen recovery
+If the monitor the window was on is disconnected or the resolution changed, the restored position is automatically moved to the nearest visible display. If no previous position is saved, the window opens in the center of the primary display.
 
-Restart behavior
-If you close the app while compact, it reopens compact. Restore it normally when you are ready.
+Position memory
+The compact icon remembers the last place you dragged it. On the next compact entry, the icon appears in the same place. On first use it defaults to the top-right corner of your display.
+
+Dragging the icon
+Grab and drag the compact icon anywhere on your desktop. Its position is saved when you release.
+
+Hide-after-copy behavior
+If "Hide window after copying" is enabled in Settings > Behavior, copying an entry enters compact mode instead of hiding the window entirely.
+
+Always-on-top
+Settings > Behavior > "Keep window on top" controls whether the compact icon stays above other windows.
 
 Auto-restore after action
-Settings > Behavior > "Auto-restore window after action in compact mode" (on by default). When on, the window automatically restores to full size after a copy or similar action is triggered while compact.`,
+Settings > Behavior > "Auto-restore window after action in compact mode" (on by default). When on, the window restores to full size after a copy triggered while compact.
+
+Compact hotkey
+The compact toggle hotkey can be changed in the Keyboard shortcuts panel (K button in the header). Default is Ctrl+Shift+. — this can be changed to any combination that is not already taken.
+
+Restart behavior
+If you close the app while compact, it reopens compact in the last saved compact position. Restore normally when ready.`,
   },
   {
     id: "getting-started",
