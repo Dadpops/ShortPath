@@ -22,7 +22,7 @@ import chokidar from "chokidar";
 import { autoUpdater } from "electron-updater";
 import { openStore, saveStore, addEntry, updateEntry, deleteEntry, recordAccess, reorderEntry, replaceSyncedEntries, replaceEntriesFromSource, toggleFavorite, togglePin, incrementCopyCount, renameVertical, addVertical, clearLocalEntries, clearSampleData, addSubFolder, renameSubFolder, removeSubFolder, deleteVertical } from "../store/index";
 import { openNotes, saveNotes, createNote as storeCreateNote, updateNote as storeUpdateNote, deleteNote as storeDeleteNote } from "../store/notes";
-import { applySeed, installSeedData } from "../store/seed";
+import { installSeedData } from "../store/seed";
 import { importCsv, exportCsv, parseCsvPreview, parseCsvPreviewWithMapping, importCsvWithMapping, parseSyncedCsv, CSV_TEMPLATE_CONTENT } from "../store/csv";
 import { loadSettings, saveSettings, type AppSettings, type SyncSourceConfig } from "./settings";
 import type { StoreData } from "../store/schema";
@@ -1174,7 +1174,17 @@ app.whenReady().then(() => {
   notesData = openNotes(userDataPath);
 
   if (store.entries.length === 0) {
-    store = applySeed(store);
+    store = installSeedData(store);
+    saveStore(userDataPath, store);
+  }
+
+  // Migrate: sample entries present but sample subfolders missing (added in v0.6.0)
+  const hasSampleEntries = store.entries.some((e) => e.source === "sample");
+  const hasSampleSubFolders = store.verticals.some((v) =>
+    (v.subFolders ?? []).some((sf) => sf.id.startsWith("sp-sample-"))
+  );
+  if (hasSampleEntries && !hasSampleSubFolders) {
+    store = installSeedData(store);
     saveStore(userDataPath, store);
   }
 

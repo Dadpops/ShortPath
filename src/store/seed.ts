@@ -566,10 +566,6 @@ function mergeSampleSubFolders(existing: SubFolder[], toAdd: SubFolder[]): SubFo
   return [...toAdd, ...cleaned];
 }
 
-export function applySeed(store: StoreData): StoreData {
-  return { ...store, entries: SEED_ENTRIES };
-}
-
 export function installSeedData(store: StoreData): StoreData {
   const others = store.entries.filter((e) => e.source !== "sample");
   const updatedVerticals = store.verticals.map((v) => {
