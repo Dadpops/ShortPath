@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Entry, VerticalGroup } from "@shared/types";
+import { copyEntry } from "@renderer/utils/htmlToPlain";
 
 interface Props {
   group: VerticalGroup;
@@ -13,12 +14,6 @@ interface Props {
   pinned?: Set<string>;
   onTogglePin?: (id: string) => void;
   onOpen: (entry: Entry) => void;
-}
-
-function copyEntry(entry: Entry): Promise<void> {
-  const raw = entry.body ?? entry.link ?? entry.title;
-  const plain = raw.replace(/<[^>]+>/g, "").trim();
-  return navigator.clipboard.writeText(plain);
 }
 
 function ToolItem({
