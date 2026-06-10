@@ -1,6 +1,6 @@
 # Current Session State
 
-**Status:** 2026-06-10 — Nested subfolder import/export (unlimited depth, `>` separator); deterministic expand/collapse all including subfolders via signal prop; ↗ quick-link button on any entry with a URL; "Open links in: New tab / New window" preference in Settings > Behavior; 7-case vitest suite for CSV import. TypeScript strict + ESLint clean.
+**Status:** 2026-06-10 — Zero-result subfolders hidden during search; collapse/expand now correctly affects subfolders in non-all mode (subExpandSignal was missing from that render path); collapse → open vertical → subfolders stay closed.
 
 **Last session:** [2026-06-10 — Nested subfolders, expand-all fix, quick-link button, link-open preference](docs/sessions/2026-06-10-csv-expand-quicklink.md)
 
