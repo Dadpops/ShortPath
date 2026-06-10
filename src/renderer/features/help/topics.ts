@@ -138,7 +138,10 @@ Sync source numbers
 If one or more sync files are connected, entries from those files show a small muted number to the right of the title (e.g. #1, #2). The number matches the source's position in Settings > Sync. This replaces the old "synced" badge and works when multiple CSV sources are connected at once.
 
 Hover actions
-Hovering any result row reveals action buttons on the right: pin (circle), star (☆), edit (✎), and copy (⎘). Entries that are already pinned or starred show their action buttons faintly even without hovering so you can see their state at a glance.`,
+Hovering any result row reveals action buttons on the right: pin (circle), star (☆), edit (✎), and copy (⎘). Entries that are already pinned or starred show their action buttons faintly even without hovering so you can see their state at a glance.
+
+Entry preview
+Hovering a result row for about a quarter second shows a small preview card to the right of the row. The card shows the entry's body text (truncated) or its URL for link-only entries. It disappears when you move the mouse away. Move the mouse quickly to skip past it without triggering it.`,
   },
   {
     id: "copying",
@@ -352,7 +355,10 @@ Your own entries are safe
 Sync only touches entries from that source. Your own entries are never modified, overwritten, or deleted by any sync operation.
 
 Adding more sources
-Click "+ Add sync source" again to connect a second CSV. Both files are watched simultaneously. Each source's entries are tracked independently — refreshing or disconnecting one does not affect the other.`,
+Click "+ Add sync source" again to connect a second CSV. Both files are watched simultaneously. Each source's entries are tracked independently — refreshing or disconnecting one does not affect the other.
+
+Duplicate detection
+After a manual Refresh, ShortPath checks whether any entry in the synced file shares a title and category with one of your local entries. If any are found, a warning appears on the source card listing the affected entries. This does not block the sync — the synced entries load as normal. Use the warning to decide whether to rename your local copy or leave it as-is.`,
   },
   {
     id: "support-tools",
@@ -389,7 +395,7 @@ Appearance
 Text size, font family, theme (dark/light), accent color, opacity, window size, and density.
 
 Behavior
-Hide window after copying, keep window on top, open-link mode, window position reset, and update check. Also contains a "Replay onboarding" button if you want to walk through the first-run onboarding overlay again.
+Hide window after copying, keep window on top, open-link mode, window position reset. Also contains a "Replay onboarding" button if you want to walk through the first-run onboarding overlay again.
 
 Compact Mode
 Pin the compact icon above all windows, icon size, icon color, and restore-after-copy behavior. See the "Compact mode" help topic for details.
