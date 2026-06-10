@@ -94,8 +94,6 @@ export default function App() {
   const [activeVerticalFilter, setActiveVerticalFilter] = useState<string | null>(null);
   const [verticalOrder, setVerticalOrder] = useState<string[]>([]);
   const [pinnedExpanded, setPinnedExpanded] = useState(true);
-  const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null);
-  const [updateDownloaded, setUpdateDownloaded] = useState(false);
   const [capturePayload, setCapturePayload] = useState<CapturePayload | null>(null);
   const [syncSources, setSyncSources] = useState<Array<{ id: string; path: string; label: string }>>([]);
   const [easterEgg, setEasterEgg] = useState(false);
@@ -210,12 +208,6 @@ export default function App() {
     const unsubSettings = window.shortpath.onOpenSettings(() => {
       setMode("settings");
     });
-    const unsubUpdate = window.shortpath.onUpdateAvailable((info) => {
-      setUpdateInfo(info);
-    });
-    const unsubDownloaded = window.shortpath.onUpdateDownloaded(() => {
-      setUpdateDownloaded(true);
-    });
     const unsubCapture = window.shortpath.onCaptureEntry((payload) => {
       setCapturePayload(payload);
       setEditingEntry(null);
@@ -233,8 +225,6 @@ export default function App() {
       unsubFocus();
       unsubHotkey();
       unsubSettings();
-      unsubUpdate();
-      unsubDownloaded();
       unsubCapture();
       unsubSync();
       unsubCompact();
@@ -1162,17 +1152,6 @@ export default function App() {
         </div>
       )}
 
-      {updateInfo && (
-        <div className="update-banner">
-          <span className="update-banner-text">Version {updateInfo.version} is available.</span>
-          {updateDownloaded ? (
-            <button className="update-banner-link" onClick={() => void window.shortpath.installUpdate()}>Restart &amp; Install</button>
-          ) : (
-            <button className="update-banner-link" onClick={() => void window.shortpath.downloadUpdate()}>Download</button>
-          )}
-          <button className="update-banner-dismiss" onClick={() => setUpdateInfo(null)} aria-label="Dismiss">✕</button>
-        </div>
-      )}
 
       <div className="search-section">
         <div className="search-container">
