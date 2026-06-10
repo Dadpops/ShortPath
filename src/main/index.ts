@@ -93,6 +93,30 @@ function getBottomLeftPosition() {
   };
 }
 
+// Clamps a window rectangle to the display it overlaps most. Falls back to the center
+// of the primary display if the rectangle is entirely off-screen (e.g. monitor removed).
+function clampToDisplays(x: number, y: number, w: number, h: number): { x: number; y: number } {
+  const displays = screen.getAllDisplays();
+  let bestDisplay = screen.getPrimaryDisplay();
+  let bestOverlap = 0;
+  for (const d of displays) {
+    const wa = d.workArea;
+    const ox = Math.max(0, Math.min(x + w, wa.x + wa.width)  - Math.max(x, wa.x));
+    const oy = Math.max(0, Math.min(y + h, wa.y + wa.height) - Math.max(y, wa.y));
+    const overlap = ox * oy;
+    if (overlap > bestOverlap) { bestOverlap = overlap; bestDisplay = d; }
+  }
+  if (bestOverlap === 0) {
+    const { x: px, y: py, width: pw, height: ph } = screen.getPrimaryDisplay().workArea;
+    return { x: px + Math.floor((pw - w) / 2), y: py + Math.floor((ph - h) / 2) };
+  }
+  const wa = bestDisplay.workArea;
+  return {
+    x: Math.max(wa.x, Math.min(x, wa.x + wa.width  - w)),
+    y: Math.max(wa.y, Math.min(y, wa.y + wa.height - h)),
+  };
+}
+
 function createWindow() {
   const saved = settings.windowBounds;
   const pos = saved ?? getBottomLeftPosition();
@@ -109,10 +133,13 @@ function createWindow() {
   if (startCompact) {
     startWidth  = 64;
     startHeight = 64;
-    const b = settings.preCompactBounds;
-    if (b) {
-      startX = b.x + Math.floor(b.width  / 2) - 32;
-      startY = b.y + Math.floor(b.height / 2) - 32;
+    if (settings.compactPosition) {
+      startX = settings.compactPosition.x;
+      startY = settings.compactPosition.y;
+    } else {
+      const wa = screen.getPrimaryDisplay().workArea;
+      startX = wa.x + wa.width  - 64 - 16;
+      startY = wa.y + 16;
     }
   }
 
@@ -127,7 +154,7 @@ function createWindow() {
     transparent: true,
     backgroundColor: "#00000000",
     skipTaskbar: true,
-    alwaysOnTop: startCompact ? true : (settings.alwaysOnTop ?? false),
+    alwaysOnTop: settings.alwaysOnTop ?? false,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "../preload/index.js"),
@@ -235,6 +262,15 @@ function createTray() {
 function toggleWindow() {
   if (!win) {
     createWindow();
+    return;
+  }
+  if (isCompact) {
+    restoreFromCompact();
+    win.show();
+    win.focus();
+    win.webContents.send("compact-mode-changed", false);
+    win.webContents.send("focus-search");
+    if (tray && trayIconActive) tray.setImage(trayIconActive);
     return;
   }
   if (win.isVisible()) {
@@ -507,6 +543,65 @@ function splitPdfText(text: string): ImportSection[] {
   return sections.length > 0 ? sections : [{ title: "Content", body: text.trim(), selected: true }];
 }
 
+function enterCompact() {
+  if (!win || isCompact) return;
+  const [width, height] = win.getSize();
+  const [x, y] = win.getPosition();
+  settings = { ...settings, preCompactBounds: { x, y, width, height }, compactMode: true };
+  saveSettings(userDataPath, settings);
+  isCompact = true;
+  win.setMinimumSize(0, 0);
+  let cx: number, cy: number;
+  if (settings.compactPosition) {
+    cx = settings.compactPosition.x;
+    cy = settings.compactPosition.y;
+  } else {
+    const wa = screen.getPrimaryDisplay().workArea;
+    cx = wa.x + wa.width - 64 - 16;
+    cy = wa.y + 16;
+  }
+  win.setBounds({ x: cx, y: cy, width: 64, height: 64 });
+  win.setResizable(false);
+  win.setAlwaysOnTop(settings.alwaysOnTop ?? false);
+}
+
+function restoreFromCompact() {
+  if (!win) return;
+  const bounds = settings.preCompactBounds;
+  isCompact = false;
+  win.setResizable(true);
+  if (bounds) {
+    const { x, y } = clampToDisplays(bounds.x, bounds.y, bounds.width, bounds.height);
+    win.setBounds({ x, y, width: bounds.width, height: bounds.height });
+  } else {
+    const { x: px, y: py, width: pw, height: ph } = screen.getPrimaryDisplay().workArea;
+    win.setBounds({
+      x: px + Math.floor((pw - WINDOW_WIDTH) / 2),
+      y: py + Math.floor((ph - WINDOW_HEIGHT) / 2),
+      width: WINDOW_WIDTH,
+      height: WINDOW_HEIGHT,
+    });
+  }
+  win.setAlwaysOnTop(settings.alwaysOnTop ?? false);
+  settings = { ...settings, compactMode: false };
+  saveSettings(userDataPath, settings);
+}
+
+function toggleCompact() {
+  if (!win) return;
+  if (isCompact) {
+    restoreFromCompact();
+    win.show();
+    win.focus();
+    win.webContents.send("compact-mode-changed", false);
+    win.webContents.send("focus-search");
+    if (tray && trayIconActive) tray.setImage(trayIconActive);
+  } else if (win.isVisible()) {
+    enterCompact();
+    win.webContents.send("compact-mode-changed", true);
+  }
+}
+
 function registerIpcHandlers() {
   ipcMain.handle("load-entries", () => {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -749,38 +844,7 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle("set-compact-mode", (_e, compact: boolean) => {
-    if (!win) return;
-    if (compact) {
-      const [width, height] = win.getSize();
-      const [x, y] = win.getPosition();
-      // Save pre-compact bounds and mark compact BEFORE resizing so scheduleSaveBounds is guarded.
-      settings = { ...settings, preCompactBounds: { x, y, width, height }, compactMode: true };
-      saveSettings(userDataPath, settings);
-      isCompact = true;
-      // Resize BEFORE locking: setResizable(false) on Windows can prevent subsequent programmatic resizes.
-      win.setMinimumSize(0, 0);
-      const cx = x + Math.floor(width  / 2);
-      const cy = y + Math.floor(height / 2);
-      win.setBounds({ x: cx - 32, y: cy - 32, width: 64, height: 64 });
-      win.setResizable(false);
-      // Auto-pin when compact so the floating icon stays on top.
-      win.setAlwaysOnTop(true);
-    } else {
-      const bounds = settings.preCompactBounds;
-      // Clear compact flag BEFORE resizing so scheduleSaveBounds can save restored bounds.
-      isCompact = false;
-      win.setResizable(true);
-      if (bounds) {
-        win.setBounds({ x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height });
-      } else {
-        const p = getBottomLeftPosition();
-        win.setBounds({ x: p.x, y: p.y, width: WINDOW_WIDTH, height: WINDOW_HEIGHT });
-      }
-      // Restore alwaysOnTop to the user's saved preference.
-      win.setAlwaysOnTop(settings.alwaysOnTop ?? false);
-      settings = { ...settings, compactMode: false };
-      saveSettings(userDataPath, settings);
-    }
+    if (compact) { enterCompact(); } else { restoreFromCompact(); }
   });
 
   ipcMain.handle("set-auto-restore-on-compact-action", (_e, value: boolean) => {
@@ -804,6 +868,11 @@ function registerIpcHandlers() {
   ipcMain.handle("compact-drag-end", () => {
     compactDragOffset = null;
     if (compactDragInterval) { clearInterval(compactDragInterval); compactDragInterval = null; }
+    if (win && isCompact) {
+      const [x, y] = win.getPosition();
+      settings = { ...settings, compactPosition: { x, y } };
+      saveSettings(userDataPath, settings);
+    }
   });
 
   ipcMain.handle("hide-window", () => win?.hide());
@@ -826,6 +895,7 @@ function registerIpcHandlers() {
     linkOpenMode: settings.linkOpenMode ?? "browser",
     compactMode: settings.compactMode ?? false,
     autoRestoreOnCompactAction: settings.autoRestoreOnCompactAction ?? true,
+    compactHotkey: settings.compactHotkey ?? "CommandOrControl+Shift+.",
   }));
 
   ipcMain.handle("set-onboarded", () => {
@@ -976,6 +1046,15 @@ function registerIpcHandlers() {
         tray.setToolTip(`ShortPath — Press ${accelerator} to open`);
         tray.setContextMenu(buildTrayMenu());
       }
+    }
+    return { ok };
+  });
+
+  ipcMain.handle("change-compact-hotkey", (_e, accelerator: string) => {
+    const ok = registerCompactHotkey(accelerator);
+    if (ok) {
+      settings = { ...settings, compactHotkey: accelerator };
+      saveSettings(userDataPath, settings);
     }
     return { ok };
   });
@@ -1250,6 +1329,7 @@ app.whenReady().then(() => {
   createTray();
   createWindow();
   registerHotkey(settings.hotkey);
+  registerCompactHotkey(settings.compactHotkey ?? "CommandOrControl+Shift+.");
   startCaptureServer();
 
   // One-time first-launch notification informing the user of the global hotkey.
@@ -1302,6 +1382,22 @@ function registerHotkey(accelerator: string): boolean {
     currentHotkey = accelerator;
   } else {
     win?.webContents.send("hotkey-failed", accelerator);
+  }
+  return ok;
+}
+
+let currentCompactHotkey: string | null = null;
+
+function registerCompactHotkey(accelerator: string): boolean {
+  if (currentCompactHotkey) {
+    globalShortcut.unregister(currentCompactHotkey);
+    currentCompactHotkey = null;
+  }
+  const ok = globalShortcut.register(accelerator, toggleCompact);
+  if (ok) {
+    currentCompactHotkey = accelerator;
+  } else {
+    win?.webContents.send("compact-hotkey-failed", accelerator);
   }
   return ok;
 }

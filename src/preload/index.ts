@@ -156,4 +156,11 @@ contextBridge.exposeInMainWorld("shortpath", {
   setAutoRestoreOnCompactAction: (value: boolean) => ipcRenderer.invoke("set-auto-restore-on-compact-action", value),
   compactDragStart: () => ipcRenderer.invoke("compact-drag-start"),
   compactDragEnd: () => ipcRenderer.invoke("compact-drag-end"),
+  changeCompactHotkey: (accelerator: string) => ipcRenderer.invoke("change-compact-hotkey", accelerator),
+
+  onCompactModeChanged: (callback: (compact: boolean) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, compact: boolean) => callback(compact);
+    ipcRenderer.on("compact-mode-changed", handler);
+    return () => ipcRenderer.removeListener("compact-mode-changed", handler);
+  },
 });

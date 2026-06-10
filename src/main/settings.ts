@@ -38,8 +38,10 @@ export interface AppSettings {
   hasOnboarded?: boolean;        // true once the onboarding overlay has been completed or skipped
   linkOpenMode?: "browser" | "window"; // how external URLs are opened; default "browser"
   compactMode?: boolean;          // true when the window is in 64x64 compact mode
-  preCompactBounds?: WindowBounds; // window size/position saved before entering compact mode
+  preCompactBounds?: WindowBounds; // window size/position at the moment compact was entered; cleared and re-taken each time
+  compactPosition?: { x: number; y: number }; // last position of the compact window; updated on every drag-end
   autoRestoreOnCompactAction?: boolean; // restore from compact after a copy/action; default true
+  compactHotkey?: string; // global hotkey for toggling compact mode; default "CommandOrControl+Shift+."
 }
 
 const DEFAULT_SETTINGS: AppSettings = {

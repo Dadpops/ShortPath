@@ -120,6 +120,7 @@ declare global {
         linkOpenMode: "browser" | "window";
         compactMode: boolean;
         autoRestoreOnCompactAction: boolean;
+        compactHotkey: string;
       }>;
       changeHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
       resetWindowPosition: () => Promise<void>;
@@ -206,6 +207,9 @@ declare global {
       setAutoRestoreOnCompactAction: (value: boolean) => Promise<void>;
       compactDragStart: () => Promise<void>;
       compactDragEnd: () => Promise<void>;
+      changeCompactHotkey: (accelerator: string) => Promise<{ ok: boolean }>;
+
+      onCompactModeChanged: (callback: (compact: boolean) => void) => () => void;
     };
   }
 }
