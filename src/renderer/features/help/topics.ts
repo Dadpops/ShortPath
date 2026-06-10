@@ -85,7 +85,7 @@ Sync source numbers
 If one or more sync files are connected, entries from those files show a small muted number to the right of the title (e.g. #1, #2). The number matches the source's position in Settings > Sync. This replaces the old "synced" badge and works when multiple CSV sources are connected at once.
 
 Hover actions
-Hovering any result row reveals action buttons on the right: pin (📍), star (☆), edit (✎), and copy (⎘). Entries that are already pinned or starred show their action buttons faintly even without hovering so you can see their state at a glance.`,
+Hovering any result row reveals action buttons on the right: pin (circle), star (☆), edit (✎), and copy (⎘). Entries that are already pinned or starred show their action buttons faintly even without hovering so you can see their state at a glance.`,
   },
   {
     id: "copying",
@@ -296,7 +296,7 @@ Reordering tools
 When browsing (not searching), each tool card shows ↑ and ↓ buttons. Click them to change the order. The new order is saved immediately.
 
 Favoriting and pinning tools
-Hover a tool card to reveal the star (☆) and pin (📍) buttons alongside the edit button. Starring adds the tool to your Favorites list. Pinning adds it to the Pinned section at the top of the main results view. Both work the same as for regular entries.
+Hover a tool row to reveal the star (☆) and pin (circle) buttons alongside the edit button. Starring adds the tool to your Favorites list. Pinning adds it to the Pinned section at the top of the main results view. Both work the same as for regular entries.
 
 Editing and removing
 Click ✎ on any tool card to open the edit form. You can change the title, URL, tags, or delete the tool.`,
@@ -456,18 +456,18 @@ Comfortable (default) shows entries at their standard spacing. Compact reduces p
     content: `Pin up to 8 entries to keep them at the top of the main list when you open ShortPath.
 
 Pinning an entry
-Hover any result row to reveal action buttons on the right side. Click the 📍 pin button to pin the entry — the icon changes to 📌 and the entry's action buttons remain faintly visible even without hovering. You can also pin from the expanded overlay using the 📍 button in the header.
+Hover any result row to reveal action buttons on the right side. Click the circle pin button to pin the entry — the circle fills with your accent color and the entry's action buttons remain faintly visible even without hovering. You can also pin from the expanded overlay using the pin button in the header.
 
-Support Tools can also be pinned. Hover a tool card and click the 📍 button to pin it.
+Support Tools can also be pinned. Hover a tool row and click the pin button to pin it.
 
 Pinned section
 When the search bar is empty, a "Pinned" section appears at the top of the results above everything else. Pinned entries are also visible in this section in the order you pinned them. Click the section header to collapse or expand it.
 
 During search
-When you type a search query, pins are no longer forced to the top — results rank by relevance. The pin icon still shows on pinned rows, but relevance wins.
+When you type a search query, pins are no longer forced to the top — results rank by relevance. The filled pin circle still shows on pinned rows, but relevance wins.
 
 Limit
-You can pin at most 8 entries. If you try to pin a ninth, a message appears: "Unpin an entry to pin this one (max 8)." Click the 📌 icon on any pinned entry to unpin it first.`,
+You can pin at most 8 entries. If you try to pin a ninth, a message appears: "Unpin an entry to pin this one (max 8)." Click the filled pin circle on any pinned entry to unpin it first.`,
   },
   {
     id: "sort-and-usage",
@@ -527,9 +527,9 @@ This setting is off by default. Turn it on if you prefer a one-and-done workflow
     id: "pin-window",
     title: "Pin window (always on top)",
     tags: ["pin", "always on top", "window", "desktop", "float"],
-    content: `The pin button (📍) in the main header keeps the ShortPath window visible above all other windows on your desktop.
+    content: `The circle pin button in the main header keeps the ShortPath window visible above all other windows on your desktop.
 
-When pinned (📌), the window stays in front even when you click away to another app. This is useful when you need to read a saved reply while typing into a support tool in another window.
+When active (circle filled with accent color), the window stays in front even when you click away to another app. This is useful when you need to read a saved reply while typing into a support tool in another window.
 
 Click the button again to unpin. The setting persists between sessions.
 

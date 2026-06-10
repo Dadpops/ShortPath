@@ -1,59 +1,98 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatAccelerator } from "@shared/platform";
+
+const DEFAULT_SHORTCUTS: Record<string, string> = {
+  notes: "Alt+N",
+  keyboard: "Alt+K",
+  help: "Alt+H",
+  settings: "Alt+S",
+  newEntry: "Ctrl+N",
+  cycleTab: "Tab",
+};
+
+const SHORTCUT_DEFS = [
+  { action: "notes",    label: "Notes" },
+  { action: "keyboard", label: "Keyboard shortcuts panel" },
+  { action: "help",     label: "Help" },
+  { action: "settings", label: "Settings" },
+  { action: "newEntry", label: "New entry" },
+  { action: "cycleTab", label: "Cycle vertical tab" },
+] as const;
+
+const FIXED_SHORTCUTS = [
+  { keys: ["↑ / ↓"], description: "Move focus between results" },
+  { keys: ["Enter"], description: "Open focused entry detail" },
+  { keys: ["Esc"], description: "Close detail / clear search / hide window" },
+  { keys: ["Shift + Tab"], description: "Cycle vertical tab backward" },
+  { keys: ["↑ in empty search"], description: "Cycle recent search queries" },
+];
 
 interface Props {
   onClose: () => void;
   hotkey: string;
+  customShortcuts: Record<string, string | null>;
+  onCustomShortcutsChange: (s: Record<string, string | null>) => void;
 }
 
-const SHORTCUT_GROUPS = [
-  {
-    category: "Navigate results",
-    items: [
-      { keys: ["↑ / ↓"], description: "Move focus between results" },
-      { keys: ["Enter"], description: "Open focused entry detail" },
-      { keys: ["Esc"], description: "Close detail → clear search → hide window" },
-    ],
-  },
-  {
-    category: "Filter and sort",
-    items: [
-      { keys: ["Tab"], description: "Cycle vertical filter tab forward" },
-      { keys: ["Shift + Tab"], description: "Cycle vertical filter tab backward" },
-    ],
-  },
-  {
-    category: "Entries",
-    items: [
-      { keys: ["Ctrl + N"], description: "New entry (from main view)" },
-      { keys: ["↑ in empty search"], description: "Cycle recent search queries" },
-    ],
-  },
-  {
-    category: "Panels",
-    items: [
-      { keys: ["Alt + K"], description: "Keyboard shortcuts (this panel)" },
-      { keys: ["Alt + N"], description: "Notes" },
-      { keys: ["Alt + H"], description: "Help" },
-      { keys: ["Alt + S"], description: "Settings" },
-    ],
-  },
-];
-
-export default function KeyboardPanel({ onClose, hotkey }: Props) {
+export default function KeyboardPanel({ onClose, hotkey, customShortcuts, onCustomShortcutsChange }: Props) {
   const backRef = useRef<HTMLButtonElement>(null);
+  const [capturingAction, setCapturingAction] = useState<string | null>(null);
+  const [capturedShortcut, setCapturedShortcut] = useState<string | null>(null);
 
   useEffect(() => {
     backRef.current?.focus();
   }, []);
 
+  // Esc closes panel when not capturing
   useEffect(() => {
+    if (capturingAction !== null) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, capturingAction]);
+
+  // Shortcut capture
+  useEffect(() => {
+    if (capturingAction === null) return;
+    function onKeyDown(e: KeyboardEvent) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === "Escape") { setCapturingAction(null); setCapturedShortcut(null); return; }
+      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
+      const parts: string[] = [];
+      if (e.ctrlKey || e.metaKey) parts.push("Ctrl");
+      if (e.altKey) parts.push("Alt");
+      if (e.shiftKey) parts.push("Shift");
+      const key = e.code.startsWith("Key")
+        ? e.code.slice(3)
+        : e.code.startsWith("Digit")
+        ? e.code.slice(5)
+        : e.key === " " ? "Space"
+        : e.key.length === 1 ? e.key.toUpperCase()
+        : e.key;
+      if (!key) return;
+      parts.push(key);
+      setCapturedShortcut(parts.join("+"));
+    }
+    function onKeyUp(e: KeyboardEvent) {
+      if (e.key === "Escape") return;
+      if (capturedShortcut && capturingAction) {
+        const newMap = { ...customShortcuts, [capturingAction]: capturedShortcut };
+        onCustomShortcutsChange(newMap);
+        void window.shortpath.setCustomShortcuts(newMap);
+        setCapturingAction(null);
+        setCapturedShortcut(null);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    window.addEventListener("keyup", onKeyUp, { capture: true });
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, { capture: true });
+      window.removeEventListener("keyup", onKeyUp, { capture: true });
+    };
+  }, [capturingAction, capturedShortcut, customShortcuts, onCustomShortcutsChange]);
 
   const formattedHotkey = formatAccelerator(hotkey, window.shortpath.platform);
 
@@ -65,27 +104,78 @@ export default function KeyboardPanel({ onClose, hotkey }: Props) {
       </div>
 
       <div className="keyboard-panel-body">
+
+        {/* Global summon hotkey */}
         <div className="keyboard-hotkey-row">
           <span className="keyboard-hotkey-label">Global summon hotkey</span>
           <kbd className="keyboard-key">{formattedHotkey}</kbd>
           <span className="keyboard-hotkey-note">Change in Settings → Behavior</span>
         </div>
 
-        {SHORTCUT_GROUPS.map((group) => (
-          <div key={group.category} className="keyboard-group">
-            <div className="keyboard-group-label">{group.category}</div>
-            {group.items.map((item) => (
-              <div key={item.description} className="keyboard-row">
-                <span className="keyboard-row-desc">{item.description}</span>
-                <div className="keyboard-keys">
-                  {item.keys.map((k) => (
-                    <kbd key={k} className="keyboard-key">{k}</kbd>
-                  ))}
+        {/* Customizable in-app shortcuts */}
+        <div className="keyboard-group">
+          <div className="keyboard-group-label">In-app shortcuts</div>
+          {SHORTCUT_DEFS.map(({ action, label }) => {
+            const current = action in customShortcuts ? customShortcuts[action] : DEFAULT_SHORTCUTS[action];
+            const isDisabled = customShortcuts[action] === null;
+            const isCapturing = capturingAction === action;
+            return (
+              <div key={action} className="keyboard-row keyboard-row-editable">
+                <span className="keyboard-row-desc">{label}</span>
+                <div className="keyboard-row-controls">
+                  {isCapturing ? (
+                    <>
+                      <span className="keyboard-capture-display">{capturedShortcut ?? "Press keys…"}</span>
+                      <button
+                        className="keyboard-shortcut-btn"
+                        onClick={() => { setCapturingAction(null); setCapturedShortcut(null); }}
+                      >Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <kbd className={`keyboard-key${isDisabled ? " keyboard-key-disabled" : ""}`}>
+                        {isDisabled ? "Off" : (current ?? DEFAULT_SHORTCUTS[action])}
+                      </kbd>
+                      <button
+                        className="keyboard-shortcut-btn"
+                        onClick={() => { setCapturingAction(action); setCapturedShortcut(null); }}
+                        disabled={isDisabled}
+                      >Change</button>
+                      <button
+                        className={`keyboard-shortcut-btn${isDisabled ? " active" : ""}`}
+                        onClick={() => {
+                          const newMap = { ...customShortcuts };
+                          if (isDisabled) { delete newMap[action]; } else { newMap[action] = null; }
+                          onCustomShortcutsChange(newMap);
+                          void window.shortpath.setCustomShortcuts(newMap);
+                        }}
+                      >{isDisabled ? "Enable" : "Off"}</button>
+                    </>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        ))}
+            );
+          })}
+          {capturingAction !== null && (
+            <p className="keyboard-capture-hint">Hold a combination, then release. Esc to cancel.</p>
+          )}
+        </div>
+
+        {/* Fixed shortcuts */}
+        <div className="keyboard-group">
+          <div className="keyboard-group-label">Fixed shortcuts</div>
+          {FIXED_SHORTCUTS.map((item) => (
+            <div key={item.description} className="keyboard-row">
+              <span className="keyboard-row-desc">{item.description}</span>
+              <div className="keyboard-keys">
+                {item.keys.map((k) => (
+                  <kbd key={k} className="keyboard-key">{k}</kbd>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
     </div>
   );

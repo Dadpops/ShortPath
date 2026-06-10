@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Entry, Vertical } from "@shared/types";
+import type { Entry, Note, Vertical } from "@shared/types";
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
@@ -33,9 +33,17 @@ interface Props {
 
 export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFavorite, onToggleFavorite, isPinned, onTogglePin, onEdit, onDuplicate, onAddNote }: Props) {
   const [copied, setCopied] = useState(false);
+  const [entryNotes, setEntryNotes] = useState<Note[]>([]);
+  const [notesExpanded, setNotesExpanded] = useState(true);
 
   const verticalLabel = verticals.find((v) => v.id === entry.vertical)?.label ?? entry.vertical;
   const tags = entry.tags ? entry.tags.split("|").map((t) => t.trim()).filter(Boolean) : [];
+
+  useEffect(() => {
+    void window.shortpath.loadNotes().then((all) => {
+      setEntryNotes(all.filter((n) => n.entryId === entry.id));
+    });
+  }, [entry.id]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -85,12 +93,11 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFa
             )}
             {onTogglePin && (
               <button
-                className={`macro-star-toggle${isPinned ? " starred" : ""}`}
+                className={`macro-star-toggle pin-btn${isPinned ? " pinned" : ""}`}
                 onClick={onTogglePin}
                 title={isPinned ? "Unpin" : "Pin to top"}
-                style={{ color: isPinned ? "var(--color-accent)" : undefined }}
               >
-                {isPinned ? "📌" : "📍"}
+                <span className="pin-dot" />
               </button>
             )}
             <span className="macro-badge macro-badge-vertical">{verticalLabel}</span>
@@ -120,7 +127,7 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFa
           )}
         </div>
 
-        {(onEdit || onDuplicate || onAddNote) && (
+        {(onEdit || onDuplicate || onAddNote || entryNotes.length > 0) && (
           <div className="macro-edit-strip">
             {entry.source === "local" && onEdit && (
               <button className="macro-edit-btn" onClick={() => onEdit(entry)}>✎ Edit entry</button>
@@ -131,8 +138,42 @@ export default function MacroOverlay({ entry, verticals, onClose, onCopied, isFa
                 <p className="macro-edit-note">Synced entries come from the shared file and can't be edited directly. Duplicating creates a local copy you can edit freely.</p>
               </>
             )}
-            {onAddNote && (
-              <button className="macro-edit-btn" onClick={onAddNote}>✎ Add note</button>
+
+            {/* Notes section */}
+            {(entryNotes.length > 0 || onAddNote) && (
+              <div className="macro-notes-section">
+                {entryNotes.length > 0 && (
+                  <button
+                    className="macro-notes-toggle"
+                    onClick={() => setNotesExpanded((p) => !p)}
+                  >
+                    <span className={`group-chevron${notesExpanded ? " expanded" : ""}`}>›</span>
+                    Notes ({entryNotes.length})
+                  </button>
+                )}
+                {notesExpanded && entryNotes.length > 0 && (
+                  <ul className="macro-notes-list">
+                    {entryNotes.map((note) => (
+                      <li key={note.id} className="macro-note-item">
+                        {note.title && <div className="macro-note-title">{note.title}</div>}
+                        <div className="macro-note-body">{note.body}</div>
+                        <button
+                          className="macro-note-delete"
+                          title="Delete note"
+                          onClick={() => {
+                            void window.shortpath.deleteNote(note.id).then(() => {
+                              setEntryNotes((prev) => prev.filter((n) => n.id !== note.id));
+                            });
+                          }}
+                        >✕</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {onAddNote && (
+                  <button className="macro-edit-btn" onClick={onAddNote}>+ Add note</button>
+                )}
+              </div>
             )}
           </div>
         )}

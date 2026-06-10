@@ -388,7 +388,10 @@ export default function App() {
   }, [entries, verticals, debouncedQuery, fuse, sortMode, activeVerticalFilter, verticalOrder, activeSource, syncSources]);
 
   const groups = useMemo((): VerticalGroup[] => {
-    return rawGroups.map((g) => ({ ...g, expanded: expandedGroups.has(g.verticalId) }));
+    return rawGroups.map((g) => {
+      const plainId = g.verticalId.includes("::") ? g.verticalId.split("::")[1] : g.verticalId;
+      return { ...g, expanded: expandedGroups.has(g.verticalId) || expandedGroups.has(plainId) };
+    });
   }, [rawGroups, expandedGroups]);
 
   const recentEntries = useMemo(
@@ -795,7 +798,14 @@ export default function App() {
   if (mode === "keyboard") {
     return (
       <div className={shellClass}>
-        <KeyboardPanel onClose={() => setMode("browse")} hotkey={currentHotkey} />
+        <KeyboardPanel
+          onClose={() => setMode("browse")}
+          hotkey={currentHotkey}
+          customShortcuts={customShortcuts}
+          onCustomShortcutsChange={(s) => {
+            setCustomShortcuts(s);
+          }}
+        />
       </div>
     );
   }
@@ -873,9 +883,9 @@ export default function App() {
               setAlwaysOnTop(next);
               void window.shortpath.setAlwaysOnTop(next);
             }}
-            title={alwaysOnTop ? "Unpin window" : "Pin window on top"}
+            title={alwaysOnTop ? "Window stays on top" : "Keep window on top"}
           >
-            {alwaysOnTop ? "📌" : "📍"}
+            <span className="pin-circle" />
           </button>
           <button className="app-path-btn" onClick={handleGoHome} title="Go home">
             shortpath
