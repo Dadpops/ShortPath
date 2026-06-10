@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Entry, VerticalGroup, SubFolder, SearchResult } from "@shared/types";
 import ResultItem from "./ResultItem";
 import FolderIcon from "./FolderIcon";
@@ -15,6 +15,8 @@ interface Props {
   onToggleFavorite?: (id: string) => void;
   pinned?: Set<string>;
   onTogglePin?: (id: string) => void;
+  // Signal from parent to expand or collapse all subfolders. Version increment triggers the effect.
+  subExpandSignal?: { expand: boolean; version: number } | null;
 }
 
 function getAllIds(subFolders: SubFolder[]): string[] {
@@ -28,13 +30,22 @@ function countInSubtree(sf: SubFolder, results: SearchResult[]): number {
 
 export default function VerticalGroupComponent({
   group, subFolders, onToggle, onEdit, onCopy, onOpen,
-  focusedEntryId, favorites, onToggleFavorite, pinned, onTogglePin,
+  focusedEntryId, favorites, onToggleFavorite, pinned, onTogglePin, subExpandSignal,
 }: Props) {
   const hasSubs = (subFolders?.length ?? 0) > 0;
 
   const [expandedSubs, setExpandedSubs] = useState<Set<string>>(
     () => new Set(getAllIds(subFolders ?? []))
   );
+
+  useEffect(() => {
+    if (!subExpandSignal) return;
+    if (subExpandSignal.expand) {
+      setExpandedSubs(new Set(getAllIds(subFolders ?? [])));
+    } else {
+      setExpandedSubs(new Set());
+    }
+  }, [subExpandSignal?.version, subFolders]); // version change triggers expand/collapse all
 
   function toggleSub(id: string) {
     setExpandedSubs((prev) => {

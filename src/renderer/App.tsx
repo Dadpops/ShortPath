@@ -104,6 +104,8 @@ export default function App() {
   const [customShortcuts, setCustomShortcuts] = useState<Record<string, string | null>>({});
   const [showOnboarding, setShowOnboarding] = useState(false);
   const isFirstOnboarding = useRef(false);
+  const [subExpandSignal, setSubExpandSignal] = useState<{ expand: boolean; version: number } | null>(null);
+  const [linkOpenMode, setLinkOpenMode] = useState<"browser" | "window">("browser");
   const [searchMode, setSearchMode] = useState<"keyword" | "full">(() => {
     const saved = localStorage.getItem("sp_search_mode");
     return saved === "full" ? "full" : "keyword";
@@ -143,6 +145,7 @@ export default function App() {
       setCurrentHotkey(s.hotkey);
       applyFontFamily(s.fontFamily ?? "system");
       setCustomShortcuts(s.customShortcuts ?? {});
+      setLinkOpenMode(s.linkOpenMode ?? "browser");
       if (!s.hasOnboarded) {
         setShowOnboarding(true);
         isFirstOnboarding.current = true;
@@ -820,6 +823,11 @@ export default function App() {
             setAlwaysOnTop(val);
             void window.shortpath.setAlwaysOnTop(val);
           }}
+          linkOpenMode={linkOpenMode}
+          onLinkOpenModeChange={(val) => {
+            setLinkOpenMode(val);
+            void window.shortpath.setLinkOpenMode(val);
+          }}
           onReplayOnboarding={() => {
             setShowOnboarding(true);
             setMode("browse");
@@ -1122,11 +1130,13 @@ export default function App() {
               <button className="collapse-all-btn" onClick={() => {
                 setExpandedGroups(new Set());
                 if (activeSource === "all") setCollapsedSources(new Set(allSourceKeys));
+                setSubExpandSignal((prev) => ({ expand: false, version: (prev?.version ?? 0) + 1 }));
               }} title="Collapse all sections">⊟ Collapse</button>
             ) : (
               <button className="collapse-all-btn" onClick={() => {
                 setExpandedGroups(new Set(groups.map((g) => g.verticalId)));
                 if (activeSource === "all") setCollapsedSources(new Set());
+                setSubExpandSignal((prev) => ({ expand: true, version: (prev?.version ?? 0) + 1 }));
               }} title="Expand all sections">⊞ Expand</button>
             )
           );
@@ -1240,6 +1250,7 @@ export default function App() {
                             onToggleFavorite={handleToggleFavorite}
                             pinned={pinned}
                             onTogglePin={(id) => void handleTogglePin(id)}
+                            subExpandSignal={subExpandSignal}
                           />
                         );
                       })}
