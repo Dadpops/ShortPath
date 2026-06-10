@@ -15,6 +15,7 @@
     "build:main": "tsc -p tsconfig.main.json",
     "electron": "electron .",
     "start": "npm run build && npm run electron",
+    "test": "vitest run",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "pack": "electron-builder --dir",
@@ -51,7 +52,8 @@
     "react-dom": "^18.3.1",
     "typescript": "^5.4.5",
     "vite": "^5.3.1",
-    "vite-plugin-electron": "^0.28.7"
+    "vite-plugin-electron": "^0.28.7",
+    "vitest": "^2.1.9"
   },
   "dependencies": {
     "chokidar": "^3.6.0",

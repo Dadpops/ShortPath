@@ -31,37 +31,62 @@ function getAllSubFolderIds(subFolders: SubFolder[]): string[] {
   return subFolders.flatMap((sf) => [sf.id, ...getAllSubFolderIds(sf.subFolders ?? [])]);
 }
 
-function findSubFolderByLabel(subFolders: SubFolder[], label: string): SubFolder | undefined {
-  const lower = label.toLowerCase();
+// Returns the full label path (breadcrumb) for a subfolder, e.g. ["Getting Started", "Setup"].
+function getSubFolderPath(subFolders: SubFolder[], id: string, ancestors: string[] = []): string[] | undefined {
   for (const sf of subFolders) {
-    if (sf.label.toLowerCase() === lower) return sf;
-    const found = findSubFolderByLabel(sf.subFolders ?? [], label);
+    const path = [...ancestors, sf.label];
+    if (sf.id === id) return path;
+    const found = getSubFolderPath(sf.subFolders ?? [], id, path);
     if (found) return found;
   }
+  return undefined;
 }
 
-function findSubFolderById(subFolders: SubFolder[], id: string): SubFolder | undefined {
-  for (const sf of subFolders) {
-    if (sf.id === id) return sf;
-    const found = findSubFolderById(sf.subFolders ?? [], id);
-    if (found) return found;
+// Find or create a nested subfolder path. segments must have at least one element.
+// Matching is case-insensitive; new folders are created with the casing from the CSV.
+function upsertSubFolderPath(
+  vertical: Vertical,
+  segments: string[]
+): { vertical: Vertical; subFolderId: string } {
+  const allIds = getAllSubFolderIds(vertical.subFolders ?? []);
+
+  function upsert(children: SubFolder[], remaining: string[]): [SubFolder[], string] {
+    const [head, ...rest] = remaining;
+    const lower = head.toLowerCase();
+    const existingIdx = children.findIndex((sf) => sf.label.toLowerCase() === lower);
+
+    let child: SubFolder;
+    if (existingIdx !== -1) {
+      child = children[existingIdx];
+    } else {
+      const slug = head.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || "folder";
+      let id = slug;
+      let n = 1;
+      while (allIds.includes(id)) { id = `${slug}-${n}`; n++; }
+      allIds.push(id);
+      child = { id, label: head };
+    }
+
+    if (rest.length === 0) {
+      const updatedChildren = existingIdx !== -1 ? children : [...children, child];
+      return [updatedChildren, child.id];
+    }
+
+    const [updatedSubs, targetId] = upsert(child.subFolders ?? [], rest);
+    const updatedChild = { ...child, subFolders: updatedSubs };
+    const updatedChildren = existingIdx !== -1
+      ? children.map((sf, i) => (i === existingIdx ? updatedChild : sf))
+      : [...children, updatedChild];
+    return [updatedChildren, targetId];
   }
+
+  const [updatedSubFolders, subFolderId] = upsert(vertical.subFolders ?? [], segments);
+  return { vertical: { ...vertical, subFolders: updatedSubFolders }, subFolderId };
 }
 
-// Find an existing subfolder by label, or create a new top-level one.
-function ensureSubFolder(vertical: Vertical, label: string): { vertical: Vertical; subFolder: SubFolder } {
-  const existing = findSubFolderByLabel(vertical.subFolders ?? [], label);
-  if (existing) return { vertical, subFolder: existing };
-  const slug = label.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || "folder";
-  const existingIds = getAllSubFolderIds(vertical.subFolders ?? []);
-  let id = slug;
-  let n = 1;
-  while (existingIds.includes(id)) { id = `${slug}-${n}`; n++; }
-  const subFolder: SubFolder = { id, label };
-  return {
-    vertical: { ...vertical, subFolders: [...(vertical.subFolders ?? []), subFolder] },
-    subFolder,
-  };
+// Parse a raw subfolder column value into path segments (split on ">", trim, drop empty).
+function parseSubFolderSegments(raw: string): string[] {
+  return raw.split(">").map((s) => s.trim()).filter(Boolean);
 }
 
 export interface ImportResult {
@@ -95,8 +120,9 @@ export interface CsvPreviewResult {
 
 // Template content bundled inline so it's accessible in packaged builds.
 // Column order matches EXPORT_COLUMNS. subfolder is optional — leave blank to place entries at the top level.
+// Use "Parent > Child" notation to create nested sub-folders. Fields containing commas must be quoted.
 export const CSV_TEMPLATE_CONTENT = `title,vertical,type,subfolder,body,url,tags
-Refund request — standard response,Saved Replies,reply,Billing,"Hi [Name],
+Refund request — standard response,Saved Replies,reply,"Billing, Payments & Refunds","Hi [Name],
 
 Thanks for reaching out. I've gone ahead and processed your refund. You should see the credit back to your original payment method within 5-10 business days depending on your bank.
 
@@ -104,7 +130,7 @@ Let me know if there's anything else I can help with!
 
 Best,
 [Your name]",, billing|refund|payment
-How to reset your password,Documentation,doc,,"To reset your password:
+How to reset your password,Documentation,doc,Getting Started > Account Help,"To reset your password:
 1. Go to the login page and click ""Forgot password?""
 2. Enter your email address and click Send.
 3. Check your inbox for the reset email (check spam if you don't see it).
@@ -278,11 +304,14 @@ export function importCsvWithMapping(
     let subFolderId: string | undefined;
     const sfLabel = row.subfolder?.trim();
     if (sfLabel) {
-      const vertIdx = verticals.findIndex((v) => v.id === vertical);
-      if (vertIdx !== -1) {
-        const sfResult = ensureSubFolder(verticals[vertIdx], sfLabel);
-        verticals = verticals.map((v, i) => (i === vertIdx ? sfResult.vertical : v));
-        subFolderId = sfResult.subFolder.id;
+      const segments = parseSubFolderSegments(sfLabel);
+      if (segments.length > 0) {
+        const vertIdx = verticals.findIndex((v) => v.id === vertical);
+        if (vertIdx !== -1) {
+          const sfResult = upsertSubFolderPath(verticals[vertIdx], segments);
+          verticals = verticals.map((v, i) => (i === vertIdx ? sfResult.vertical : v));
+          subFolderId = sfResult.subFolderId;
+        }
       }
     }
 
@@ -352,16 +381,19 @@ export function importCsv(
       verticals = [...verticals, { id: vertical, label: vertical, builtIn: false }];
     }
 
-    // Resolve subfolder: find or create by label within the vertical.
+    // Resolve subfolder path. Supports nested paths via ">" separator (e.g. "A > B > C").
     // undefined column = column absent from CSV (preserve on update); "" = clear; label = assign.
     let subFolderId: string | undefined;
     const sfLabel = row.subfolder?.trim();
     if (sfLabel) {
-      const vertIdx = verticals.findIndex((v) => v.id === vertical);
-      if (vertIdx !== -1) {
-        const sfResult = ensureSubFolder(verticals[vertIdx], sfLabel);
-        verticals = verticals.map((v, i) => (i === vertIdx ? sfResult.vertical : v));
-        subFolderId = sfResult.subFolder.id;
+      const segments = parseSubFolderSegments(sfLabel);
+      if (segments.length > 0) {
+        const vertIdx = verticals.findIndex((v) => v.id === vertical);
+        if (vertIdx !== -1) {
+          const sfResult = upsertSubFolderPath(verticals[vertIdx], segments);
+          verticals = verticals.map((v, i) => (i === vertIdx ? sfResult.vertical : v));
+          subFolderId = sfResult.subFolderId;
+        }
       }
     }
 
@@ -467,8 +499,9 @@ export function parseSyncedCsv(csvString: string): SyncParseResult {
 export function exportCsv(entries: Entry[], verticals: Vertical[]): string {
   const rows = entries.map((e) => {
     const vertical = verticals.find((v) => v.id === e.vertical);
+    // Export full nested path joined with " > " so imports can round-trip correctly.
     const subfolder = e.subFolderId
-      ? findSubFolderById(vertical?.subFolders ?? [], e.subFolderId)?.label ?? ""
+      ? (getSubFolderPath(vertical?.subFolders ?? [], e.subFolderId)?.join(" > ") ?? "")
       : "";
     return {
       title: e.title,
