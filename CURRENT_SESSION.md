@@ -1,8 +1,8 @@
 # Current Session State
 
-**Status:** 2026-06-10 — Compact mode shipped (v0.6.3). File share sync folder fix also in v0.6.3.
+**Status:** 2026-06-10 — Compact mode v2 implementation complete, pending build and release as v0.6.8.
 
-**Last session:** [2026-06-10 — Compact mode; file share sync folder fix; v0.6.3 release](docs/sessions/2026-06-10-compact-mode.md)
+**Last session:** [2026-06-10 — Compact mode v2; Stream Deck removal; crash recovery; v0.6.7](docs/sessions/2026-06-10-compact-mode-v2.md)
 
 **Open items:**
 - Help topics not yet updated for v0.6.0 features (onboarding, search mode toggle, sample data removal, favorites card view). CLAUDE.md standing rule applies.
