@@ -1,10 +1,10 @@
 # ShortPath
 
-**The support knowledge hub that lives on your desktop — not in another browser tab.**
+**The support knowledge hub that lives on your desktop, not in another browser tab.**
 
 Press a hotkey. Type a word. Copy your reply. Back to the ticket in under five seconds.
 
-[![GitHub release](https://img.shields.io/github/v/release/Dadpops/ShortPath)](https://github.com/Dadpops/ShortPath/releases)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue)](https://github.com/Dadpops/ShortPath/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-lightgrey)](https://github.com/Dadpops/ShortPath/releases)
 
@@ -18,7 +18,7 @@ Press a hotkey. Type a word. Copy your reply. Back to the ticket in under five s
 
 ## The problem it solves
 
-Support agents waste time switching between tabs, hunting through docs, and retyping the same responses. ShortPath puts your entire knowledge library — saved replies, SOPs, documentation, quick links — in a single searchable popup that appears instantly from any app.
+Support agents waste time switching between tabs, hunting through docs, and retyping the same responses. ShortPath puts your entire knowledge library (saved replies, SOPs, documentation, quick links) in a single searchable popup that appears instantly from any app.
 
 No login. No browser. Nothing sent to a server. Everything runs on your machine.
 
@@ -30,14 +30,14 @@ No login. No browser. Nothing sent to a server. Everything runs on your machine.
 
 <img src="docs/screenshots/main.png" align="right" width="280" alt="Search results grouped by category" />
 
-Type a word and see hits across Saved Replies, Documentation, SOPs, and any custom categories you've created — all at once, grouped by category, instantly filtered as you type.
+Type a word and see hits across Saved Replies, Documentation, SOPs, and any custom categories you've created. All at once, grouped by category, instantly filtered as you type.
 
 The search is fuzzy and title-weighted. Switch between **Keyword** mode (titles and tags only) and **Full text** mode (searches body content too) with a single toggle next to the search bar.
 
 <br clear="right" />
 
 ### Always there, never in the way
-Press `Ctrl+Shift+Space` (or your custom hotkey) from anywhere on your desktop. ShortPath appears at the bottom-left corner. Press it again — it hides. Pin it to float above your support tool when you need both visible at once.
+Press `Ctrl+Shift+Space` (or your custom hotkey) from anywhere on your desktop. ShortPath appears at the bottom-left corner. Press it again and it hides. Pin it to float above your support tool when you need both visible at once.
 
 ### Rich text that pastes right
 Format replies with bold, bullet lists, headers, and code blocks. Choose per-entry whether copying gives you formatted HTML (for Gmail, Zendesk, Intercom) or clean plain text (for tickets with plain-text fields).
@@ -46,7 +46,7 @@ Format replies with bold, bullet lists, headers, and code blocks. Choose per-ent
 
 <img src="docs/screenshots/tools.png" align="right" width="280" alt="Support Tools grid showing quick-launch links in a 2-column card layout" />
 
-Quick-launch links for your admin panel, billing tool, status page, and more — in a 2-column card layout at the bottom of the browse view. Pin, star, reorder, and open them directly without leaving ShortPath.
+Quick-launch links for your admin panel, billing tool, status page, and more, in a 2-column card layout at the bottom of the browse view. Pin, star, reorder, and open them directly without leaving ShortPath.
 
 <br clear="right" />
 
@@ -63,12 +63,12 @@ Export your library as a `.streamDeckProfile` in one click. Pick your deck layou
 
 <img src="docs/screenshots/settings.png" align="right" width="280" alt="Settings panel showing theme, accent color, hotkey, opacity, window size, and density controls" />
 
-6 accent color presets, dark/light theme, opacity slider, compact/comfortable density, window size, and font family — all in one Settings panel. Customize keyboard shortcuts, including the global summon hotkey, in the dedicated Keyboard Shortcuts panel.
+6 accent color presets, dark/light theme, opacity slider, compact/comfortable density, window size, and font family, all in one Settings panel. Customize keyboard shortcuts, including the global summon hotkey, in the dedicated Keyboard Shortcuts panel.
 
 <br clear="right" />
 
 ### Organized the way support teams think
-Verticals (categories) → sub-folders → entries. Nest as deep as you need. Filter by category with tab buttons or a dropdown. Drag to reorder. Add new categories on the fly.
+Verticals (categories) -> sub-folders -> entries. Nest as deep as you need. Filter by category with tab buttons or a dropdown. Drag to reorder. Add new categories on the fly.
 
 ---
 
@@ -88,7 +88,7 @@ Verticals (categories) → sub-folders → entries. Nest as deep as you need. Fi
       <br />
       <strong>Settings and appearance</strong>
       <br />
-      <sub>Theme, accent, hotkey, opacity, window size — all in one panel.</sub>
+      <sub>Theme, accent, hotkey, opacity, window size, all in one panel.</sub>
     </td>
     <td align="center">
       <img src="docs/screenshots/tools.png" width="100%" alt="Support Tools grid" />
@@ -123,7 +123,7 @@ Verticals (categories) → sub-folders → entries. Nest as deep as you need. Fi
 | Notes | Private scratchpad entries, linked to any resource. Auto-saves. |
 | Support Tools grid | Quick-launch links open in the browser. 2-column grid, reorderable, pinneable and favoritable. |
 | Nested sub-folders | Organize entries within any vertical. Unlimited depth. |
-| Clipboard capture | Clipboard text detected on focus — one click to save it as a new entry. |
+| Clipboard capture | Clipboard text detected on focus. One click to save it as a new entry. |
 | Paste and split | Paste a multi-section document; ShortPath splits it into separate entries on headings. |
 | Tab / filter bar | Filter visible results to one category. Tabs for up to 5 categories, dropdown beyond that. |
 | Sort modes | Relevance, most used, recently added, A to Z. |
@@ -143,8 +143,8 @@ Download the latest installer from the **[Releases page](https://github.com/Dadp
 
 | Platform | File | Notes |
 |---|---|---|
-| Windows | `ShortPath-Setup-x.y.z.exe` | SmartScreen warning on first run — click "More info → Run anyway". |
-| macOS | `ShortPath-x.y.z.dmg` | Gatekeeper will block unsigned builds — see [docs/INSTALLING.md](docs/INSTALLING.md). |
+| Windows | `ShortPath-Setup-x.y.z.exe` | SmartScreen warning on first run. Click "More info -> Run anyway". |
+| macOS | `ShortPath-x.y.z.dmg` | Gatekeeper will block unsigned builds. See [docs/INSTALLING.md](docs/INSTALLING.md). |
 
 Your data lives in `%APPDATA%\ShortPath` (Windows) or `~/Library/Application Support/ShortPath` (macOS). Reinstalling or updating does not affect your entries.
 
@@ -160,13 +160,13 @@ Your data lives in `%APPDATA%\ShortPath` (Windows) or `~/Library/Application Sup
 
 The admin owns the shared file. Agents own their local entries. ShortPath never writes back to the shared file.
 
-Multiple sources are supported — connect a team CSV, a personal reference CSV, and a product docs CSV all at once.
+Multiple sources are supported. Connect a team CSV, a personal reference CSV, and a product docs CSV all at once.
 
 ---
 
 ## Browser extension
 
-The extension is in `extensions/` — one folder for Chrome/Edge, one for Firefox.
+The extension is in `extensions/` -- one folder for Chrome/Edge, one for Firefox.
 
 **Chrome/Edge:** Go to `chrome://extensions`, enable Developer Mode, click "Load unpacked," select `extensions/chrome`.
 
@@ -178,7 +178,7 @@ Click the extension icon on any page to send it to ShortPath. A queue badge show
 
 ## Stream Deck
 
-Settings > Data > Export Stream Deck Profile opens a layout picker. Set columns and rows to match your deck (e.g. 5 x 3 for a standard deck, 8 x 4 for an XL). Click Export — double-click the resulting file to import into the Stream Deck app.
+Settings > Data > Export Stream Deck Profile opens a layout picker. Set columns and rows to match your deck (e.g. 5 x 3 for a standard deck, 8 x 4 for an XL). Click Export -- double-click the resulting file to import into the Stream Deck app.
 
 ---
 
@@ -199,4 +199,4 @@ See [CLAUDE.md](CLAUDE.md) for coding conventions, commit style, and session wor
 
 ## License
 
-MIT — free for personal and commercial use.
+MIT -- free for personal and commercial use.
