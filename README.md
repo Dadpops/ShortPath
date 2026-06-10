@@ -4,6 +4,16 @@
 
 Press a hotkey. Type a word. Copy your reply. Back to the ticket in under five seconds.
 
+[![GitHub release](https://img.shields.io/github/v/release/Dadpops/ShortPath)](https://github.com/Dadpops/ShortPath/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-lightgrey)](https://github.com/Dadpops/ShortPath/releases)
+
+<p align="center">
+  <img src="docs/screenshots/main.png" width="600" alt="ShortPath main search UI showing results grouped by Saved Replies, Internal SOPs, Support Tools, and Documentation" />
+</p>
+
+<!-- DEMO VIDEO: drag your .mp4 directly into this edit window on GitHub and it will upload and embed automatically -->
+
 ---
 
 ## The problem it solves
@@ -16,14 +26,29 @@ No login. No browser. Nothing sent to a server. Everything runs on your machine.
 
 ## What makes it different
 
+### One search, every category
+
+<img src="docs/screenshots/main.png" align="right" width="280" alt="Search results grouped by category" />
+
+Type a word and see hits across Saved Replies, Documentation, SOPs, and any custom categories you've created — all at once, grouped by category, instantly filtered as you type.
+
+The search is fuzzy and title-weighted. Switch between **Keyword** mode (titles and tags only) and **Full text** mode (searches body content too) with a single toggle next to the search bar.
+
+<br clear="right" />
+
 ### Always there, never in the way
 Press `Ctrl+Shift+Space` (or your custom hotkey) from anywhere on your desktop. ShortPath appears at the bottom-left corner. Press it again — it hides. Pin it to float above your support tool when you need both visible at once.
 
-### One search, every category
-Type a word and see hits across Saved Replies, Documentation, SOPs, and any custom categories you've created — all at once, grouped by category, instantly filtered as you type.
-
 ### Rich text that pastes right
 Format replies with bold, bullet lists, headers, and code blocks. Choose per-entry whether copying gives you formatted HTML (for Gmail, Zendesk, Intercom) or clean plain text (for tickets with plain-text fields).
+
+### Support Tools grid
+
+<img src="docs/screenshots/tools.png" align="right" width="280" alt="Support Tools grid showing quick-launch links in a 2-column card layout" />
+
+Quick-launch links for your admin panel, billing tool, status page, and more — in a 2-column card layout at the bottom of the browse view. Pin, star, reorder, and open them directly without leaving ShortPath.
+
+<br clear="right" />
 
 ### Team sync without a backend
 Connect one or more CSV files from shared cloud folders (Google Drive, Dropbox, OneDrive, network drives). Each source can have a friendly name. Switch between Local, a specific source, or All at once. In All mode, results are grouped by source and category. Your personal entries are never touched by sync.
@@ -34,8 +59,46 @@ Import entries from a URL (paste any web page URL and edit the extracted text), 
 ### Stream Deck ready
 Export your library as a `.streamDeckProfile` in one click. Pick your deck layout (5x3, 8x4, or custom). Every entry becomes a labeled button.
 
+### Make it yours
+
+<img src="docs/screenshots/settings.png" align="right" width="280" alt="Settings panel showing theme, accent color, hotkey, opacity, window size, and density controls" />
+
+6 accent color presets, dark/light theme, opacity slider, compact/comfortable density, window size, and font family — all in one Settings panel. Customize keyboard shortcuts, including the global summon hotkey, in the dedicated Keyboard Shortcuts panel.
+
+<br clear="right" />
+
 ### Organized the way support teams think
 Verticals (categories) → sub-folders → entries. Nest as deep as you need. Filter by category with tab buttons or a dropdown. Drag to reorder. Add new categories on the fly.
+
+---
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/screenshots/main.png" width="100%" alt="Main search UI" />
+      <br />
+      <strong>Search everything at once</strong>
+      <br />
+      <sub>Results grouped by category with hit counts and copy buttons.</sub>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/settings.png" width="100%" alt="Settings panel" />
+      <br />
+      <strong>Settings and appearance</strong>
+      <br />
+      <sub>Theme, accent, hotkey, opacity, window size — all in one panel.</sub>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/tools.png" width="100%" alt="Support Tools grid" />
+      <br />
+      <strong>Support Tools grid</strong>
+      <br />
+      <sub>Quick-launch links for your daily tools in a 2-column card layout.</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -44,7 +107,7 @@ Verticals (categories) → sub-folders → entries. Nest as deep as you need. Fi
 | Feature | Details |
 |---|---|
 | Global hotkey | Summon / dismiss from anywhere. Default: Ctrl/Cmd+Shift+Space. Fully configurable. |
-| Full-text search | Fuse.js, title-weighted, fuzzy. Searches all active sources and categories at once. |
+| Full-text search | Fuse.js, title-weighted, fuzzy. Keyword or Full text mode. Searches all active sources and categories at once. |
 | Rich text editor | Bold, italic, underline, lists, code, hyperlinks. Copy as plain text or HTML per entry. |
 | Source selector | Switch between Local, a named sync source, or All. In All mode results group by source then category. |
 | Multi-source sync | Connect multiple CSV files (cloud or local). Each source has a friendly name and can be refreshed or disconnected independently. |
@@ -68,6 +131,8 @@ Verticals (categories) → sub-folders → entries. Nest as deep as you need. Fi
 | Accent color + theme | 6 preset accent colors, dark/light theme, opacity slider, compact/comfortable density. |
 | Keyboard navigation | Arrow keys to move, Enter to open, Esc to dismiss. Tab to cycle category filter. |
 | In-app help | 30+ searchable topics covering every feature. No browser required. |
+| First-run onboarding | 4-step walkthrough on first launch. Replayable from Settings. |
+| Sample data | 50 sample entries pre-loaded to explore the app. Removable in one click. |
 | Auto-update | App checks for new releases and installs them with one click. |
 
 ---
