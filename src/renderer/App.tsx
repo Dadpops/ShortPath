@@ -110,6 +110,7 @@ export default function App() {
   });
 
   const debouncedQuery = useDebounce(query, 120);
+  const hasSampleData = entries.some((e) => e.source === "sample");
 
   useEffect(() => {
     window.shortpath
@@ -222,15 +223,19 @@ export default function App() {
     }
   }, [mode]);
 
-  // Validate activeSource whenever syncSources update — fall back to "local" if source was removed
+  // Validate activeSource whenever syncSources or sample data changes — fall back to "local" if removed
   useEffect(() => {
-    if (activeSource !== "local" && activeSource !== "all") {
-      if (!syncSources.find(s => s.id === activeSource)) {
-        setActiveSource("local");
-        localStorage.setItem("sp_active_source", "local");
-      }
+    if (activeSource === "local" || activeSource === "all") return;
+    if (activeSource === "sample" && !hasSampleData) {
+      setActiveSource("local");
+      localStorage.setItem("sp_active_source", "local");
+      return;
     }
-  }, [syncSources, activeSource]);
+    if (activeSource !== "sample" && !syncSources.find(s => s.id === activeSource)) {
+      setActiveSource("local");
+      localStorage.setItem("sp_active_source", "local");
+    }
+  }, [syncSources, activeSource, hasSampleData]);
 
   // Close source picker when clicking outside
   useEffect(() => {
@@ -251,6 +256,7 @@ export default function App() {
   function getActiveSourceDisplayLabel(): string {
     if (activeSource === "local") return "Local";
     if (activeSource === "all") return "All";
+    if (activeSource === "sample") return "Sample Data";
     const src = syncSources.find(s => s.id === activeSource);
     return src ? getSourceLabel(src) : "Local";
   }
@@ -322,15 +328,20 @@ export default function App() {
       items = items.filter((i) => i.entry.vertical === activeVerticalFilter);
     }
 
-    // Filter by source (non-"all" modes); sample entries appear alongside local
+    // Filter by source
     if (activeSource === "local") {
-      items = items.filter(i => i.entry.source === "local" || i.entry.source === "sample");
+      items = items.filter(i => i.entry.source === "local");
+    } else if (activeSource === "sample") {
+      items = items.filter(i => i.entry.source === "sample");
     } else if (!isAllMode) {
       items = items.filter(i => i.entry.syncSource === activeSource);
     }
 
-    const getSrcKey = (entry: Entry) =>
-      entry.source === "local" ? "local" : (entry.syncSource ?? "unknown");
+    const getSrcKey = (entry: Entry) => {
+      if (entry.source === "local") return "local";
+      if (entry.source === "sample") return "sample";
+      return entry.syncSource ?? "unknown";
+    };
     const getGroupKey = (entry: Entry) =>
       isAllMode ? `${getSrcKey(entry)}::${entry.vertical}` : entry.vertical;
 
@@ -880,7 +891,6 @@ export default function App() {
   }
 
   const hasClipboard = !!clipboardText && !clipboardDismissed;
-  const hasSampleData = entries.some((e) => e.source === "sample");
 
   if (easterEgg) {
     return (
@@ -914,7 +924,7 @@ export default function App() {
             shortpath
           </button>
           <div className="source-picker-wrap" ref={sourcePickerRef}>
-            {syncSources.length > 0 ? (
+            {(syncSources.length > 0 || hasSampleData) ? (
               <>
                 <button
                   className="app-source-btn"
@@ -926,6 +936,9 @@ export default function App() {
                 {sourcePickerOpen && (
                   <div className="source-picker-dropdown">
                     <button className={`source-option${activeSource === "local" ? " active" : ""}`} onClick={() => handleSetActiveSource("local")}>Local</button>
+                    {hasSampleData && (
+                      <button className={`source-option${activeSource === "sample" ? " active" : ""}`} onClick={() => handleSetActiveSource("sample")}>Sample Data</button>
+                    )}
                     {syncSources.map(s => (
                       <button key={s.id} className={`source-option${activeSource === s.id ? " active" : ""}`} onClick={() => handleSetActiveSource(s.id)}>
                         {getSourceLabel(s)}
@@ -1185,7 +1198,7 @@ export default function App() {
             }
             return Array.from(bySource.entries()).map(([srcKey, srcGroups]) => {
               const srcObj = syncSources.find(s => s.id === srcKey);
-              const srcLabel = srcKey === "local" ? "Local" : (srcObj ? getSourceLabel(srcObj) : "Sync");
+              const srcLabel = srcKey === "local" ? "Local" : srcKey === "sample" ? "Sample Data" : (srcObj ? getSourceLabel(srcObj) : "Sync");
               const isExpanded = !collapsedSources.has(srcKey);
               const srcHitCount = srcGroups.reduce((s, g) => s + g.hitCount, 0);
               return (

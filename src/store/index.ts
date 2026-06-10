@@ -3,6 +3,7 @@ import path from "path";
 import { randomUUID } from "crypto";
 import type { Entry, Vertical, SubFolder } from "../shared/types";
 import { defaultStore, type StoreData } from "./schema";
+import { uninstallSeedData } from "./seed";
 
 export type { StoreData };
 
@@ -194,15 +195,7 @@ export function clearLocalEntries(store: StoreData): StoreData {
 }
 
 export function clearSampleData(store: StoreData): StoreData {
-  const sampleIds = new Set(store.entries.filter((e) => e.source === "sample").map((e) => e.id));
-  return {
-    ...store,
-    entries: store.entries.filter((e) => e.source !== "sample"),
-    recents: store.recents.filter((id) => !sampleIds.has(id)),
-    favorites: store.favorites.filter((id) => !sampleIds.has(id)),
-    pinned: store.pinned.filter((id) => !sampleIds.has(id)),
-    recentCopies: (store.recentCopies ?? []).filter((r) => !sampleIds.has(r.id)),
-  };
+  return uninstallSeedData(store);
 }
 
 export function hasSampleData(store: StoreData): boolean {

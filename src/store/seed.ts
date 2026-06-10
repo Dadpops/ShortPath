@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import type { Entry } from "../shared/types";
+import type { Entry, SubFolder } from "../shared/types";
 import type { StoreData } from "./schema";
 
 function entry(fields: Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">): Entry {
@@ -7,10 +7,102 @@ function entry(fields: Omit<Entry, "id" | "createdAt" | "updatedAt" | "source">)
   return { ...fields, source: "sample", id: randomUUID(), createdAt: now, updatedAt: now };
 }
 
+// All sample subfolder IDs begin with "sp-sample-" so they can be identified and
+// removed as a group when the user clears sample data.
+export const SEED_SUBFOLDERS: Record<string, SubFolder[]> = {
+  "saved-replies": [
+    {
+      id: "sp-sample-sr-billing",
+      label: "Billing",
+      subFolders: [
+        {
+          id: "sp-sample-sr-billing-refunds",
+          label: "Refunds",
+          subFolders: [
+            { id: "sp-sample-sr-billing-refunds-processed", label: "Processed" },
+          ],
+        },
+        { id: "sp-sample-sr-billing-plans", label: "Plans & Subscriptions" },
+      ],
+    },
+    {
+      id: "sp-sample-sr-account",
+      label: "Account & Access",
+      subFolders: [
+        { id: "sp-sample-sr-account-password", label: "Password Reset" },
+      ],
+    },
+    { id: "sp-sample-sr-shipping", label: "Shipping & Orders" },
+  ],
+  "documentation": [
+    {
+      id: "sp-sample-docs-policies",
+      label: "Policies",
+      subFolders: [
+        {
+          id: "sp-sample-docs-policies-billing",
+          label: "Billing",
+          subFolders: [
+            { id: "sp-sample-docs-policies-billing-faq", label: "FAQs" },
+          ],
+        },
+        { id: "sp-sample-docs-policies-security", label: "Security" },
+      ],
+    },
+    {
+      id: "sp-sample-docs-reference",
+      label: "Reference",
+      subFolders: [
+        { id: "sp-sample-docs-reference-api", label: "API & Integration" },
+      ],
+    },
+  ],
+  "sops": [
+    {
+      id: "sp-sample-sops-escalation",
+      label: "Escalation",
+      subFolders: [
+        {
+          id: "sp-sample-sops-escalation-process",
+          label: "Process",
+          subFolders: [
+            { id: "sp-sample-sops-escalation-process-comms", label: "Communications" },
+          ],
+        },
+        { id: "sp-sample-sops-escalation-after-hours", label: "After Hours" },
+      ],
+    },
+    {
+      id: "sp-sample-sops-account",
+      label: "Account Operations",
+      subFolders: [
+        { id: "sp-sample-sops-account-security", label: "Security & Fraud" },
+      ],
+    },
+  ],
+  "support-tools": [
+    {
+      id: "sp-sample-tools-admin",
+      label: "Admin",
+      subFolders: [
+        {
+          id: "sp-sample-tools-admin-billing",
+          label: "Billing",
+          subFolders: [
+            { id: "sp-sample-tools-admin-billing-disputes", label: "Disputes" },
+          ],
+        },
+      ],
+    },
+    { id: "sp-sample-tools-reference", label: "Reference" },
+  ],
+};
+
 const SEED_ENTRIES: Entry[] = [
   // ── Saved Replies (18) ──────────────────────────────────────────────────────
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-billing",
     title: "Billing inquiry — general",
     body: "Hi [Name],\n\nThanks for reaching out about your billing. I've pulled up your account and can see the charge in question.\n\nCould you let me know which specific charge you'd like me to look into? Once I have that detail I can walk you through exactly what it covers or process an adjustment if needed.\n\nLooking forward to sorting this out for you.",
     link: null,
@@ -19,6 +111,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-shipping",
     title: "Shipping delay apology",
     body: "Hi [Name],\n\nI'm sorry to hear your order hasn't arrived yet — that's frustrating and I completely understand.\n\nI've looked into your shipment and it appears there's been a delay with the carrier. Your updated estimated delivery is [DATE]. If it doesn't arrive by then, please reply here and I'll escalate this to get it resolved or arrange a replacement.\n\nThank you for your patience.",
     link: null,
@@ -27,6 +120,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-account-password",
     title: "Password reset instructions",
     body: "Hi [Name],\n\nNo problem — here's how to reset your password:\n\n1. Go to the login page and click \"Forgot password?\"\n2. Enter the email address on your account.\n3. Check your inbox for a reset link (check spam if you don't see it within a few minutes).\n4. Click the link and choose a new password.\n\nIf you run into any issues or the email doesn't arrive, let me know and I'll sort it out directly.",
     link: null,
@@ -35,6 +129,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-billing-refunds-processed",
     title: "Refund confirmation",
     body: "Hi [Name],\n\nYour refund of [AMOUNT] has been approved and processed. Depending on your bank, it typically takes 3–5 business days to appear on your statement.\n\nIf you don't see it after 5 business days, please get back to us with your bank's reference number and we'll look into it right away.\n\nSorry again for the inconvenience — thanks for your patience.",
     link: null,
@@ -43,6 +138,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-account",
     title: "Account cancellation confirmation",
     body: "Hi [Name],\n\nI've cancelled your account as requested. You won't be charged again and your access will remain active until [END DATE].\n\nIf you change your mind or need anything in the meantime, don't hesitate to reach out. We're sorry to see you go.",
     link: null,
@@ -75,6 +171,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-account-password",
     title: "Password reset — account not found",
     body: "Hi [Name],\n\nI've searched for your account and I'm not finding a match for the email address you provided.\n\nCould you check:\n- Is the email address spelled correctly?\n- Did you sign up under a different email (a work alias, for example)?\n\nIf you're still stuck, reply here and I'll search by name or order number instead.",
     link: null,
@@ -83,6 +180,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-shipping",
     title: "Order not received — follow-up",
     body: "Hi [Name],\n\nI'm following up on your missing order. I've checked the tracking and the carrier shows [STATUS].\n\nIf your package hasn't arrived by [DATE], please reply and I'll open a formal investigation with the carrier or arrange a replacement straight away.",
     link: null,
@@ -91,6 +189,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-billing-refunds",
     title: "Refund request received",
     body: "Hi [Name],\n\nI've received your refund request and I'm looking into it now.\n\nI'll come back to you within [TIMEFRAME] with either a confirmation or any questions I need to process it. In the meantime, feel free to reply if anything changes.",
     link: null,
@@ -99,6 +198,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-account",
     title: "Account suspension warning",
     body: "Hi [Name],\n\nWe've identified activity on your account that may violate our terms of service. If we don't hear from you within 24 hours, we may need to suspend access while we review the situation.\n\nIf you believe this message is in error or you have questions, please reply immediately and we'll hold any action while we investigate together.",
     link: null,
@@ -107,6 +207,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-billing-plans",
     title: "Plan upgrade confirmation",
     body: "Hi [Name],\n\nYour account has been upgraded to [PLAN NAME]. The change is effective immediately and you now have access to [KEY FEATURES].\n\nYour next billing date is [DATE] and you'll be charged [AMOUNT]. Let me know if you have any questions about your new plan.",
     link: null,
@@ -131,6 +232,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-billing",
     title: "Chargeback — dispute notice",
     body: "Hi [Name],\n\nWe've received a chargeback dispute from your bank for a transaction of [AMOUNT] on [DATE].\n\nBefore this proceeds, I'd like to understand what happened and see if we can resolve this directly. Chargebacks can affect your account standing, so reaching out now is the fastest way to sort it out.\n\nPlease reply with any details you can share and I'll look into it straight away.",
     link: null,
@@ -139,6 +241,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "saved-replies",
+    subFolderId: "sp-sample-sr-billing-plans",
     title: "Downgrade confirmation",
     body: "Hi [Name],\n\nI've downgraded your account to [PLAN NAME] effective at the end of your current billing period on [DATE]. You'll continue to have access to your current features until then.\n\nAfter that date, [FEATURES REMOVED] will no longer be available. Let me know if you have any questions.",
     link: null,
@@ -157,6 +260,7 @@ const SEED_ENTRIES: Entry[] = [
   // ── Documentation (12) ──────────────────────────────────────────────────────
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-policies-billing",
     title: "Refund policy",
     body: "Refunds are available within 30 days of purchase for unused accounts. Partial refunds are calculated on a pro-rata basis for annual plans. Refunds are not available for monthly plans after the billing date. To initiate a refund, the customer must contact support with their order number.",
     link: "https://example.com/refund-policy",
@@ -165,6 +269,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-reference",
     title: "Supported browsers and devices",
     body: "Supported browsers: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+. Mobile: iOS 14+ (Safari), Android 10+ (Chrome). Internet Explorer is not supported. For the best experience, keep your browser up to date.",
     link: null,
@@ -173,6 +278,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-reference-api",
     title: "API rate limits",
     body: null,
     link: "https://example.com/docs/api/rate-limits",
@@ -189,6 +295,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-policies-security",
     title: "Password requirements",
     body: "Passwords must be at least 10 characters and include at least one uppercase letter, one number, and one special character. Passwords cannot be reused from the last 5 rotations. Password expiry is set to 90 days for enterprise accounts.",
     link: null,
@@ -197,6 +304,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-policies-security",
     title: "Data retention and deletion policy",
     body: "Customer data is retained for the duration of the subscription plus 30 days after cancellation. Data deletion requests are processed within 14 business days. Backups are purged within 60 days of a deletion request. Users can export their data at any time from account settings.",
     link: null,
@@ -205,6 +313,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-policies-security",
     title: "Two-factor authentication setup",
     body: null,
     link: "https://example.com/docs/2fa",
@@ -213,6 +322,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-reference",
     title: "CSV import format",
     body: "The CSV import format requires the following columns: title (required), vertical (required), body, link, tags, type. Tags should be pipe-separated (e.g. billing|refund). The 'type' column accepts: reply, doc, sop, link, tool. Rows with missing required fields are skipped during import.",
     link: null,
@@ -221,6 +331,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-policies",
     title: "Account limits and quotas",
     body: "Free plan: up to 3 team members, 500 entries. Pro plan: up to 20 team members, unlimited entries. Enterprise: unlimited members and entries, plus SSO and audit logs. Storage limit: 10 MB per account for attachments.",
     link: null,
@@ -229,6 +340,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-policies-billing-faq",
     title: "Billing and cancellation FAQ",
     body: "Q: When am I billed? A: On the same date each month (or year for annual plans). Q: Can I get a refund? A: Yes, within 30 days for annual plans. Q: What happens when I cancel? A: Access continues until the end of the billing period. Q: Are there overage charges? A: No — we notify you before any limit is reached.",
     link: null,
@@ -237,6 +349,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-policies",
     title: "Escalation contacts and matrix",
     body: "Tier 1 (general): standard support queue. Tier 2 (technical): internal escalation channel. Tier 3 (critical / data breach): security@example.com, on-call engineer page. VIP escalation: account manager + Tier 2 simultaneously. Finance escalation: refunds >$500, finance@example.com.",
     link: null,
@@ -245,6 +358,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "documentation",
+    subFolderId: "sp-sample-docs-policies",
     title: "Service level agreement (SLA)",
     body: "Response time targets: Critical (P1): 1 hour. High (P2): 4 hours. Normal (P3): 1 business day. Low (P4): 3 business days. VIP accounts: P1–P2 response times apply to all tickets. SLA clock starts from ticket submission, not assignment.",
     link: null,
@@ -255,6 +369,7 @@ const SEED_ENTRIES: Entry[] = [
   // ── Internal SOPs (12) ──────────────────────────────────────────────────────
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-escalation-process",
     title: "Escalation process",
     body: "Escalate to Tier 2 when:\n- Issue has not been resolved after two contact attempts\n- Customer is requesting a manager\n- Issue involves a data breach or security concern\n- Refund request exceeds $500\n\nHow to escalate:\n1. Tag the ticket with 'Escalation' in the helpdesk.\n2. Assign to the Tier 2 queue.\n3. Add a note summarising what was tried and why it needs escalation.\n4. Notify the customer that a specialist will follow up within 4 business hours.",
     link: null,
@@ -263,6 +378,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-account",
     title: "Refund approval workflow",
     body: "Refunds under $100:\n- Agent can approve directly in the billing tool.\n- No manager sign-off required.\n- Process within the same support session.\n\nRefunds $100–$500:\n- Agent fills out the Refund Request form (link in Support Tools).\n- Approver (Team Lead) reviews within 2 business hours.\n- Agent notifies customer once approved.\n\nRefunds over $500:\n- Requires Finance approval.\n- Submit via the Finance Request channel in Slack.\n- SLA: 1 business day.",
     link: null,
@@ -271,6 +387,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-escalation-process-comms",
     title: "VIP customer handling",
     body: "VIP accounts are tagged 'VIP' in the helpdesk. When handling a VIP ticket:\n1. Respond within 1 hour (not the standard 4-hour SLA).\n2. Do not put VIP tickets in the general queue — assign directly.\n3. Proactively offer account credit for any service disruption.\n4. Loop in the Account Manager before closing the ticket.",
     link: null,
@@ -279,6 +396,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-account-security",
     title: "Account suspension — steps",
     body: "Before suspending an account:\n1. Confirm with Team Lead that suspension is warranted.\n2. Document the reason in the ticket.\n3. Send the pre-suspension warning email (saved reply: 'Account suspension warning').\n4. Wait 24 hours for a response.\n5. If no response, proceed with suspension in the admin panel.\n6. Send suspension confirmation email.",
     link: null,
@@ -287,6 +405,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-account",
     title: "Password reset — manual override",
     body: "Use manual override when the customer cannot receive the automated reset email (e.g. email address no longer active).\n\n1. Verify identity: ask for the last 4 digits of the payment method on file OR the billing address.\n2. Log the verification step in the ticket.\n3. In the admin panel, use User > Reset password > Manual.\n4. Generate a temporary password and send it via the support channel.\n5. Advise the customer to change it immediately after logging in.",
     link: null,
@@ -295,6 +414,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-escalation-process-comms",
     title: "Communicating a refund denial",
     body: "When a refund request does not qualify:\n1. Acknowledge the customer's frustration first.\n2. State the reason clearly, citing the relevant policy (link in Documentation).\n3. Offer an alternative where possible: account credit, plan adjustment, or extended trial.\n4. If the customer escalates, pass to Team Lead before making any exception.\n\nDo not say 'no refunds' — say 'outside our refund window' and offer the next best option.",
     link: null,
@@ -303,6 +423,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-account",
     title: "New account setup checklist",
     body: "When onboarding a new enterprise account:\n1. Confirm billing contact and billing email.\n2. Set up SSO if included in plan — send SSO setup guide.\n3. Assign Account Manager and introduce by email.\n4. Create the onboarding ticket in the helpdesk under the customer's org.\n5. Schedule a 30-minute kickoff call.\n6. Send the welcome email with help center link.",
     link: null,
@@ -311,6 +432,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-escalation",
     title: "Outage communication procedure",
     body: "When a service outage is confirmed:\n1. Post initial status update on status.example.com within 15 minutes.\n2. Notify the #incidents Slack channel with severity level.\n3. For P1 outages: notify all VIP account managers by direct message.\n4. Update the status page every 30 minutes until resolved.\n5. After resolution: post a post-mortem summary within 48 hours.\n\nDo not speculate on root cause in customer-facing communications.",
     link: null,
@@ -319,6 +441,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-account-security",
     title: "Data deletion request — GDPR",
     body: "When a customer requests account and data deletion:\n1. Verify identity (email match + billing record).\n2. Log the request with timestamp in the privacy ticket queue.\n3. Initiate deletion in the admin panel under User > Delete account.\n4. Confirm via email that deletion is in progress; data will be purged within 14 business days.\n5. Note: backups are cleared within 60 days — inform the customer if asked.\n6. Escalate to legal@example.com for any disputes.",
     link: null,
@@ -327,6 +450,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-account-security",
     title: "Fraudulent account investigation",
     body: "Signs of fraud: multiple failed payment attempts, mismatched billing address, unusually high usage spike, chargebacks.\n\nSteps:\n1. Do not alert the account holder until investigation is complete.\n2. Flag the account as 'Under Review' in the admin panel.\n3. Document all evidence in the internal ticket.\n4. Escalate to security@example.com.\n5. If fraud is confirmed: suspend the account and initiate refund to affected parties.",
     link: null,
@@ -335,6 +459,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-escalation",
     title: "Chargeback dispute response",
     body: "When a chargeback is filed:\n1. Retrieve the original transaction record from Stripe.\n2. Compile evidence: order confirmation, delivery record, support ticket history, customer communications.\n3. Submit the dispute response in Stripe within 7 days of notification.\n4. Send the customer the 'Chargeback dispute notice' saved reply.\n5. If the chargeback is upheld and the customer re-engages, require prepayment for future orders.",
     link: null,
@@ -343,6 +468,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "sops",
+    subFolderId: "sp-sample-sops-escalation-after-hours",
     title: "After-hours escalation contacts",
     body: "Outside business hours (Mon–Fri, 9am–6pm [TIMEZONE]):\n\nP1 incidents (service down): page the on-call engineer via [PAGER TOOL].\nP1 security events: email security@example.com AND call the on-call number.\nVIP customer emergencies: contact the assigned Account Manager via mobile (numbers in the internal directory).\n\nDo not attempt to resolve P1 issues without engineering involvement after hours.",
     link: null,
@@ -353,6 +479,7 @@ const SEED_ENTRIES: Entry[] = [
   // ── Support Tools (8) ───────────────────────────────────────────────────────
   entry({
     vertical: "support-tools",
+    subFolderId: "sp-sample-tools-admin",
     title: "Admin panel",
     body: null,
     link: "https://admin.example.com",
@@ -361,6 +488,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "support-tools",
+    subFolderId: "sp-sample-tools-reference",
     title: "Status page",
     body: null,
     link: "https://status.example.com",
@@ -369,6 +497,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "support-tools",
+    subFolderId: "sp-sample-tools-admin",
     title: "Customer lookup",
     body: null,
     link: "https://admin.example.com/customers",
@@ -377,6 +506,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "support-tools",
+    subFolderId: "sp-sample-tools-admin-billing-disputes",
     title: "Stripe dashboard",
     body: null,
     link: "https://dashboard.stripe.com",
@@ -385,6 +515,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "support-tools",
+    subFolderId: "sp-sample-tools-admin-billing-disputes",
     title: "Refund request form",
     body: null,
     link: "https://forms.example.com/refund-request",
@@ -393,6 +524,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "support-tools",
+    subFolderId: "sp-sample-tools-reference",
     title: "Internal knowledge base",
     body: null,
     link: "https://wiki.example.com",
@@ -401,6 +533,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "support-tools",
+    subFolderId: "sp-sample-tools-admin-billing",
     title: "Billing tool",
     body: null,
     link: "https://billing.example.com",
@@ -409,6 +542,7 @@ const SEED_ENTRIES: Entry[] = [
   }),
   entry({
     vertical: "support-tools",
+    subFolderId: "sp-sample-tools-admin",
     title: "Escalation tracker",
     body: null,
     link: "https://escalations.example.com",
@@ -417,11 +551,48 @@ const SEED_ENTRIES: Entry[] = [
   }),
 ];
 
+function removeSampleSubFolders(subFolders: SubFolder[]): SubFolder[] {
+  return subFolders
+    .filter((sf) => !sf.id.startsWith("sp-sample-"))
+    .map((sf) => ({
+      ...sf,
+      subFolders: sf.subFolders ? removeSampleSubFolders(sf.subFolders) : undefined,
+    }));
+}
+
+function mergeSampleSubFolders(existing: SubFolder[], toAdd: SubFolder[]): SubFolder[] {
+  // Remove any stale sample subfolders then prepend the fresh set
+  const cleaned = removeSampleSubFolders(existing);
+  return [...toAdd, ...cleaned];
+}
+
 export function applySeed(store: StoreData): StoreData {
   return { ...store, entries: SEED_ENTRIES };
 }
 
 export function installSeedData(store: StoreData): StoreData {
   const others = store.entries.filter((e) => e.source !== "sample");
-  return { ...store, entries: [...SEED_ENTRIES, ...others] };
+  const updatedVerticals = store.verticals.map((v) => {
+    const seedFolders = SEED_SUBFOLDERS[v.id];
+    if (!seedFolders) return v;
+    return { ...v, subFolders: mergeSampleSubFolders(v.subFolders ?? [], seedFolders) };
+  });
+  return { ...store, entries: [...SEED_ENTRIES, ...others], verticals: updatedVerticals };
+}
+
+export function uninstallSeedData(store: StoreData): StoreData {
+  const sampleIds = new Set(store.entries.filter((e) => e.source === "sample").map((e) => e.id));
+  const updatedVerticals = store.verticals.map((v) => ({
+    ...v,
+    subFolders: v.subFolders ? removeSampleSubFolders(v.subFolders) : undefined,
+  }));
+  return {
+    ...store,
+    entries: store.entries.filter((e) => e.source !== "sample"),
+    recents: store.recents.filter((id) => !sampleIds.has(id)),
+    favorites: store.favorites.filter((id) => !sampleIds.has(id)),
+    pinned: (store.pinned ?? []).filter((id) => !sampleIds.has(id)),
+    recentCopies: (store.recentCopies ?? []).filter((r) => !sampleIds.has(r.id)),
+    verticals: updatedVerticals,
+  };
 }
