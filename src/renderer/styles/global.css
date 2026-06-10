@@ -115,8 +115,8 @@ body.is-compact #root {
 }
 
 .compact-logo {
-  width: 44px;
-  height: 44px;
+  width: 69%;
+  height: 69%;
   opacity: 0.88;
   transition: opacity 0.12s, transform 0.12s;
   pointer-events: none;

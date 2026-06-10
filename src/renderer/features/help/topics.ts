@@ -12,8 +12,8 @@ export const HELP_TOPICS: HelpTopic[] = [
   {
     id: "compact-mode",
     title: "Compact mode",
-    tags: ["compact", "mini", "shrink", "restore", "small window", "hotkey", "position", "drag"],
-    content: `Compact mode shrinks the window to a 64x64 icon so it stays out of your way while remaining on screen.
+    tags: ["compact", "mini", "shrink", "restore", "small window", "hotkey", "position", "drag", "pin", "size", "color"],
+    content: `Compact mode shrinks the window to a small icon so it stays out of your way while remaining on screen.
 
 Entering compact mode
 Click the compact button (ShortPath logo icon) in the top-left of the toolbar, or press the compact hotkey (default: Ctrl+Shift+. on Windows, Cmd+Shift+. on Mac) from anywhere on your desktop.
@@ -35,11 +35,14 @@ Grab and drag the compact icon anywhere on your desktop. Its position is saved w
 Hide-after-copy behavior
 If "Hide window after copying" is enabled in Settings > Behavior, copying an entry enters compact mode instead of hiding the window entirely.
 
-Always-on-top
-Settings > Behavior > "Keep window on top" controls whether the compact icon stays above other windows.
+Compact Mode settings
+Open Settings > Compact Mode to customize the icon:
+- Pin icon above all windows: keeps the compact icon on top of all other windows (on by default).
+- Icon size: Small (48px), Medium (64px, default), or Large (80px).
+- Icon color: follow the app accent color or pick a custom color for the compact icon only.
+- Restore window after copying: when on, the window expands after you copy an entry while compact.
 
-Auto-restore after action
-Settings > Behavior > "Auto-restore window after action in compact mode" (on by default). When on, the window restores to full size after a copy triggered while compact.
+The main window "Keep window on top" setting (Settings > Behavior) is independent and controls only the normal window view.
 
 Compact hotkey
 The compact toggle hotkey can be changed in the Keyboard shortcuts panel (K button in the header). Default is Ctrl+Shift+. — this can be changed to any combination that is not already taken.

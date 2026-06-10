@@ -562,9 +562,10 @@ function enterCompact() {
     cx = wa.x + wa.width - 64 - 16;
     cy = wa.y + 16;
   }
-  win.setBounds({ x: cx, y: cy, width: 64, height: 64 });
+  const sz = settings.compactSize ?? 64;
+  win.setBounds({ x: cx, y: cy, width: sz, height: sz });
   win.setResizable(false);
-  win.setAlwaysOnTop(settings.alwaysOnTop ?? false);
+  win.setAlwaysOnTop(settings.compactAlwaysOnTop ?? true);
 }
 
 function restoreFromCompact() {
@@ -855,6 +856,22 @@ function registerIpcHandlers() {
     saveSettings(userDataPath, settings);
   });
 
+  ipcMain.handle("set-compact-always-on-top", (_e, value: boolean) => {
+    settings = { ...settings, compactAlwaysOnTop: value };
+    saveSettings(userDataPath, settings);
+    if (isCompact) win?.setAlwaysOnTop(value);
+  });
+
+  ipcMain.handle("set-compact-size", (_e, value: number) => {
+    settings = { ...settings, compactSize: value };
+    saveSettings(userDataPath, settings);
+  });
+
+  ipcMain.handle("set-compact-accent-color", (_e, value: string | null) => {
+    settings = { ...settings, compactAccentColor: value };
+    saveSettings(userDataPath, settings);
+  });
+
   ipcMain.handle("compact-drag-start", () => {
     if (!win || !isCompact) return;
     const [wx, wy] = win.getPosition();
@@ -899,6 +916,9 @@ function registerIpcHandlers() {
     compactMode: settings.compactMode ?? false,
     autoRestoreOnCompactAction: settings.autoRestoreOnCompactAction ?? true,
     compactHotkey: settings.compactHotkey ?? "CommandOrControl+Shift+.",
+    compactAlwaysOnTop: settings.compactAlwaysOnTop ?? true,
+    compactSize: settings.compactSize ?? 64,
+    compactAccentColor: settings.compactAccentColor ?? null,
   }));
 
   ipcMain.handle("set-onboarded", () => {

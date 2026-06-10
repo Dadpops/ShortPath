@@ -20,11 +20,17 @@ interface Props {
   onLinkOpenModeChange: (val: "browser" | "window") => void;
   autoRestoreOnCompactAction: boolean;
   onAutoRestoreOnCompactActionChange: (val: boolean) => void;
+  compactAlwaysOnTop: boolean;
+  onCompactAlwaysOnTopChange: (val: boolean) => void;
+  compactSize: number;
+  onCompactSizeChange: (val: number) => void;
+  compactAccentColor: string | null;
+  onCompactAccentColorChange: (val: string | null) => void;
   onReplayOnboarding?: () => void;
   initialSection?: SectionKey;
 }
 
-type SectionKey = "appearance" | "behavior" | "organization" | "data" | "sync";
+type SectionKey = "appearance" | "behavior" | "organization" | "data" | "sync" | "compact";
 
 const ACCENT_PRESETS = [
   { label: "Ocean",  value: "#2563eb" },
@@ -39,7 +45,11 @@ export default function SettingsScreen({
   onClose, onNavigate, verticals, onVerticalRenamed, onVerticalAdded,
   entries, verticalOrder, onVerticalOrderChange, autoHideOnCopy, onAutoHideOnCopyChange,
   alwaysOnTop, onAlwaysOnTopChange, linkOpenMode, onLinkOpenModeChange,
-  autoRestoreOnCompactAction, onAutoRestoreOnCompactActionChange, onReplayOnboarding,
+  autoRestoreOnCompactAction, onAutoRestoreOnCompactActionChange,
+  compactAlwaysOnTop, onCompactAlwaysOnTopChange,
+  compactSize, onCompactSizeChange,
+  compactAccentColor, onCompactAccentColorChange,
+  onReplayOnboarding,
   initialSection,
 }: Props) {
   const [positionReset, setPositionReset] = useState(false);
@@ -333,6 +343,7 @@ export default function SettingsScreen({
   const sectionTitles: Record<SectionKey, string> = {
     appearance: "Appearance",
     behavior: "Behavior",
+    compact: "Compact Mode",
     organization: "Organization",
     sync: "Sync",
     data: "Data",
@@ -381,7 +392,7 @@ export default function SettingsScreen({
           <span className="form-title">Settings</span>
         </div>
         <div className="settings-nav-list">
-          {(["appearance", "behavior", "organization", "sync", "data"] as SectionKey[]).map((key) => (
+          {(["appearance", "behavior", "compact", "organization", "sync", "data"] as SectionKey[]).map((key) => (
             <button key={key} className="settings-nav-item" onClick={() => setActivePage(key)}>
               <span className="settings-nav-label">{sectionTitles[key]}</span>
               {key === "sync" && syncSources.length > 0 && (
@@ -555,21 +566,6 @@ export default function SettingsScreen({
                 </div>
               </div>
 
-              <div className="settings-row">
-                <div className="settings-row-label">Auto-restore window after action in compact mode</div>
-                <div className="font-size-control">
-                  {([true, false] as const).map((val) => (
-                    <button
-                      key={String(val)}
-                      className={`font-size-btn${autoRestoreOnCompactAction === val ? " active" : ""}`}
-                      onClick={() => onAutoRestoreOnCompactActionChange(val)}
-                    >
-                      {val ? "On" : "Off"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <p className="settings-row-note">
                 Keyboard shortcuts (including the global summon hotkey) are managed in the Keyboard shortcuts panel.
               </p>
@@ -625,6 +621,81 @@ export default function SettingsScreen({
               <p className="settings-row-note" style={{ marginTop: 8 }}>
                 To customize in-app keyboard shortcuts, open the Keyboard shortcuts panel (Alt+K).
               </p>
+            </div>
+          )}
+
+        {/* ── Compact Mode ──────────────────────────────────────── */}
+        {activePage === "compact" && (
+            <div className="settings-section-body">
+              <div className="settings-row">
+                <div className="settings-row-label">Pin icon above all windows</div>
+                <div className="font-size-control">
+                  {([true, false] as const).map((val) => (
+                    <button
+                      key={String(val)}
+                      className={`font-size-btn${compactAlwaysOnTop === val ? " active" : ""}`}
+                      onClick={() => onCompactAlwaysOnTopChange(val)}
+                    >
+                      {val ? "On" : "Off"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-label">Icon size</div>
+                <div className="font-size-control">
+                  {([48, 64, 80] as const).map((val) => (
+                    <button
+                      key={val}
+                      className={`font-size-btn${compactSize === val ? " active" : ""}`}
+                      onClick={() => onCompactSizeChange(val)}
+                    >
+                      {val === 48 ? "S" : val === 64 ? "M" : "L"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-label">Icon color</div>
+                <div className="accent-swatch-row">
+                  <button
+                    className={`accent-swatch${compactAccentColor === null ? " active" : ""}`}
+                    style={{ background: "var(--color-accent)" }}
+                    title="Follow app theme"
+                    onClick={() => onCompactAccentColorChange(null)}
+                  />
+                  {ACCENT_PRESETS.map((p) => (
+                    <button
+                      key={p.value}
+                      className={`accent-swatch${compactAccentColor === p.value ? " active" : ""}`}
+                      style={{ background: p.value }}
+                      title={`${p.label}${compactAccentColor === null ? "" : ""}`}
+                      onClick={() => onCompactAccentColorChange(p.value)}
+                    />
+                  ))}
+                </div>
+              </div>
+              {compactAccentColor === null && (
+                <p className="settings-row-note">Icon uses the app accent color.</p>
+              )}
+
+              <div className="settings-row" style={{ marginTop: 8 }}>
+                <div className="settings-row-label">Restore window after copying</div>
+                <div className="font-size-control">
+                  {([true, false] as const).map((val) => (
+                    <button
+                      key={String(val)}
+                      className={`font-size-btn${autoRestoreOnCompactAction === val ? " active" : ""}`}
+                      onClick={() => onAutoRestoreOnCompactActionChange(val)}
+                    >
+                      {val ? "On" : "Off"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="settings-row-note">When on, the window expands automatically after you copy an entry while compact.</p>
             </div>
           )}
 

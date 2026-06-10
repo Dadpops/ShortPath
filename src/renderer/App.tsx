@@ -109,8 +109,11 @@ export default function App() {
   const [isCompact, setIsCompact] = useState(false);
   const [autoRestoreOnCompactAction, setAutoRestoreOnCompactAction] = useState(true);
   const [compactHotkey, setCompactHotkey] = useState("CommandOrControl+Shift+.");
+  const [compactAlwaysOnTop, setCompactAlwaysOnTop] = useState(true);
+  const [compactSize, setCompactSize] = useState(64);
+  const [compactAccentColor, setCompactAccentColor] = useState<string | null>(null);
   const compactDragRef = useRef<{ startX: number; startY: number; moved: boolean } | null>(null);
-  const [settingsSection, setSettingsSection] = useState<"appearance" | "behavior" | "organization" | "data" | "sync" | null>(null);
+  const [settingsSection, setSettingsSection] = useState<"appearance" | "behavior" | "organization" | "data" | "sync" | "compact" | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const [headerNarrow, setHeaderNarrow] = useState(false);
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
@@ -158,6 +161,9 @@ export default function App() {
       setLinkOpenMode(s.linkOpenMode ?? "browser");
       setIsCompact(s.compactMode ?? false);
       setAutoRestoreOnCompactAction(s.autoRestoreOnCompactAction ?? true);
+      setCompactAlwaysOnTop(s.compactAlwaysOnTop ?? true);
+      setCompactSize(s.compactSize ?? 64);
+      setCompactAccentColor(s.compactAccentColor ?? null);
       if (!s.hasOnboarded) {
         setShowOnboarding(true);
         isFirstOnboarding.current = true;
@@ -800,6 +806,7 @@ export default function App() {
       <div className="app-shell compact-mode">
         <div
           className="compact-view"
+          style={compactAccentColor ? { "--compact-accent": compactAccentColor } as React.CSSProperties : undefined}
           title="Drag to move — click to restore"
           onPointerDown={(e) => {
             (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -821,7 +828,7 @@ export default function App() {
           }}
         >
           <svg viewBox="0 0 512 512" className="compact-logo" aria-label="ShortPath">
-            <rect x="0" y="0" width="512" height="512" rx="112" fill="var(--color-accent)"/>
+            <rect x="0" y="0" width="512" height="512" rx="112" fill="var(--compact-accent, var(--color-accent))"/>
             <path d="M150 176 L246 256 L150 336" fill="none" stroke="#ffffff" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M278 176 L374 256 L278 336" fill="none" stroke="#ffffff" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
             <rect x="206" y="370" width="160" height="40" rx="20" fill="#ffffff"/>
@@ -934,6 +941,21 @@ export default function App() {
           onAutoRestoreOnCompactActionChange={(val) => {
             setAutoRestoreOnCompactAction(val);
             void window.shortpath.setAutoRestoreOnCompactAction(val);
+          }}
+          compactAlwaysOnTop={compactAlwaysOnTop}
+          onCompactAlwaysOnTopChange={(val) => {
+            setCompactAlwaysOnTop(val);
+            void window.shortpath.setCompactAlwaysOnTop(val);
+          }}
+          compactSize={compactSize}
+          onCompactSizeChange={(val) => {
+            setCompactSize(val);
+            void window.shortpath.setCompactSize(val);
+          }}
+          compactAccentColor={compactAccentColor}
+          onCompactAccentColorChange={(val) => {
+            setCompactAccentColor(val);
+            void window.shortpath.setCompactAccentColor(val);
           }}
           onReplayOnboarding={() => {
             setShowOnboarding(true);

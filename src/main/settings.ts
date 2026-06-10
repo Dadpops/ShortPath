@@ -42,6 +42,9 @@ export interface AppSettings {
   compactPosition?: { x: number; y: number }; // last position of the compact window; updated on every drag-end
   autoRestoreOnCompactAction?: boolean; // restore from compact after a copy/action; default true
   compactHotkey?: string; // global hotkey for toggling compact mode; default "CommandOrControl+Shift+."
+  compactAlwaysOnTop?: boolean; // pin the compact icon above all other windows; default true
+  compactSize?: number;          // compact window size in px; options: 48 | 64 | 80; default 64
+  compactAccentColor?: string | null; // null = follow app theme; hex string = custom icon color
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
