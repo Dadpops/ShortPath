@@ -204,8 +204,8 @@ declare global {
       setLinkOpenMode: (mode: "browser" | "window") => Promise<void>;
       setCompactMode: (compact: boolean) => Promise<void>;
       setAutoRestoreOnCompactAction: (value: boolean) => Promise<void>;
-      compactDragStart: () => Promise<{ x: number; y: number } | null>;
-      compactDragMove: (x: number, y: number) => Promise<void>;
+      compactDragStart: () => Promise<void>;
+      compactDragEnd: () => Promise<void>;
     };
   }
 }

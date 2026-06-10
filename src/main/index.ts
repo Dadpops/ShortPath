@@ -75,6 +75,10 @@ let saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
 // compact size never overwrites the pre-compact window bounds in settings.
 let isCompact = false;
 
+// Active compact-mode drag: main-process polling loop so fast mouse movement never drops the drag.
+let compactDragInterval: ReturnType<typeof setInterval> | null = null;
+let compactDragOffset: { dx: number; dy: number } | null = null;
+
 // Sync state — multiple sources supported via syncWatchers map
 const syncWatchers = new Map<string, chokidar.FSWatcher>();
 const syncDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -145,6 +149,20 @@ function createWindow() {
 
   win.on("closed", () => {
     win = null;
+    // Clean up compact drag polling if window dies mid-drag.
+    if (compactDragInterval) { clearInterval(compactDragInterval); compactDragInterval = null; }
+    compactDragOffset = null;
+  });
+
+  win.webContents.on("render-process-gone", (_e, details) => {
+    console.error("Renderer process gone:", details.reason, details.exitCode);
+    if (win && !win.isDestroyed()) { win.destroy(); win = null; }
+    createWindow();
+  });
+
+  win.webContents.on("unresponsive", () => {
+    console.warn("Renderer became unresponsive — reloading");
+    if (win && !win.isDestroyed()) win.webContents.reload();
   });
 
   win.on("hide", () => {
@@ -771,14 +789,21 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle("compact-drag-start", () => {
-    if (!win) return null;
-    const [x, y] = win.getPosition();
-    return { x, y };
+    if (!win || !isCompact) return;
+    const [wx, wy] = win.getPosition();
+    const cursor = screen.getCursorScreenPoint();
+    compactDragOffset = { dx: cursor.x - wx, dy: cursor.y - wy };
+    if (compactDragInterval) clearInterval(compactDragInterval);
+    compactDragInterval = setInterval(() => {
+      if (!compactDragOffset || !win || !isCompact) return;
+      const cur = screen.getCursorScreenPoint();
+      win.setPosition(Math.round(cur.x - compactDragOffset.dx), Math.round(cur.y - compactDragOffset.dy));
+    }, 16);
   });
 
-  ipcMain.handle("compact-drag-move", (_e, x: number, y: number) => {
-    if (!win || !isCompact) return;
-    win.setPosition(x, y);
+  ipcMain.handle("compact-drag-end", () => {
+    compactDragOffset = null;
+    if (compactDragInterval) { clearInterval(compactDragInterval); compactDragInterval = null; }
   });
 
   ipcMain.handle("hide-window", () => win?.hide());
@@ -1190,6 +1215,14 @@ function registerIpcHandlers() {
     }
   });
 }
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception in main process:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection in main process:", reason);
+});
 
 app.whenReady().then(() => {
   userDataPath = app.getPath("userData");

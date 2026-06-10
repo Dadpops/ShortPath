@@ -155,5 +155,5 @@ contextBridge.exposeInMainWorld("shortpath", {
   setCompactMode: (compact: boolean) => ipcRenderer.invoke("set-compact-mode", compact),
   setAutoRestoreOnCompactAction: (value: boolean) => ipcRenderer.invoke("set-auto-restore-on-compact-action", value),
   compactDragStart: () => ipcRenderer.invoke("compact-drag-start"),
-  compactDragMove: (x: number, y: number) => ipcRenderer.invoke("compact-drag-move", x, y),
+  compactDragEnd: () => ipcRenderer.invoke("compact-drag-end"),
 });

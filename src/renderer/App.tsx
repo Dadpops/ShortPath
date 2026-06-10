@@ -108,7 +108,7 @@ export default function App() {
   const [linkOpenMode, setLinkOpenMode] = useState<"browser" | "window">("browser");
   const [isCompact, setIsCompact] = useState(false);
   const [autoRestoreOnCompactAction, setAutoRestoreOnCompactAction] = useState(true);
-  const compactDragRef = useRef<{ startX: number; startY: number; winX: number; winY: number; moved: boolean } | null>(null);
+  const compactDragRef = useRef<{ startX: number; startY: number; moved: boolean } | null>(null);
   const [searchMode, setSearchMode] = useState<"keyword" | "full">(() => {
     const saved = localStorage.getItem("sp_search_mode");
     return saved === "full" ? "full" : "keyword";
@@ -768,24 +768,22 @@ export default function App() {
         <div
           className="compact-view"
           title="Drag to move — click to restore"
-          onMouseDown={async (e) => {
-            const pos = await window.shortpath.compactDragStart();
-            if (!pos) return;
-            compactDragRef.current = { startX: e.screenX, startY: e.screenY, winX: pos.x, winY: pos.y, moved: false };
+          onPointerDown={(e) => {
+            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+            compactDragRef.current = { startX: e.screenX, startY: e.screenY, moved: false };
+            void window.shortpath.compactDragStart();
           }}
-          onMouseMove={(e) => {
+          onPointerMove={(e) => {
             const d = compactDragRef.current;
             if (!d || e.buttons !== 1) return;
-            const dx = e.screenX - d.startX;
-            const dy = e.screenY - d.startY;
-            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+            if (Math.abs(e.screenX - d.startX) > 4 || Math.abs(e.screenY - d.startY) > 4) {
               d.moved = true;
-              void window.shortpath.compactDragMove(d.winX + dx, d.winY + dy);
             }
           }}
-          onMouseUp={() => {
+          onPointerUp={() => {
             const d = compactDragRef.current;
             compactDragRef.current = null;
+            void window.shortpath.compactDragEnd();
             if (d && !d.moved) void handleRestoreCompact();
           }}
         >
