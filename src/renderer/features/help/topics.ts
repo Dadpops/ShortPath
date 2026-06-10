@@ -208,11 +208,14 @@ Renaming a vertical
 In Settings > Organization, click Rename next to any vertical, type the new name, and press Save.
 
 Sub-folders
-Each vertical can have any number of sub-folders to keep large libraries organised. Sub-folders appear as collapsible groups inside a vertical's results.
+Each vertical can have any number of sub-folders to keep large libraries organised. Sub-folders appear as collapsible groups inside a vertical's results and can be nested to any depth.
 
 To manage sub-folders: in Settings > Organization, click the 📁 button next to any vertical to expand its sub-folder panel. From there you can add, rename, or remove sub-folders.
 
 To assign an entry to a sub-folder: when adding or editing an entry, a Sub-folder selector appears below the Vertical field once the selected vertical has at least one sub-folder.
+
+Sub-folders in CSV import
+Use ">" in the subfolder column to create or match nested folders: "Getting Started > Setup & Onboarding". See the "Importing a CSV" help topic for details.
 
 Removing a sub-folder
 Click Remove next to the sub-folder name and confirm. Any entries assigned to the removed sub-folder move back to the top level of the vertical — they are not deleted.`,
@@ -220,7 +223,7 @@ Click Remove next to the sub-folder name and confirm. Any entries assigned to th
   {
     id: "importing-csv",
     title: "Importing a CSV",
-    tags: ["import", "csv", "template", "upload", "bulk", "file", "subfolder", "folder", "column mapping", "drag"],
+    tags: ["import", "csv", "template", "upload", "bulk", "file", "subfolder", "folder", "column mapping", "drag", "nested", "comma"],
     content: `Go to Settings > Data > Import CSV to add entries in bulk from a spreadsheet.
 
 How to import
@@ -237,10 +240,21 @@ Type must be one of: reply, doc, sop, link, tool
 Tags use pipe separators: billing|refund|payment
 
 Sub-folders
-Include a subfolder column in your CSV to place entries in a specific folder within a vertical. If the folder doesn't exist yet, ShortPath creates it automatically on import.
+Include a subfolder column to place entries in a folder within a vertical. Use ">" to create nested folders:
+
+  Getting Started > Setup & Onboarding
+
+ShortPath splits on ">" and trims whitespace, so "A > B", "A>B", and "A >B" all resolve to the same folders. Any depth works. Matching is case-insensitive so existing folders are reused. If a folder does not exist it is created automatically.
+
+Fields with commas
+Wrap any CSV field that contains a comma in double quotes:
+
+  "Billing, Payments & Refunds"
+
+Double quotes inside a quoted field are escaped by doubling them: "He said ""hello""". Most spreadsheet apps (Google Sheets, Excel) handle this automatically when you export to CSV.
 
 Download a template
-Use Settings > Data > Download template to get an example file showing the exact column format.
+Use Settings > Data > Download template to get an example file. It includes rows demonstrating nested sub-folders and quoted fields with commas.
 
 Update behavior
 If a row's title + vertical matches an existing entry, that entry is updated. Otherwise a new entry is created.`,
