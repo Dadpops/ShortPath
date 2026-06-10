@@ -49,11 +49,6 @@ export default function SettingsScreen({
   const [density, setDensity] = useState<"compact" | "comfortable">("comfortable");
   const [fontFamily, setFontFamily] = useState("system");
   const [exportingAll, setExportingAll] = useState(false);
-  const [streamDeckToast, setStreamDeckToast] = useState("");
-  const [streamDeckDialogOpen, setStreamDeckDialogOpen] = useState(false);
-  const [streamDeckCols, setStreamDeckCols] = useState(5);
-  const [streamDeckRows, setStreamDeckRows] = useState(3);
-  const [lastStreamDeckExport, setLastStreamDeckExport] = useState<string | null>(null);
 
   // Vertical management
   const [editingVerticalId, setEditingVerticalId] = useState<string | null>(null);
@@ -109,14 +104,13 @@ export default function SettingsScreen({
   const [clearingSample, setClearingSample] = useState(false);
 
   useEffect(() => {
-    window.shortpath.getSettings().then(({ fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d, lastStreamDeckExport: lsd, fontFamily: ff }) => {
+    window.shortpath.getSettings().then(({ fontSize: fs, theme: t, accentColor: ac, opacity: op, windowSize: ws, density: d, fontFamily: ff }) => {
       setFontSize(fs);
       setTheme(t);
       setAccentColor(ac);
       setOpacity(op);
       setWindowSize(ws);
       setDensity(d);
-      setLastStreamDeckExport(lsd ?? null);
       setFontFamily(ff ?? "system");
     });
     window.shortpath.getSyncStatus().then(setSyncStatus);
@@ -373,13 +367,6 @@ export default function SettingsScreen({
     { label: "↓ Download template", topicId: "importing-csv", onClick: () => window.shortpath.downloadTemplateCsv() },
     { label: exportingAll ? "Saving…" : "Export all", topicId: "exporting-csv", onClick: handleExportAll, disabled: exportingAll },
     { label: "Export selected", topicId: "exporting-csv", onClick: () => onNavigate("export-select") },
-    {
-      label: lastStreamDeckExport
-        ? `Re-export Stream Deck${" (" + new Date(lastStreamDeckExport).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + ")"}`
-        : "Export Stream Deck Profile",
-      topicId: "stream-deck-export",
-      onClick: () => setStreamDeckDialogOpen(true),
-    },
   ];
 
   // Settings main menu
@@ -414,10 +401,6 @@ export default function SettingsScreen({
       </div>
 
       <div className="settings-body">
-        {streamDeckToast && (
-          <div className="settings-toast">{streamDeckToast}</div>
-        )}
-
         {/* ── Appearance ────────────────────────────────────────── */}
         {activePage === "appearance" && (
             <div className="settings-section-body">
@@ -1019,73 +1002,6 @@ export default function SettingsScreen({
                   <div className="settings-info-popup-title">{activeInfoTopic.title}</div>
                   <button className="settings-info-popup-close" onClick={() => setActiveInfoId(null)} aria-label="Close">✕</button>
                   <div className="settings-info-popup-body">{activeInfoTopic.content}</div>
-                </div>
-              )}
-
-              {streamDeckDialogOpen && (
-                <div className="stream-deck-dialog">
-                  <div className="stream-deck-dialog-title">Stream Deck device layout</div>
-                  <p className="settings-row-note">Choose your device model or set a custom layout.</p>
-                  <div className="stream-deck-preset-row">
-                    {[
-                      { label: "Mini (3×2)", cols: 3, rows: 2 },
-                      { label: "Standard (5×3)", cols: 5, rows: 3 },
-                      { label: "XL (8×4)", cols: 8, rows: 4 },
-                      { label: "Neo (4×2)", cols: 4, rows: 2 },
-                    ].map((p) => (
-                      <button
-                        key={p.label}
-                        className={`stream-deck-preset-btn${streamDeckCols === p.cols && streamDeckRows === p.rows ? " active" : ""}`}
-                        onClick={() => { setStreamDeckCols(p.cols); setStreamDeckRows(p.rows); }}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="stream-deck-custom-row">
-                    <label className="stream-deck-custom-label">
-                      Columns
-                      <input
-                        type="number"
-                        className="stream-deck-input"
-                        min={1} max={15}
-                        value={streamDeckCols}
-                        onChange={(e) => setStreamDeckCols(Math.max(1, Math.min(15, Number(e.target.value))))}
-                      />
-                    </label>
-                    <label className="stream-deck-custom-label">
-                      Rows
-                      <input
-                        type="number"
-                        className="stream-deck-input"
-                        min={1} max={10}
-                        value={streamDeckRows}
-                        onChange={(e) => setStreamDeckRows(Math.max(1, Math.min(10, Number(e.target.value))))}
-                      />
-                    </label>
-                    <span className="stream-deck-button-count">{streamDeckCols * streamDeckRows} buttons</span>
-                  </div>
-                  <div className="stream-deck-dialog-actions">
-                    <button className="btn-secondary settings-action-btn" onClick={() => setStreamDeckDialogOpen(false)}>
-                      Cancel
-                    </button>
-                    <button
-                      className="btn-primary settings-action-btn"
-                      onClick={async () => {
-                        setStreamDeckDialogOpen(false);
-                        const result = await window.shortpath.exportStreamDeckProfile(streamDeckCols, streamDeckRows);
-                        if (result.success) {
-                          setLastStreamDeckExport(new Date().toISOString());
-                        }
-                        if (result.capped) {
-                          setStreamDeckToast(`Exported first ${streamDeckCols * streamDeckRows} entries (layout limit).`);
-                          setTimeout(() => setStreamDeckToast(""), 5000);
-                        }
-                      }}
-                    >
-                      Export
-                    </button>
-                  </div>
                 </div>
               )}
 

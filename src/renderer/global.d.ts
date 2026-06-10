@@ -17,7 +17,6 @@ interface LoadEntriesResult {
   autoHideOnCopy: boolean;
   alwaysOnTop: boolean;
   pinCap: number;
-  lastStreamDeckExport: string | null;
 }
 
 interface CreateEntryResult {
@@ -90,7 +89,6 @@ declare global {
       exportCsv: () => Promise<{ success: boolean }>;
       exportMine: () => Promise<{ success: boolean }>;
       exportSelected: (ids: string[]) => Promise<{ success: boolean }>;
-      exportStreamDeckProfile: (cols?: number, rows?: number) => Promise<{ success: boolean; capped?: boolean }>;
 
       previewCsvImport: () => Promise<CsvPreviewResult>;
       commitCsvImport: (resolutions?: Record<number, string>) => Promise<CsvCommitResult>;
@@ -116,7 +114,6 @@ declare global {
         autoHideOnCopy: boolean;
         alwaysOnTop: boolean;
         pinCap: number;
-        lastStreamDeckExport: string | null;
         fontFamily: string;
         customShortcuts: Record<string, string | null>;
         hasOnboarded: boolean;

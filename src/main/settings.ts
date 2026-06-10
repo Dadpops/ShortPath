@@ -33,7 +33,6 @@ export interface AppSettings {
   alwaysOnTop?: boolean;
   firstLaunchNotified?: boolean; // true once the first-launch tray notification has fired
   pinCap?: number;               // max pinned entries; default 8
-  lastStreamDeckExport?: string; // ISO 8601 timestamp of last Stream Deck profile export
   fontFamily?: string;           // font family key: "system" | "serif" | "mono" | "rounded"
   customShortcuts?: Record<string, string | null>; // null = disabled, undefined key = use default
   hasOnboarded?: boolean;        // true once the onboarding overlay has been completed or skipped

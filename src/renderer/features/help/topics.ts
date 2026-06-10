@@ -372,7 +372,7 @@ Sync
 Connect CSV files from cloud-synced folders. See the "Shared file sync" help topic for full setup instructions.
 
 Data
-Add entry, Import CSV, Paste and split, Download template, Export all, Export mine, Export selected, Export Stream Deck profile, Remove sample data, and Clear all entries.
+Add entry, Import CSV, Paste and split, Download template, Export all, Export mine, Export selected, Remove sample data, and Clear all entries.
 
 Keyboard shortcuts
 The summon hotkey and all in-app shortcuts are configured in the Keyboard Shortcuts panel — click the K button in the main header. This is separate from Settings.`,
@@ -587,31 +587,6 @@ When active (circle filled with accent color), the window stays in front even wh
 Click the button again to unpin. The setting persists between sessions.
 
 The global hotkey still works when pinned — pressing it will hide the window even if it is on top.`,
-  },
-  {
-    id: "stream-deck-export",
-    title: "Stream Deck profile export",
-    tags: ["stream deck", "elgato", "profile", "export", "hardware", "buttons", "layout"],
-    content: `Settings > Data > Export Stream Deck Profile creates a .streamDeckProfile file you can import directly into the Elgato Stream Deck app.
-
-Device layout
-Before exporting, a dialog lets you choose your device model or set a custom layout:
-- Mini: 3×2 (6 buttons)
-- Standard: 5×3 (15 buttons)
-- XL: 8×4 (32 buttons)
-- Neo: 4×2 (8 buttons)
-- Custom: enter any columns × rows
-
-The export creates buttons to fill that grid exactly. If you have more entries than buttons, the first N entries are used (N = columns × rows).
-
-How to import it
-1. Double-click the .streamDeckProfile file — Stream Deck app opens and prompts you to import.
-   Or: open the Stream Deck app, go to Preferences > Profiles, click the gear icon, and choose Import.
-2. The profile appears in your profile list under "ShortPath".
-3. Switch to it and you will see your entries as labeled buttons.
-
-Wiring up button actions
-The exported buttons have labels but no action assigned yet. After import, click any button in the Stream Deck editor and assign the action you want.`,
   },
   {
     id: "rich-text",

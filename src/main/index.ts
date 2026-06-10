@@ -13,7 +13,6 @@ import {
   Notification,
 } from "electron";
 import { randomUUID } from "crypto";
-import JSZip from "jszip";
 import path from "path";
 import fs from "fs";
 import http from "http";
@@ -511,7 +510,6 @@ function registerIpcHandlers() {
       autoHideOnCopy: settings.autoHideOnCopy ?? false,
       alwaysOnTop: settings.alwaysOnTop ?? false,
       pinCap: settings.pinCap ?? 8,
-      lastStreamDeckExport: settings.lastStreamDeckExport ?? null,
     };
   });
 
@@ -697,71 +695,6 @@ function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle("export-streamdeck-profile", async (_e, cols: number = 5, rows: number = 3) => {
-    const MAX_BUTTONS = cols * rows;
-    const entries = store.entries.slice(0, MAX_BUTTONS);
-    const capped = store.entries.length > MAX_BUTTONS;
-
-    const profileUuid = randomUUID().toUpperCase();
-    const pageUuid = randomUUID().toLowerCase();
-
-    const outerManifest = {
-      AppIdentifier: "com.elgato.StreamDeck",
-      Version: "3.0",
-      Name: "ShortPath",
-      Pages: { Current: pageUuid },
-    };
-
-    const actions: Record<string, unknown> = {};
-    entries.forEach((e, idx) => {
-      const col = idx % cols;
-      const row = Math.floor(idx / cols);
-      const actionId = randomUUID().toUpperCase();
-      actions[`${col},${row}`] = {
-        ActionID: actionId,
-        LinkedTitle: true,
-        Name: e.title,
-        UUID: "com.elgato.streamdeck.system.open",
-        Settings: { openInBrowser: false, path: "" },
-        State: 0,
-        States: [
-          {
-            Title: e.title,
-            Image: "",
-            ShowTitle: true,
-            TitleAlignment: "bottom",
-            TitleColor: "#ffffff",
-            FontSize: 9,
-          },
-        ],
-      };
-    });
-
-    const pageManifest = {
-      Controllers: [{ Actions: actions, Type: "Keypad" }],
-    };
-
-    const { filePath } = await dialog.showSaveDialog(win!, {
-      defaultPath: "ShortPath.streamDeckProfile",
-      filters: [{ name: "Stream Deck Profile", extensions: ["streamDeckProfile"] }],
-    });
-    if (!filePath) return { success: false };
-
-    try {
-      const zip = new JSZip();
-      const profileDir = `${profileUuid}.sdProfile/`;
-      zip.file(`${profileDir}manifest.json`, JSON.stringify(outerManifest, null, 2));
-      zip.file(`${profileDir}Profiles/${pageUuid}/manifest.json`, JSON.stringify(pageManifest, null, 2));
-      const content = await zip.generateAsync({ type: "nodebuffer" });
-      fs.writeFileSync(filePath, content);
-      settings = { ...settings, lastStreamDeckExport: new Date().toISOString() };
-      saveSettings(userDataPath, settings);
-      return { success: true, capped };
-    } catch (err) {
-      return { success: false, errors: [String(err)] };
-    }
-  });
-
   ipcMain.handle("download-template-csv", async () => {
     const { filePath } = await dialog.showSaveDialog(win!, {
       defaultPath: "shortpath-template.csv",
@@ -862,7 +795,6 @@ function registerIpcHandlers() {
     autoHideOnCopy: settings.autoHideOnCopy ?? false,
     alwaysOnTop: settings.alwaysOnTop ?? false,
     pinCap: settings.pinCap ?? 8,
-    lastStreamDeckExport: settings.lastStreamDeckExport ?? null,
     fontFamily: settings.fontFamily ?? "system",
     customShortcuts: settings.customShortcuts ?? {},
     hasOnboarded: settings.hasOnboarded ?? false,
