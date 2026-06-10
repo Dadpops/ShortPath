@@ -364,3 +364,23 @@ export function replaceEntriesFromSource(store: StoreData, sourceId: string, new
 
   return { ...store, entries: [...kept, ...tagged], verticals, recents, favorites, pinned };
 }
+
+// Returns entries in newSyncedEntries that share title+vertical with an existing local entry.
+// Call before replaceEntriesFromSource so the local entries are still in store.
+export function detectSyncDuplicates(
+  store: StoreData,
+  newSyncedEntries: Entry[]
+): Array<{ title: string; vertical: string }> {
+  const locals = store.entries.filter((e) => e.source === "local");
+  const seen = new Set<string>();
+  const dupes: Array<{ title: string; vertical: string }> = [];
+  for (const synced of newSyncedEntries) {
+    const key = `${synced.title.toLowerCase()}::${synced.vertical}`;
+    if (seen.has(key)) continue;
+    if (locals.some((l) => l.title.toLowerCase() === synced.title.toLowerCase() && l.vertical === synced.vertical)) {
+      seen.add(key);
+      dupes.push({ title: synced.title, vertical: synced.vertical });
+    }
+  }
+  return dupes;
+}
