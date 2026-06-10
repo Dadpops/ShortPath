@@ -1,13 +1,12 @@
 # Current Session State
 
-**Status:** 2026-06-10 — Zero-result subfolders hidden during search; collapse/expand now correctly affects subfolders in non-all mode (subExpandSignal was missing from that render path); collapse → open vertical → subfolders stay closed.
+**Status:** 2026-06-10 — Compact mode shipped (v0.6.3). File share sync folder fix also in v0.6.3.
 
-**Last session:** [2026-06-10 — Nested subfolders, expand-all fix, quick-link button, link-open preference](docs/sessions/2026-06-10-csv-expand-quicklink.md)
+**Last session:** [2026-06-10 — Compact mode; file share sync folder fix; v0.6.3 release](docs/sessions/2026-06-10-compact-mode.md)
 
 **Open items:**
 - Help topics not yet updated for v0.6.0 features (onboarding, search mode toggle, sample data removal, favorites card view). CLAUDE.md standing rule applies.
 - SetupScreen (`src/renderer/components/SetupScreen.tsx`) is defined but never imported or rendered. Wire it up or delete it.
-- Version bump to v0.6.1 in `package.json` and `electron-builder.yml`; Windows installer build; GitHub Release publish.
 - Test scripts and QA screenshots are untracked (`scripts/test-*.mjs`, `qa_*.png`) -- commit or delete.
 - Code signing (Windows certificate, Apple Developer ID) -- unlocks SmartScreen bypass and macOS Gatekeeper.
 - macOS build -- no blocker other than signing; dist:mac script is ready.

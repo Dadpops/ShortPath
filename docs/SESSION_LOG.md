@@ -4,6 +4,8 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-10 — Compact mode; file share sync folder fix; v0.6.3 release](sessions/2026-06-10-compact-mode.md) — Compact mode (64x64 logo square, restore on click/Esc, persisted across restarts); file share sync now creates folders from subfolder column; shipped as v0.6.3.
+
 - [2026-06-10 — Subfolder search filtering and collapse/expand fix](sessions/2026-06-10-subfolder-search-fix.md) — Zero-result subfolders hidden during search; subExpandSignal wired to non-all-mode renders; collapse → open vertical → subfolders stay closed.
 - [2026-06-10 — Nested subfolders, expand-all fix, quick-link button, link-open preference](sessions/2026-06-10-csv-expand-quicklink.md) — Nested subfolder paths in CSV (depth unlimited, ">"-separated); deterministic expand/collapse all including subfolders; ↗ quick-link on any entry with a URL; "Open links in" setting (New tab / New window); vitest + 7 CSV import tests.
 - [2026-06-09 — v0.6.0: onboarding, sample data, search mode toggle, README landing page](sessions/2026-06-09-v0.6.0.md) -- 4-step first-run onboarding overlay; 50-entry sample data with installSeedData; search mode toggle (Keyword/Full text); keyboard shortcut editing consolidated into KeyboardPanel; Notes and Favorites card treatment; README revamped with 8 screenshots, gallery, and inline pitch images; v0.6.0.
