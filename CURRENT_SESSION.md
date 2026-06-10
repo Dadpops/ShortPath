@@ -1,8 +1,8 @@
 # Current Session State
 
-**Status:** v0.4.0 — Keyboard panel, UX fixes (sample data filter, friendly name dropdown, clipboard strip position, pin button position, N/K letter buttons), pin limit removed, full keyboard nav shortcuts, Check for updates info note. TypeScript clean. Ready to release.
+**Status:** v0.5.0 — Support tools as list items, help popout, CSS pin circles, accent scoped to folder headers, group separation, keyboard shortcuts in keyboard panel, entry notes in overlay, export subfolder improvements. TypeScript clean. Pushed to master.
 
-**Last session:** [2026-06-09 — Keyboard panel, UX fixes, full keyboard nav](docs/sessions/2026-06-09-ux-fixes.md)
+**Last session:** [2026-06-09 — v0.5.0 polish](docs/sessions/2026-06-09-v0.5.0.md)
 
 **Open items:**
 - SetupScreen (`src/renderer/components/SetupScreen.tsx`) is defined but never imported or rendered. Wire it up for first-time users or delete it.
