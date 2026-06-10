@@ -108,7 +108,7 @@ export default function App() {
   const [linkOpenMode, setLinkOpenMode] = useState<"browser" | "window">("browser");
   const [isCompact, setIsCompact] = useState(false);
   const [autoRestoreOnCompactAction, setAutoRestoreOnCompactAction] = useState(true);
-  const compactPressRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const compactDragRef = useRef<{ startX: number; startY: number; winX: number; winY: number; moved: boolean } | null>(null);
   const [searchMode, setSearchMode] = useState<"keyword" | "full">(() => {
     const saved = localStorage.getItem("sp_search_mode");
     return saved === "full" ? "full" : "keyword";
@@ -768,16 +768,25 @@ export default function App() {
         <div
           className="compact-view"
           title="Drag to move — click to restore"
-          onMouseDown={(e) => {
-            compactPressRef.current = { x: e.screenX, y: e.screenY, t: Date.now() };
+          onMouseDown={async (e) => {
+            const pos = await window.shortpath.compactDragStart();
+            if (!pos) return;
+            compactDragRef.current = { startX: e.screenX, startY: e.screenY, winX: pos.x, winY: pos.y, moved: false };
           }}
-          onMouseUp={(e) => {
-            const p = compactPressRef.current;
-            compactPressRef.current = null;
-            if (!p) return;
-            const moved = Math.abs(e.screenX - p.x) > 4 || Math.abs(e.screenY - p.y) > 4;
-            const slow  = Date.now() - p.t > 400;
-            if (!moved && !slow) void handleRestoreCompact();
+          onMouseMove={(e) => {
+            const d = compactDragRef.current;
+            if (!d || e.buttons !== 1) return;
+            const dx = e.screenX - d.startX;
+            const dy = e.screenY - d.startY;
+            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+              d.moved = true;
+              void window.shortpath.compactDragMove(d.winX + dx, d.winY + dy);
+            }
+          }}
+          onMouseUp={() => {
+            const d = compactDragRef.current;
+            compactDragRef.current = null;
+            if (d && !d.moved) void handleRestoreCompact();
           }}
         >
           <svg viewBox="0 0 512 512" className="compact-logo" aria-label="ShortPath">

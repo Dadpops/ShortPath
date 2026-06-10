@@ -837,6 +837,17 @@ function registerIpcHandlers() {
     saveSettings(userDataPath, settings);
   });
 
+  ipcMain.handle("compact-drag-start", () => {
+    if (!win) return null;
+    const [x, y] = win.getPosition();
+    return { x, y };
+  });
+
+  ipcMain.handle("compact-drag-move", (_e, x: number, y: number) => {
+    if (!win || !isCompact) return;
+    win.setPosition(x, y);
+  });
+
   ipcMain.handle("hide-window", () => win?.hide());
 
   ipcMain.handle("get-settings", () => ({
