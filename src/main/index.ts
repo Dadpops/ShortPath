@@ -38,8 +38,7 @@ const SIZE_PRESETS = {
 } as const;
 
 let tray: Tray | null = null;
-let trayIconBase: ReturnType<typeof nativeImage.createFromPath> | null = null;
-let trayIconActive: ReturnType<typeof nativeImage.createFromPath> | null = null;
+let trayIcon: ReturnType<typeof nativeImage.createFromPath> | null = null;
 let win: BrowserWindow | null = null;
 let helpWin: BrowserWindow | null = null;
 let store: StoreData;
@@ -160,7 +159,6 @@ function createWindow() {
 
   win.once("ready-to-show", () => {
     win?.show();
-    if (tray && trayIconActive) tray.setImage(trayIconActive);
   });
 
   win.on("closed", () => {
@@ -181,9 +179,6 @@ function createWindow() {
     if (win && !win.isDestroyed()) win.webContents.reload();
   });
 
-  win.on("hide", () => {
-    if (tray && trayIconBase) tray.setImage(trayIconBase);
-  });
 
   function scheduleSaveBounds() {
     if (saveBoundsTimer) clearTimeout(saveBoundsTimer);
@@ -200,18 +195,6 @@ function createWindow() {
   win.on("resize", scheduleSaveBounds);
 }
 
-function buildActiveIcon(base: ReturnType<typeof nativeImage.createFromPath>) {
-  const { width, height } = base.getSize();
-  const bitmap = base.getBitmap();
-  for (let i = 0; i < bitmap.length; i += 4) {
-    if (bitmap[i + 3] > 0) {
-      bitmap[i]     = Math.min(bitmap[i]     + 70, 255);
-      bitmap[i + 1] = Math.min(bitmap[i + 1] + 70, 255);
-      bitmap[i + 2] = Math.min(bitmap[i + 2] + 70, 255);
-    }
-  }
-  return nativeImage.createFromBitmap(bitmap, { width, height });
-}
 
 function buildTrayMenu() {
   const hotkeyLabel = settings?.hotkey ?? "CommandOrControl+Shift+Space";
@@ -236,11 +219,10 @@ function buildTrayMenu() {
 }
 
 function createTray() {
-  trayIconBase = nativeImage.createFromPath(
+  trayIcon = nativeImage.createFromPath(
     path.join(app.getAppPath(), "icons/png/tray-32.png")
   );
-  trayIconActive = buildActiveIcon(trayIconBase);
-  tray = new Tray(trayIconBase);
+  tray = new Tray(trayIcon);
 
   const hotkeyLabel = settings?.hotkey ?? "CommandOrControl+Shift+Space";
   tray.setToolTip(`ShortPath — Press ${hotkeyLabel} to open`);
@@ -259,18 +241,15 @@ function toggleWindow() {
     win.focus();
     win.webContents.send("compact-mode-changed", false);
     win.webContents.send("focus-search");
-    if (tray && trayIconActive) tray.setImage(trayIconActive);
-    return;
+        return;
   }
   if (win.isVisible()) {
     win.hide();
-    if (tray && trayIconBase) tray.setImage(trayIconBase);
   } else {
     win.show();
     win.focus();
     win.webContents.send("focus-search");
-    if (tray && trayIconActive) tray.setImage(trayIconActive);
-  }
+      }
 }
 
 function pushStoreUpdate() {
@@ -587,8 +566,7 @@ function toggleCompact() {
     win.focus();
     win.webContents.send("compact-mode-changed", false);
     win.webContents.send("focus-search");
-    if (tray && trayIconActive) tray.setImage(trayIconActive);
-  } else if (win.isVisible()) {
+      } else if (win.isVisible()) {
     enterCompact();
     win.webContents.send("compact-mode-changed", true);
   }
