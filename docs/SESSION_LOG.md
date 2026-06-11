@@ -4,6 +4,8 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-10 — post-release fixes](sessions/2026-06-10-post-release-fixes.md) — Tray icon invisible-on-Windows bug fixed (removed buildActiveIcon/createFromBitmap); results count moved to frozen bottom bar; "show recent entries on focus" setting added; README security note and known issues; v1.0.0 installer rebuilt and re-uploaded.
+
 - [2026-06-10 — v1.0.0 release](sessions/2026-06-10-v1.0.md) — Duplicate Phase 14 removed from roadmap; SetupScreen deleted; entry preview on hover (250ms, portal, below-item); duplicate detection across sync sources; check-for-updates removed; version bumped to 1.0.0.
 
 - [2026-06-10 — run-shortpath project skill](sessions/2026-06-10-run-skill.md) — Project skill written at .claude/skills/run-shortpath/SKILL.md; documents build step, onboarding dismiss, settings nav, help panel second-window capture, and cleanup.

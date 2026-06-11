@@ -1,8 +1,8 @@
 # Current Session State
 
-**Status:** 2026-06-10 — v1.0.0 shipped. App is feature-complete; distribution infrastructure is the remaining work.
+**Status:** 2026-06-10 — v1.0.0 installer updated with post-release fixes. Session closed.
 
-**Last session:** [2026-06-10 — v1.0.0 release](docs/sessions/2026-06-10-v1.0.md)
+**Last session:** [2026-06-10 — post-release fixes](docs/sessions/2026-06-10-post-release-fixes.md)
 
 **Open items:**
 - Code signing (Windows certificate, Apple Developer ID) -- unlocks SmartScreen bypass and macOS Gatekeeper.
