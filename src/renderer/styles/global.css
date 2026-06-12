@@ -122,7 +122,7 @@ body.is-compact #root {
   pointer-events: none;
 }
 
-.compact-view:hover .compact-logo {
+.compact-view:hover:not(:active) .compact-logo {
   opacity: 1;
   transform: scale(1.08);
 }
@@ -380,7 +380,8 @@ body.is-compact #root {
 /* Action buttons */
 .result-actions {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
   opacity: 0;
   transition: opacity 0.12s;
   flex-shrink: 0;
@@ -457,6 +458,137 @@ body.is-compact #root {
 .tool-action-btn.starred {
   color: var(--color-accent) !important;
   border-color: var(--color-accent) !important;
+}
+
+/* ===== EntryActions: redesigned quick-action buttons ===== */
+
+/* Primary action button: Copy and Open Link — 38×38px with accent-tinted fill */
+.ea-primary {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-dim);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  flex-shrink: 0;
+}
+
+.ea-primary:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.ea-primary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.ea-primary.ea-copied {
+  color: var(--color-success);
+}
+
+/* Secondary action button: Favorite and Edit — 32×32px hit area (28px visible via ghost style) */
+.ea-secondary {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.1s, background 0.1s;
+  flex-shrink: 0;
+}
+
+.ea-secondary:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.ea-secondary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.ea-secondary.ea-active {
+  color: var(--color-accent);
+}
+
+/* Overflow trigger: "..." button shown when the row is too narrow for secondary buttons */
+.ea-overflow-trigger {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.1s, background 0.1s;
+  flex-shrink: 0;
+}
+
+.ea-overflow-trigger:hover,
+.ea-overflow-trigger.ea-active {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.ea-overflow-trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* Overflow menu — portaled to document.body so it is never clipped by the row */
+.ea-overflow-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+  min-width: 148px;
+  padding: 4px;
+}
+
+.ea-overflow-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+
+.ea-overflow-item:hover,
+.ea-overflow-item:focus {
+  background: var(--color-surface-hover);
+  outline: none;
+}
+
+.ea-overflow-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
 }
 
 /* Entry hover preview card — rendered via portal at document.body */

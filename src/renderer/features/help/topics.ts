@@ -30,7 +30,7 @@ Position memory
 The compact icon remembers the last place you dragged it. On the next compact entry, the icon appears in the same place. On first use it defaults to the top-right corner of your display.
 
 Dragging the icon
-Grab and drag the compact icon anywhere on your desktop. Its position is saved when you release.
+Grab and drag the compact icon anywhere on your desktop. Its position is saved when you release. The icon scales up slightly on hover to indicate it can be clicked; this animation does not apply while you are holding the button down.
 
 Hide-after-copy behavior
 If "Hide window after copying" is enabled in Settings > Behavior, copying an entry enters compact mode instead of hiding the window entirely.
@@ -138,7 +138,7 @@ Sync source numbers
 If one or more sync files are connected, entries from those files show a small muted number to the right of the title (e.g. #1, #2). The number matches the source's position in Settings > Sync. This replaces the old "synced" badge and works when multiple CSV sources are connected at once.
 
 Hover actions
-Hovering any result row reveals action buttons on the right: pin (circle), star (☆), edit (✎), and copy (⎘). Entries that are already pinned or starred show their action buttons faintly even without hovering so you can see their state at a glance.
+Hovering any result row reveals action buttons on the right. The Copy and Open Link buttons are the primary actions (larger, accent-tinted). Favorite (star) and Edit are secondary (smaller, ghost-style). If the window is narrow, Favorite and Edit collapse into a "..." overflow menu — Copy and Open Link are always visible at full size. Entries that are pinned or starred show their action buttons faintly even without hovering.
 
 Entry preview
 Hovering a result row for about a quarter second shows a small preview card to the right of the row. The card shows the entry's body text (truncated) or its URL for link-only entries. It disappears when you move the mouse away. Move the mouse quickly to skip past it without triggering it.`,
@@ -447,7 +447,7 @@ The rename applies everywhere: group headers, entry forms, and the overlay badge
     content: `You can star any entry to save it to your Favorites list.
 
 Adding and removing favorites
-Hover any result row to reveal action buttons on the right side. Click the ☆ star button to star the entry — it turns ★ amber. Click again to unstar. Entries that are already starred show their action buttons faintly even without hovering.
+Hover any result row to reveal action buttons on the right side. Click the ☆ star (secondary ghost button) to star the entry — the icon fills and turns accent-colored. Click again to unstar. Entries that are already starred show their action buttons faintly even without hovering. If the window is narrow, the star collapses into the "..." overflow menu.
 
 In the expanded overlay (click any result to open it), the star appears in the header. Click it to toggle.
 

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Entry, VerticalGroup } from "@shared/types";
-import { copyEntry } from "@renderer/utils/htmlToPlain";
+import EntryActions from "./EntryActions";
 
 interface Props {
   group: VerticalGroup;
@@ -15,6 +15,8 @@ interface Props {
   onTogglePin?: (id: string) => void;
   onOpen: (entry: Entry) => void;
 }
+
+const COLLAPSE_THRESHOLD = 360;
 
 function ToolItem({
   entry,
@@ -43,29 +45,35 @@ function ToolItem({
   onOpen: (entry: Entry) => void;
   onReorder: (entryId: string, direction: "up" | "down") => void;
 }) {
-  const [copied, setCopied] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(false);
+  const liRef = useRef<HTMLLIElement>(null);
 
-  function handleCopy(e: React.MouseEvent) {
-    e.stopPropagation();
-    copyEntry(entry).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-      onCopy(entry.id);
-      window.shortpath.recordAccess(entry.id);
+  useEffect(() => {
+    const el = liRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([e]) => {
+      setIsNarrow(e.contentRect.width < COLLAPSE_THRESHOLD);
     });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  function handleCopyComplete() {
+    onCopy(entry.id);
+    void window.shortpath.recordAccess(entry.id);
   }
 
-  function handleOpenLink(e: React.MouseEvent) {
-    e.stopPropagation();
+  function handleOpenLink() {
     if (entry.link) {
       window.shortpath.openExternal(entry.link);
-      window.shortpath.recordAccess(entry.id);
+      void window.shortpath.recordAccess(entry.id);
       onCopy(entry.id);
     }
   }
 
   return (
     <li
+      ref={liRef}
       className="result-item"
       onClick={() => onOpen(entry)}
       style={{ cursor: "pointer" }}
@@ -79,53 +87,35 @@ function ToolItem({
           <button
             className={`action-btn pin-btn${isPinned ? " pinned" : ""}`}
             onClick={(e) => { e.stopPropagation(); onTogglePin(entry.id); }}
+            aria-label={isPinned ? "Unpin entry" : "Pin to top"}
             title={isPinned ? "Unpin" : "Pin to top"}
           >
             <span className="pin-dot" />
           </button>
         )}
-        {onToggleFavorite && (
-          <button
-            className={`action-btn star-btn${isFav ? " starred" : ""}`}
-            onClick={(e) => { e.stopPropagation(); onToggleFavorite(entry.id); }}
-            title={isFav ? "Remove from favorites" : "Add to favorites"}
-          >
-            {isFav ? "★" : "☆"}
-          </button>
-        )}
-        {entry.link && (
-          <button className="action-btn open-btn" onClick={handleOpenLink} title="Open link">
-            ↗
-          </button>
-        )}
-        {entry.body && (
-          <button
-            className={`action-btn copy-btn${copied ? " copied" : ""}`}
-            onClick={handleCopy}
-            title="Copy to clipboard"
-          >
-            {copied ? "✓" : "⎘"}
-          </button>
-        )}
-        <button
-          className="action-btn edit-btn"
-          onClick={(e) => { e.stopPropagation(); onEdit(entry); }}
-          title="Edit"
-        >
-          ✎
-        </button>
+        <EntryActions
+          entry={entry}
+          isNarrow={isNarrow}
+          isFavorite={isFav}
+          onCopyComplete={entry.body ? handleCopyComplete : undefined}
+          onOpenLink={entry.link ? handleOpenLink : undefined}
+          onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(entry.id) : undefined}
+          onEdit={() => onEdit(entry)}
+        />
         {!isSearching && (
           <>
             <button
               className="action-btn"
               onClick={(e) => { e.stopPropagation(); onReorder(entry.id, "up"); }}
               disabled={isFirst}
+              aria-label="Move up"
               title="Move up"
             >↑</button>
             <button
               className="action-btn"
               onClick={(e) => { e.stopPropagation(); onReorder(entry.id, "down"); }}
               disabled={isLast}
+              aria-label="Move down"
               title="Move down"
             >↓</button>
           </>

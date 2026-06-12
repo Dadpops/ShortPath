@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import type { Entry, SearchResult } from "@shared/types";
-import { copyEntry, htmlToPlain } from "@renderer/utils/htmlToPlain";
+import { htmlToPlain } from "@renderer/utils/htmlToPlain";
+import EntryActions from "./EntryActions";
 
 interface Props {
   result: SearchResult;
@@ -15,9 +16,11 @@ interface Props {
   onTogglePin?: (id: string) => void;
 }
 
+const COLLAPSE_THRESHOLD = 360;
+
 export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, isFavorite, onToggleFavorite, isPinned, onTogglePin }: Props) {
-  const [copied, setCopied] = useState(false);
   const [previewRect, setPreviewRect] = useState<DOMRect | null>(null);
+  const [isNarrow, setIsNarrow] = useState(false);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const liRef = useRef<HTMLLIElement>(null);
   const { entry } = result;
@@ -29,6 +32,16 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
 
   useEffect(() => {
     return () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); };
+  }, []);
+
+  useEffect(() => {
+    const el = liRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([e]) => {
+      setIsNarrow(e.contentRect.width < COLLAPSE_THRESHOLD);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   function handleMouseEnter() {
@@ -43,30 +56,20 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
     setPreviewRect(null);
   }
 
-  function handleCopy(e: React.MouseEvent) {
-    e.stopPropagation();
-    copyEntry(entry).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-      onCopy(entry.id);
-      window.shortpath.recordAccess(entry.id);
-    });
+  function handleCopyComplete() {
+    onCopy(entry.id);
+    void window.shortpath.recordAccess(entry.id);
   }
 
-  function handleOpenLink(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (entry.link) {
-      window.shortpath.openExternal(entry.link);
-    }
+  function handleOpenLink() {
+    if (entry.link) window.shortpath.openExternal(entry.link);
   }
 
-  function handleEdit(e: React.MouseEvent) {
-    e.stopPropagation();
+  function handleEdit() {
     onEdit(entry);
   }
 
-  function handleToggleFavorite(e: React.MouseEvent) {
-    e.stopPropagation();
+  function handleToggleFavorite() {
     onToggleFavorite?.(entry.id);
   }
 
@@ -115,40 +118,26 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
         </div>
         {entry.tags && <span className="result-tags">{entry.tags}</span>}
       </div>
-      <div className="result-actions">
+      <div className="result-actions" onClick={(e) => e.stopPropagation()}>
         {onTogglePin !== undefined && (
           <button
             className={`action-btn pin-btn${isPinned ? " pinned" : ""}`}
             onClick={handleTogglePin}
+            aria-label={isPinned ? "Unpin entry" : "Pin to top"}
             title={isPinned ? "Unpin" : "Pin to top"}
           >
             <span className="pin-dot" />
           </button>
         )}
-        {onToggleFavorite !== undefined && (
-          <button
-            className={`action-btn star-btn${isFavorite ? " starred" : ""}`}
-            onClick={handleToggleFavorite}
-            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          >
-            {isFavorite ? "★" : "☆"}
-          </button>
-        )}
-        {isOpenable && (
-          <button className="action-btn open-btn" onClick={handleOpenLink} title="Open link">
-            ↗
-          </button>
-        )}
-        <button className="action-btn edit-btn" onClick={handleEdit} title="Edit entry">
-          ✎
-        </button>
-        <button
-          className={`action-btn copy-btn${copied ? " copied" : ""}`}
-          onClick={handleCopy}
-          title="Copy to clipboard"
-        >
-          {copied ? "✓" : "⎘"}
-        </button>
+        <EntryActions
+          entry={entry}
+          isNarrow={isNarrow}
+          isFavorite={isFavorite}
+          onCopyComplete={handleCopyComplete}
+          onOpenLink={isOpenable ? handleOpenLink : undefined}
+          onToggleFavorite={onToggleFavorite ? handleToggleFavorite : undefined}
+          onEdit={handleEdit}
+        />
       </div>
     </li>
     {previewPortal}
