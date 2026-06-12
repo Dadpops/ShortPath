@@ -14,11 +14,12 @@ interface Props {
   onToggleFavorite?: (id: string) => void;
   isPinned?: boolean;
   onTogglePin?: (id: string) => void;
+  hideCopyCount?: boolean;
 }
 
 const COLLAPSE_THRESHOLD = 360;
 
-export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, isFavorite, onToggleFavorite, isPinned, onTogglePin }: Props) {
+export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, isFavorite, onToggleFavorite, isPinned, onTogglePin, hideCopyCount }: Props) {
   const [previewRect, setPreviewRect] = useState<DOMRect | null>(null);
   const [isNarrow, setIsNarrow] = useState(false);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -112,7 +113,7 @@ export default function ResultItem({ result, onEdit, onCopy, onOpen, isFocused, 
       <div className="result-content">
         <div style={{ display: "flex", alignItems: "baseline", gap: 0, minWidth: 0 }}>
           <span className="result-title">{entry.title}</span>
-          {(entry.copyCount ?? 0) > 0 && (
+          {!hideCopyCount && (entry.copyCount ?? 0) > 0 && (
             <span className="copy-count-badge">{entry.copyCount}×</span>
           )}
         </div>

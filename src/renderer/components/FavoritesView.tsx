@@ -42,6 +42,7 @@ export default function FavoritesView({ entries, favorites, verticals, onBack, o
                   onOpen={onOpen}
                   isFavorite={favorites.has(entry.id)}
                   onToggleFavorite={onToggleFavorite}
+                  hideCopyCount
                 />
               </li>
             ))}
