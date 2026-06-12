@@ -1,6 +1,6 @@
 {
   "name": "shortpath",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Local-first documentation, saved-reply, and process hub for support agents.",
   "main": "dist/main/index.js",
   "author": "Dadpops",
