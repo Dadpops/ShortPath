@@ -4,7 +4,7 @@ Reverse-chronological. One line per session.
 
 ---
 
-- [2026-06-11 — bug fixes](sessions/2026-06-11-bug-fixes.md) — Subfolder collapse re-expansion via stale useEffect dep fixed; toggleGroup all-mode key mismatch fixed; compact drag icon grow fixed (data-dragging attribute); pin button removed from Support Tools items; copy count badge hidden from Favorites cards; 10 unit tests added.
+- [2026-06-11 — bug fixes](sessions/2026-06-11-bug-fixes.md) — Subfolder collapse re-expansion via stale useEffect dep fixed; toggleGroup all-mode key mismatch fixed; compact drag icon grow fixed (data-dragging attribute); pin button removed from Support Tools items; copy count badge hidden from Favorites cards; 10 unit tests added. Released as v1.0.1.
 
 - [2026-06-11 — entry actions redesign](sessions/2026-06-11-entry-actions-redesign.md) — New shared EntryActions component; Copy/Open Link 38px accent-tinted primaries; Fav/Edit 32px ghost secondaries; ResizeObserver collapse at 360px li width with "..." portal overflow menu; compact mode drag scale bug fixed (`:hover:not(:active)`); onPointerCancel guard added; Known Issues section removed from README.
 

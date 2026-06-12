@@ -1,6 +1,6 @@
 # Current Session State
 
-**Status:** 2026-06-11 — Four bug fixes. Session closed.
+**Status:** 2026-06-11 — Four bug fixes + v1.0.1 release. Session closed.
 
 **Last session:** [2026-06-11 — bug fixes](docs/sessions/2026-06-11-bug-fixes.md)
 
