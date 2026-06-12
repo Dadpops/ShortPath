@@ -365,7 +365,7 @@ After a manual Refresh, ShortPath checks whether any entry in the synced file sh
   {
     id: "support-tools",
     title: "Support Tools",
-    tags: ["support tools", "links", "quick launch", "utilities", "grid", "reorder", "pin", "favorite"],
+    tags: ["support tools", "links", "quick launch", "utilities", "grid", "reorder", "favorite"],
     content: `Support Tools is a dedicated category for links you open regularly — admin panels, dashboards, forms, and other utilities.
 
 Support Tools entries appear in a grid layout for faster scanning, separate from the text-based saved replies and docs.
@@ -379,8 +379,8 @@ Click + in the header, set the Type to "tool", and fill in the Title and URL.
 Reordering tools
 When browsing (not searching), each tool card shows ↑ and ↓ buttons. Click them to change the order. The new order is saved immediately.
 
-Favoriting and pinning tools
-Hover a tool row to reveal the star (☆) and pin (circle) buttons alongside the edit button. Starring adds the tool to your Favorites list. Pinning adds it to the Pinned section at the top of the main results view. Both work the same as for regular entries.
+Favoriting tools
+Hover a tool row to reveal the star (☆) button alongside the edit button. Starring adds the tool to your Favorites list.
 
 Editing and removing
 Click ✎ on any tool card to open the edit form. You can change the title, URL, tags, or delete the tool.`,

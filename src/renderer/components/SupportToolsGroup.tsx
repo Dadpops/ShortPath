@@ -11,8 +11,6 @@ interface Props {
   isSearching: boolean;
   favorites?: Set<string>;
   onToggleFavorite?: (id: string) => void;
-  pinned?: Set<string>;
-  onTogglePin?: (id: string) => void;
   onOpen: (entry: Entry) => void;
 }
 
@@ -24,9 +22,7 @@ function ToolItem({
   isLast,
   isSearching,
   isFav,
-  isPinned,
   onToggleFavorite,
-  onTogglePin,
   onEdit,
   onCopy,
   onOpen,
@@ -37,9 +33,7 @@ function ToolItem({
   isLast: boolean;
   isSearching: boolean;
   isFav: boolean;
-  isPinned: boolean;
   onToggleFavorite?: (id: string) => void;
-  onTogglePin?: (id: string) => void;
   onEdit: (entry: Entry) => void;
   onCopy: (entryId: string) => void;
   onOpen: (entry: Entry) => void;
@@ -83,16 +77,6 @@ function ToolItem({
         {entry.tags && <span className="result-tags">{entry.tags}</span>}
       </div>
       <div className="result-actions" onClick={(e) => e.stopPropagation()}>
-        {onTogglePin && (
-          <button
-            className={`action-btn pin-btn${isPinned ? " pinned" : ""}`}
-            onClick={(e) => { e.stopPropagation(); onTogglePin(entry.id); }}
-            aria-label={isPinned ? "Unpin entry" : "Pin to top"}
-            title={isPinned ? "Unpin" : "Pin to top"}
-          >
-            <span className="pin-dot" />
-          </button>
-        )}
         <EntryActions
           entry={entry}
           isNarrow={isNarrow}
@@ -127,7 +111,7 @@ function ToolItem({
 
 export default function SupportToolsGroup({
   group, onToggle, onEdit, onCopy, onReorder, isSearching,
-  favorites, onToggleFavorite, pinned, onTogglePin, onOpen,
+  favorites, onToggleFavorite, onOpen,
 }: Props) {
   return (
     <div className="vertical-group support-tools-group">
@@ -149,9 +133,7 @@ export default function SupportToolsGroup({
                 isLast={idx === group.results.length - 1}
                 isSearching={isSearching}
                 isFav={favorites?.has(entry.id) ?? false}
-                isPinned={pinned?.has(entry.id) ?? false}
                 onToggleFavorite={onToggleFavorite}
-                onTogglePin={onTogglePin}
                 onEdit={onEdit}
                 onCopy={onCopy}
                 onOpen={onOpen}
