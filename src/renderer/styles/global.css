@@ -122,9 +122,14 @@ body.is-compact #root {
   pointer-events: none;
 }
 
-.compact-view:hover:not(:active) .compact-logo {
+.compact-view:hover .compact-logo {
   opacity: 1;
   transform: scale(1.08);
+}
+
+.compact-view[data-dragging="true"] .compact-logo {
+  opacity: 0.88;
+  transform: none;
 }
 
 /* Header */
