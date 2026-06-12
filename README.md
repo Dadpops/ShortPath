@@ -280,12 +280,6 @@ See [CLAUDE.md](CLAUDE.md) for coding conventions, commit style, and session wor
 
 ---
 
-## Known issues
-
-| Issue | Workaround |
-|---|---|
-| Compact mode icon grows continuously when held | Click the icon briefly instead of holding it. Switching back to the regular window and then returning to compact mode resets the size. |
-
 ---
 
 ## License

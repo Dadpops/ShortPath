@@ -818,6 +818,10 @@ export default function App() {
             void window.shortpath.compactDragEnd();
             if (d && !d.moved) void handleRestoreCompact();
           }}
+          onPointerCancel={() => {
+            compactDragRef.current = null;
+            void window.shortpath.compactDragEnd();
+          }}
         >
           <svg viewBox="0 0 512 512" className="compact-logo" aria-label="ShortPath">
             <rect x="0" y="0" width="512" height="512" rx="112" fill="var(--compact-accent, var(--color-accent))"/>

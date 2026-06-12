@@ -4,6 +4,8 @@ Reverse-chronological. One line per session.
 
 ---
 
+- [2026-06-11 — entry actions redesign](sessions/2026-06-11-entry-actions-redesign.md) — New shared EntryActions component; Copy/Open Link 38px accent-tinted primaries; Fav/Edit 32px ghost secondaries; ResizeObserver collapse at 360px li width with "..." portal overflow menu; compact mode drag scale bug fixed (`:hover:not(:active)`); onPointerCancel guard added; Known Issues section removed from README.
+
 - [2026-06-10 — post-release fixes](sessions/2026-06-10-post-release-fixes.md) — Tray icon invisible-on-Windows bug fixed (removed buildActiveIcon/createFromBitmap); results count moved to frozen bottom bar; "show recent entries on focus" setting added; README security note and known issues; v1.0.0 installer rebuilt and re-uploaded.
 
 - [2026-06-10 — v1.0.0 release](sessions/2026-06-10-v1.0.md) — Duplicate Phase 14 removed from roadmap; SetupScreen deleted; entry preview on hover (250ms, portal, below-item); duplicate detection across sync sources; check-for-updates removed; version bumped to 1.0.0.

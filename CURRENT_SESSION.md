@@ -1,8 +1,8 @@
 # Current Session State
 
-**Status:** 2026-06-10 — v1.0.0 installer updated with post-release fixes. Session closed.
+**Status:** 2026-06-11 — Entry actions redesign + compact mode drag fix. Session closed.
 
-**Last session:** [2026-06-10 — post-release fixes](docs/sessions/2026-06-10-post-release-fixes.md)
+**Last session:** [2026-06-11 — entry actions redesign](docs/sessions/2026-06-11-entry-actions-redesign.md)
 
 **Open items:**
 - Code signing (Windows certificate, Apple Developer ID) -- unlocks SmartScreen bypass and macOS Gatekeeper.
