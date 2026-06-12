@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Entry, VerticalGroup, SubFolder, SearchResult } from "@shared/types";
 import ResultItem from "./ResultItem";
 import FolderIcon from "./FolderIcon";
@@ -39,14 +39,18 @@ export default function VerticalGroupComponent({
     () => new Set(getAllIds(subFolders ?? []))
   );
 
+  const subFoldersRef = useRef(subFolders);
+  subFoldersRef.current = subFolders;
+
   useEffect(() => {
     if (!subExpandSignal) return;
     if (subExpandSignal.expand) {
-      setExpandedSubs(new Set(getAllIds(subFolders ?? [])));
+      setExpandedSubs(new Set(getAllIds(subFoldersRef.current ?? [])));
     } else {
       setExpandedSubs(new Set());
     }
-  }, [subExpandSignal?.version, subFolders]); // version change triggers expand/collapse all
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subExpandSignal?.version]); // intentionally omit subFolders — ref keeps it current
 
   function toggleSub(id: string) {
     setExpandedSubs((prev) => {

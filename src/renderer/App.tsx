@@ -112,6 +112,7 @@ export default function App() {
   const [compactSize, setCompactSize] = useState(64);
   const [compactAccentColor, setCompactAccentColor] = useState<string | null>(null);
   const compactDragRef = useRef<{ startX: number; startY: number; moved: boolean } | null>(null);
+  const [isCompactDragging, setIsCompactDragging] = useState(false);
   const [settingsSection, setSettingsSection] = useState<"appearance" | "behavior" | "organization" | "data" | "sync" | "compact" | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const [headerNarrow, setHeaderNarrow] = useState(false);
@@ -505,10 +506,16 @@ export default function App() {
   }, [focusedEntryId]);
 
   const toggleGroup = useCallback((verticalId: string) => {
+    const plainId = verticalId.includes("::") ? verticalId.split("::")[1] : verticalId;
     setExpandedGroups((prev) => {
+      const isExpanded = prev.has(verticalId) || prev.has(plainId);
       const next = new Set(prev);
-      if (next.has(verticalId)) next.delete(verticalId);
-      else next.add(verticalId);
+      if (isExpanded) {
+        next.delete(verticalId);
+        next.delete(plainId);
+      } else {
+        next.add(verticalId);
+      }
       return next;
     });
   }, []);
@@ -798,11 +805,13 @@ export default function App() {
       <div className="app-shell compact-mode">
         <div
           className="compact-view"
+          data-dragging={isCompactDragging ? "true" : undefined}
           style={compactAccentColor ? { "--compact-accent": compactAccentColor } as React.CSSProperties : undefined}
           title="Drag to move — click to restore"
           onPointerDown={(e) => {
             (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
             compactDragRef.current = { startX: e.screenX, startY: e.screenY, moved: false };
+            setIsCompactDragging(true);
             void window.shortpath.compactDragStart();
           }}
           onPointerMove={(e) => {
@@ -815,11 +824,13 @@ export default function App() {
           onPointerUp={() => {
             const d = compactDragRef.current;
             compactDragRef.current = null;
+            setIsCompactDragging(false);
             void window.shortpath.compactDragEnd();
             if (d && !d.moved) void handleRestoreCompact();
           }}
           onPointerCancel={() => {
             compactDragRef.current = null;
+            setIsCompactDragging(false);
             void window.shortpath.compactDragEnd();
           }}
         >
@@ -1370,8 +1381,6 @@ export default function App() {
                             isSearching={isSearching}
                             favorites={favorites}
                             onToggleFavorite={handleToggleFavorite}
-                            pinned={pinned}
-                            onTogglePin={(id) => void handleTogglePin(id)}
                             onOpen={handleOpenOverlay}
                           />
                         ) : (
@@ -1413,8 +1422,6 @@ export default function App() {
                 isSearching={isSearching}
                 favorites={favorites}
                 onToggleFavorite={handleToggleFavorite}
-                pinned={pinned}
-                onTogglePin={(id) => void handleTogglePin(id)}
                 onOpen={handleOpenOverlay}
               />
             ) : (
