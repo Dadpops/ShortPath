@@ -21,7 +21,7 @@ describe("importCsv — subfolder handling", () => {
   it("imports a single-level subfolder", () => {
     const result = importCsv(makeStore(), csv(["Entry,Documentation,doc,Getting Started,Some body,,"]));
     expect(result.imported).toBe(1);
-    const vertical = result.store.verticals.find((v) => v.id === "Documentation");
+    const vertical = result.store.verticals.find((v) => v.id === "documentation");
     const sf = vertical?.subFolders?.find((s) => s.label === "Getting Started");
     expect(sf).toBeDefined();
     expect(result.store.entries[0].subFolderId).toBe(sf!.id);
@@ -30,7 +30,7 @@ describe("importCsv — subfolder handling", () => {
   it("imports a two-level nested subfolder", () => {
     const result = importCsv(makeStore(), csv(["Entry,Documentation,doc,Getting Started > Account Help,Body,,"]));
     expect(result.imported).toBe(1);
-    const vertical = result.store.verticals.find((v) => v.id === "Documentation");
+    const vertical = result.store.verticals.find((v) => v.id === "documentation");
     const parent = vertical?.subFolders?.find((s) => s.label === "Getting Started");
     expect(parent).toBeDefined();
     const child = parent?.subFolders?.find((s) => s.label === "Account Help");
@@ -44,7 +44,7 @@ describe("importCsv — subfolder handling", () => {
     const r3 = importCsv(makeStore(), csv(["E3,Documentation,doc,A >B,Body,,"]));
 
     function childId(store: typeof r1.store): string | undefined {
-      const v = store.verticals.find((v) => v.id === "Documentation");
+      const v = store.verticals.find((v) => v.id === "documentation");
       const parent = v?.subFolders?.find((s) => s.label === "A");
       return parent?.subFolders?.find((s) => s.label === "B")?.id;
     }
@@ -62,7 +62,7 @@ describe("importCsv — subfolder handling", () => {
     const first = importCsv(makeStore(), csv(["E1,Documentation,doc,Getting Started,Body,,"]));
     // Second import uses different casing — should reuse the existing folder
     const second = importCsv(first.store, csv(["E2,Documentation,doc,getting started,Body,,"]));
-    const vertical = second.store.verticals.find((v) => v.id === "Documentation");
+    const vertical = second.store.verticals.find((v) => v.id === "documentation");
     // Still only one top-level subfolder
     expect(vertical?.subFolders?.length).toBe(1);
     expect(vertical?.subFolders?.[0].label).toBe("Getting Started"); // original casing preserved
@@ -73,7 +73,7 @@ describe("importCsv — subfolder handling", () => {
     // PapaParse RFC 4180: "Data, Privacy & Security" is a single field
     const result = importCsv(makeStore(), csv([`Entry,Documentation,doc,"Data, Privacy & Security",Body,,`]));
     expect(result.imported).toBe(1);
-    const vertical = result.store.verticals.find((v) => v.id === "Documentation");
+    const vertical = result.store.verticals.find((v) => v.id === "documentation");
     const sf = vertical?.subFolders?.find((s) => s.label === "Data, Privacy & Security");
     expect(sf).toBeDefined();
   });
